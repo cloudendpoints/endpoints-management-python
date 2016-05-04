@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -29,50 +26,3 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-import os
-import re
-import sys
-
-from setuptools import setup, find_packages
-
-# Get the version
-version_regex = r'__version__ = ["\']([^"\']*)["\']'
-with open('google/scc/__init__.py', 'r') as f:
-    text = f.read()
-    match = re.search(version_regex, text)
-    if match:
-        version = match.group(1)
-    else:
-        raise RuntimeError("No version number found!")
-
-
-install_requires = [
-    'google-apitools>=0.4.15,<0.5',
-    'oauth2client>=1.5.2,<2',
-    'strict-rfc3339>=0.7,<0.8'
-]
-
-setup(
-    name='google-scc',
-    version=version,
-    description='Service Control Client for Python',
-    long_description=open('README.rst').read(),
-    author='Google Inc',
-    author_email='googleapis-packages@google.com',
-    url='',
-    packages=find_packages(),
-    package_dir={'google-scc': 'google'},
-    license='MIT License',
-    classifiers=[
-        'Development Status :: 3 - Alpha',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: Implementation :: CPython',
-    ],
-    tests_require=['pytest'],
-    install_requires=install_requires,
-)
