@@ -31,5 +31,93 @@
 
 from __future__ import absolute_import
 
+import collections
+import datetime
 
 __version__ = '0.1.0'
+
+
+class MetricKind(object):
+    """MetricKind is a placeholder for a generated protobuf enum."""
+    METRIC_KIND_UNSPECIFIED = 0
+    GAUGE = 1
+    DELTA = 2
+    CUMULATIVE = 3
+
+
+class ReportAggregationOptions(
+        collections.namedtuple(
+            'ReportAggregegationOptions',
+            ['num_entries',
+             'flush_interval'])):
+    """Holds values used to control report aggregation behavior.
+
+    Attributes:
+
+        num_entries: the maximum number of cache entries that can be kept in
+          the aggregation cache
+
+        flush_interval (:class:`datetime.timedelta`): the maximum delta before
+          aggregated report requests are flushed to the server.  The cache
+          entry is deleted after the flush
+    """
+    # pylint: disable=too-few-public-methods
+    DEFAULT_NUM_ENTRIES = 200
+    DEFAULT_FLUSH_INTERVAL = datetime.timedelta(seconds=1)
+
+    def __new__(cls,
+                num_entries=DEFAULT_NUM_ENTRIES,
+                flush_interval=DEFAULT_FLUSH_INTERVAL):
+        """Invokes the base constructor with default values."""
+        assert isinstance(num_entries, int), 'should be an int'
+        assert isinstance(flush_interval,
+                          datetime.timedelta), 'should be a timedelta'
+
+        return super(cls, ReportAggregationOptions).__new__(
+            cls,
+            num_entries,
+            flush_interval)
+
+
+class CheckAggregationOptions(
+        collections.namedtuple(
+            'CheckAggregationOptions',
+            ['num_entries',
+             'flush_interval',
+             'expiration'])):
+    """Holds values used to control report check behavior.
+
+    Attributes:
+
+        num_entries: the maximum number of cache entries that can be kept in
+          the aggregation cache
+        flush_interval (:class:`datetime.timedelta`): the maximum delta before
+          aggregated report requests are flushed to the server.  The cache
+          entry is deleted after the flush.
+        expiration (:class:`datetime.timedelta`): elapsed time before a cached
+          check response should be deleted.  This value should be larger than
+          ``flush_interval``, otherwise it will be ignored, and instead a value
+          equivalent to flush_interval + 1ms will be used.
+    """
+    # pylint: disable=too-few-public-methods
+    DEFAULT_NUM_ENTRIES = 200
+    DEFAULT_FLUSH_INTERVAL = datetime.timedelta(milliseconds=500)
+    DEFAULT_EXPIRATION = datetime.timedelta(seconds=1)
+
+    def __new__(cls,
+                num_entries=DEFAULT_NUM_ENTRIES,
+                flush_interval=DEFAULT_FLUSH_INTERVAL,
+                expiration=DEFAULT_EXPIRATION):
+        """Invokes the base constructor with default values."""
+        assert isinstance(num_entries, int), 'should be an int'
+        assert isinstance(flush_interval,
+                          datetime.timedelta), 'should be a timedelta'
+        assert isinstance(expiration,
+                          datetime.timedelta), 'should be a timedelta'
+        if expiration <= flush_interval:
+            expiration = flush_interval + datetime.timedelta(milliseconds=1)
+        return super(cls, CheckAggregationOptions).__new__(
+            cls,
+            num_entries,
+            flush_interval,
+            expiration)
