@@ -48,8 +48,10 @@ with open('google/scc/__init__.py', 'r') as f:
 
 
 install_requires = [
+    'cachetools>=1.0.0,<2',
     'google-apitools>=0.4.15,<0.5',
     'oauth2client>=1.5.2,<2',
+    'protorpc>=0.11.1,<0.12',
     'strict-rfc3339>=0.7,<0.8'
 ]
 
