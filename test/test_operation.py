@@ -31,14 +31,14 @@ from __future__ import absolute_import
 
 import datetime
 import unittest2
-from expects import expect, equal, raise_error
+from expects import be_none, expect, equal, raise_error
 
 import google.apigen.servicecontrol_v1_messages as messages
 from google.scc import timestamp, MetricKind
 from google.scc.aggregators import metric_value, operation
 
 _A_FLOAT_VALUE = 1.1
-_REALLY_EARLY = timestamp.to_rfc3339(datetime.datetime(1970, 1, 1, 10, 0, 0))
+_REALLY_EARLY = timestamp.to_rfc3339(datetime.datetime(1970, 1, 1, 0, 0, 0))
 _EARLY = timestamp.to_rfc3339(datetime.datetime(1980, 1, 1, 10, 0, 0))
 _LATER = timestamp.to_rfc3339(datetime.datetime(1980, 2, 2, 10, 0, 0))
 _LATER_STILL = timestamp.to_rfc3339(datetime.datetime(1981, 2, 2, 10, 0, 0))
@@ -317,3 +317,82 @@ class TestOperationAggregation(unittest2.TestCase):
                 expect(got).to(equal(want))
             except AssertionError as e:
                 raise AssertionError('Failed to {0}\n{1}'.format(desc, e))
+
+
+_INFO_TESTS = [
+    (operation.Info(
+        referer='a_referer',
+        service_name='a_service_name'),
+     messages.Operation(
+         startTime=_REALLY_EARLY,
+         endTime=_REALLY_EARLY)),
+    (operation.Info(
+        operation_id='an_op_id',
+        referer='a_referer',
+        service_name='a_service_name'),
+     messages.Operation(
+         operationId='an_op_id',
+         startTime=_REALLY_EARLY,
+         endTime=_REALLY_EARLY)),
+    (operation.Info(
+        operation_id='an_op_id',
+        operation_name='an_op_name',
+        referer='a_referer',
+        service_name='a_service_name'),
+     messages.Operation(
+         operationId='an_op_id',
+         operationName='an_op_name',
+         startTime=_REALLY_EARLY,
+         endTime=_REALLY_EARLY)),
+    (operation.Info(
+        api_key='an_api_key',
+        api_key_valid=True,
+        operation_id='an_op_id',
+        operation_name='an_op_name',
+        referer='a_referer',
+        service_name='a_service_name'),
+     messages.Operation(
+         consumerId='api_key:an_api_key',
+         operationId='an_op_id',
+         operationName='an_op_name',
+         startTime=_REALLY_EARLY,
+         endTime=_REALLY_EARLY)),
+    (operation.Info(
+        api_key='an_api_key',
+        api_key_valid=False,
+        consumer_project_id='project_id',
+        operation_id='an_op_id',
+        operation_name='an_op_name',
+        referer='a_referer',
+        service_name='a_service_name'),
+     messages.Operation(
+         consumerId='project:project_id',
+         operationId='an_op_id',
+         operationName='an_op_name',
+         startTime=_REALLY_EARLY,
+         endTime=_REALLY_EARLY)),
+]
+
+class TestInfo(unittest2.TestCase):
+
+    def test_should_construct_with_no_args(self):
+        expect(operation.Info()).not_to(be_none)
+
+    def test_should_convert_to_operation_ok(self):
+        timer = _DateTimeTimer()
+        for info, want in _INFO_TESTS:
+            expect(info.as_operation(timer=timer)).to(equal(want))
+
+
+class _DateTimeTimer(object):
+    def __init__(self, auto=False):
+        self.auto = auto
+        self.time = datetime.datetime(1970, 1, 1)
+
+    def __call__(self):
+        if self.auto:
+            self.tick()
+        return self.time
+
+    def tick(self):
+        self.time += datetime.timedelta(seconds=1)

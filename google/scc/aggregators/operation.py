@@ -42,6 +42,7 @@ from __future__ import absolute_import
 
 import collections
 import logging
+from datetime import datetime
 
 from apitools.base.py import encoding
 
@@ -50,6 +51,77 @@ from .. import timestamp, MetricKind
 from . import metric_value
 
 logger = logging.getLogger(__name__)
+
+
+class Info(
+        collections.namedtuple(
+            'Info', [
+                'api_key',
+                'api_key_valid',
+                'consumer_project_id',
+                'operation_id',
+                'operation_name',
+                'referer',
+                'service_name',
+            ])):
+    """Holds basic information about an api call.
+
+    This class is one of several used to mediate between the raw service
+    control api surface and python frameworks. Client code can construct
+    operations using this surface
+
+    Attributes:
+        api_key (string): the api key
+        api_key_valid (bool): it the request has a valid api key. By default
+          it is true, it will only be set to false if the api key cannot
+          be validated by the service controller
+        consumer_project_id (string): the project id of the api consumer
+        operation_id (string): identity of the operation, which must be unique
+          within the scope of the service. Calls to report and check on the
+          same operation should carry the same operation id
+        operation_name (string): the fully-qualified name of the operation
+        referer (string): the referer header, or if not present the origin
+        service_name(string): the name of service
+
+    """
+
+    def __new__(cls,
+                api_key='',
+                api_key_valid=False,
+                consumer_project_id='',
+                operation_id='',
+                operation_name='',
+                referer='',
+                service_name=''):
+        """Invokes the base constructor with default values."""
+        return super(cls, Info).__new__(
+            cls,
+            api_key,
+            api_key_valid,
+            consumer_project_id,
+            operation_id,
+            operation_name,
+            referer,
+            service_name)
+
+    def as_operation(self, timer=datetime.now):
+        """Makes an ``Operation`` from this instance.
+
+        Returns:
+          an ``Operation``
+
+        """
+        now = timestamp.to_rfc3339(timer())
+        op = messages.Operation(endTime=now, startTime=now)
+        if self.operation_id:
+            op.operationId = self.operation_id
+        if self.operation_name:
+            op.operationName = self.operation_name
+        if self.api_key and self.api_key_valid:
+            op.consumerId = 'api_key:' + self.api_key
+        elif self.consumer_project_id:
+            op.consumerId= 'project:' + self.consumer_project_id
+        return op
 
 
 class Aggregator(object):

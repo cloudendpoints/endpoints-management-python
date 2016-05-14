@@ -45,6 +45,41 @@ _TEST_OP1_NAME = 'testOp1'
 _TEST_OP2_NAME = 'testOp2'
 
 
+class TestInfo(unittest2.TestCase):
+
+    def test_should_construct_with_no_args(self):
+        expect(report_request.Info()).not_to(be_none)
+
+    def test_should_raise_if_constructed_with_a_bad_method(self):
+        testf = lambda: report_request.Info(protocol=object())
+        # not a report_request.ReportedProtocols
+        expect(testf).to(raise_error(ValueError))
+
+    def test_should_raise_if_constructed_with_a_bad_request_size(self):
+        testf = lambda: report_request.Info(request_size=object())
+        expect(testf).to(raise_error(ValueError))
+        testf = lambda: report_request.Info(request_size=-2)
+        expect(testf).to(raise_error(ValueError))
+
+    def test_should_raise_if_constructed_with_a_bad_response_size(self):
+        testf = lambda: report_request.Info(response_size=object())
+        expect(testf).to(raise_error(ValueError))
+        testf = lambda: report_request.Info(response_size=-2)
+        expect(testf).to(raise_error(ValueError))
+
+    def test_should_raise_if_constructed_with_a_bad_backend_time(self):
+        testf = lambda: report_request.Info(backend_time=object())
+        expect(testf).to(raise_error(ValueError))
+
+    def test_should_raise_if_constructed_with_a_bad_overhead_time(self):
+        testf = lambda: report_request.Info(overhead_time=object())
+        expect(testf).to(raise_error(ValueError))
+
+    def test_should_raise_if_constructed_with_a_bad_request_time(self):
+        testf = lambda: report_request.Info(request_time=object())
+        expect(testf).to(raise_error(ValueError))
+
+
 class TestAggregatorReport(unittest2.TestCase):
     SERVICE_NAME = 'service.report'
 

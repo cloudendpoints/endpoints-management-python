@@ -36,7 +36,7 @@ from expects import be_none, equal, expect, raise_error
 from apitools.base.py import encoding
 
 import google.apigen.servicecontrol_v1_messages as messages
-from google.scc import CheckAggregationOptions
+from google.scc import timestamp, CheckAggregationOptions
 from google.scc.aggregators import check_request, metric_value
 
 
@@ -369,3 +369,108 @@ def _make_test_request(service_name, importance=None):
     return messages.ServicecontrolServicesCheckRequest(
         serviceName=service_name,
         check_request=check_request)
+
+
+_START_OF_EPOCH = timestamp.to_rfc3339(datetime.datetime(1970, 1, 1, 0, 0, 0))
+_TEST_SERVICE_NAME = 'a_service_name'
+_INFO_TESTS = [
+    (check_request.Info(
+        operation_id='an_op_id',
+        operation_name='an_op_name',
+        referer='a_referer',
+        service_name=_TEST_SERVICE_NAME),
+     messages.Operation(
+         labels = encoding.PyValueToMessage(
+             messages.Operation.LabelsValue, {
+                 'servicecontrol.googleapis.com/user_agent': 'ESP',
+                 'servicecontrol.googleapis.com/referer': 'a_referer'
+             }),
+         operationId='an_op_id',
+         operationName='an_op_name',
+         startTime=_START_OF_EPOCH,
+         endTime=_START_OF_EPOCH)),
+    (check_request.Info(
+        api_key='an_api_key',
+        api_key_valid=True,
+        operation_id='an_op_id',
+        operation_name='an_op_name',
+        referer='a_referer',
+        service_name=_TEST_SERVICE_NAME),
+     messages.Operation(
+         consumerId='api_key:an_api_key',
+         labels = encoding.PyValueToMessage(
+             messages.Operation.LabelsValue, {
+                 'servicecontrol.googleapis.com/user_agent': 'ESP',
+                 'servicecontrol.googleapis.com/referer': 'a_referer'
+             }),
+         operationId='an_op_id',
+         operationName='an_op_name',
+         startTime=_START_OF_EPOCH,
+         endTime=_START_OF_EPOCH)),
+    (check_request.Info(
+        api_key='an_api_key',
+        api_key_valid=False,
+        client_ip='127.0.0.1',
+        consumer_project_id='project_id',
+        operation_id='an_op_id',
+        operation_name='an_op_name',
+        referer='a_referer',
+        service_name=_TEST_SERVICE_NAME),
+     messages.Operation(
+         consumerId='project:project_id',
+         labels = encoding.PyValueToMessage(
+             messages.Operation.LabelsValue, {
+                 'servicecontrol.googleapis.com/caller_ip': '127.0.0.1',
+                 'servicecontrol.googleapis.com/user_agent': 'ESP',
+                 'servicecontrol.googleapis.com/referer': 'a_referer'
+             }),
+         operationId='an_op_id',
+         operationName='an_op_name',
+         startTime=_START_OF_EPOCH,
+         endTime=_START_OF_EPOCH)),
+]
+_INCOMPLETE_INFO_TESTS = [
+    check_request.Info(
+        operation_name='an_op_name',
+        service_name=_TEST_SERVICE_NAME),
+    check_request.Info(
+        operation_id='an_op_id',
+        service_name=_TEST_SERVICE_NAME),
+    check_request.Info(
+        operation_id='an_op_id',
+        operation_name='an_op_name')
+]
+
+
+class TestInfo(unittest2.TestCase):
+
+    def test_should_construct_with_no_args(self):
+        expect(check_request.Info()).not_to(be_none)
+
+    def test_should_convert_using_as_check_request(self):
+        timer = _DateTimeTimer()
+        for info, want in _INFO_TESTS:
+            got = info.as_check_request(timer=timer)
+            expect(got.check_request.operation).to(equal(want))
+            expect(got.serviceName).to(equal(_TEST_SERVICE_NAME))
+
+    def test_should_fail_as_check_request_on_incomplete_info(self):
+        timer = _DateTimeTimer()
+        for info in _INCOMPLETE_INFO_TESTS:
+            testf = lambda: info.as_check_request(timer=timer)
+            expect(testf).to(raise_error(ValueError))
+
+
+
+class _DateTimeTimer(object):
+    def __init__(self, auto=False):
+        self.auto = auto
+        self.time = datetime.datetime(1970, 1, 1)
+
+    def __call__(self):
+        if self.auto:
+            self.tick()
+        return self.time
+
+    def tick(self):
+        self.time += datetime.timedelta(seconds=1)

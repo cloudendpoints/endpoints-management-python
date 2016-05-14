@@ -35,12 +35,14 @@ information regarding an operation, and is a key constituent of
 :class:`~google.apigen.servicecontrol_v1_message.CheckRequest` and
 :class:`~google.apigen.servicecontrol_v1_message.ReportRequests.
 
-The :class:`.Aggregator` support this.
+The :class:`.Aggregator` implements the strategy for aggregating CheckRequests
+and caching their responses.
 
 """
 
 from __future__ import absolute_import
 
+import collections
 import hashlib
 import logging
 from datetime import datetime
@@ -90,6 +92,56 @@ def sign(check_request):
     md5.update('\x00')
 
     return md5.digest()
+
+
+class Info(collections.namedtuple('Info',
+                                  ('client_ip',) + operation.Info._fields),
+           operation.Info):
+    """Holds the information necessary to fill in CheckRequest.
+
+    In addition the attributes in :class:`operation.Info`, this has:
+
+    Attributes:
+       client_ip: the client IP address
+
+    """
+    def __new__(cls, client_ip='', **kw):
+        """Invokes the base constructor with default values."""
+        op_info = operation.Info(**kw)
+        return super(Info, cls).__new__(cls, client_ip, **op_info._asdict())
+
+    def as_check_request(self, timer=datetime.now):
+        """Makes a `ServicecontrolServicesCheckRequest` from this instance
+
+        Returns:
+          a ``ServicecontrolServicesCheckRequest``
+
+        Raises:
+          ValueError: if the fields in this instance are insufficient to
+            to create a valid ``ServicecontrolServicesCheckRequest``
+
+        """
+        if not self.service_name:
+            raise ValueError('the service name must be set')
+        if not self.operation_id:
+            raise ValueError('the operation id must be set')
+        if not self.operation_name:
+            raise ValueError('the operation name must be set')
+        op = super(Info, self).as_operation(timer=timer)
+        labels = {
+            'servicecontrol.googleapis.com/user_agent': 'ESP',
+        }
+        if self.client_ip:
+            labels['servicecontrol.googleapis.com/caller_ip'] = self.client_ip
+        if self.referer:
+            labels['servicecontrol.googleapis.com/referer'] = self.referer
+        op.labels = encoding.PyValueToMessage(
+            messages.Operation.LabelsValue, labels)
+        check_request = messages.CheckRequest(operation=op)
+        return messages.ServicecontrolServicesCheckRequest(
+            serviceName=self.service_name,
+            check_request=check_request)
+
 
 
 class Aggregator(object):

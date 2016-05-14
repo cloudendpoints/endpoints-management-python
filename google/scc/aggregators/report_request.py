@@ -37,17 +37,126 @@ ReportRequests.
 
 from __future__ import absolute_import
 
+import collections
 import functools
 import hashlib
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from apitools.base.py import encoding
 import google.apigen.servicecontrol_v1_messages as messages
+from apitools.base.py import encoding
+from enum import Enum
 from .. import caches, signing
 from . import operation
 
 logger = logging.getLogger(__name__)
+
+
+_UNSET_SIZE=-1
+
+
+def _validate_int_arg(name, value):
+    if value == _UNSET_SIZE or (isinstance(value, (int, long)) and value > 0):
+        return
+    raise ValueError('%s should be a positive int/long' % (name,))
+
+
+def _validate_timedelta_arg(name, value):
+    if value is None or isinstance(value, timedelta):
+        return
+    raise ValueError('%s should be a timedelta' % (name,))
+
+
+class ReportedProtocols(Enum):
+    """Enumerates the protocols that might be reported in a call to report."""
+    UNKNOWN = 0
+    HTTP = 1
+    HTTP2 = 2
+    GRPC = 3
+
+
+class Info(
+        collections.namedtuple(
+            'Info', (
+                'api_name',
+                'api_method',
+                'auth_issuer',
+                'auth_audience',
+                'backend_time',
+                'location',
+                'log_message',
+                'method',
+                'overhead_time',
+                'protocol',
+                'request_size',
+                'request_time',
+                'response_size',
+                'url',
+            ) + operation.Info._fields),
+        operation.Info):
+    """Holds the information necessary to fill in a ReportRequest.
+
+    In the attribute descriptions below, N/A means 'not available'
+
+    Attributes:
+       api_name (string): the api name and version
+       api_method (string): the full api method name
+       auth_issuer (string): the auth issuer
+       auth_audience (string): the auth audience
+       backend_time(datetime.timedelta): the backend request time, None for N/A
+       location (string): the location of the service
+       log_message (string): a message to log as an info log
+       method (string): the HTTP method used to make the request
+       overhead_time(datetime.timedelta): the overhead time, None for N/A
+       request_size(int): the request size in bytes, -1 means N/A
+       request_time(datetime.timedelta): the request time
+       response_size(int): the request size in bytes, -1 means N/A
+       url (string): the request url
+
+    """
+
+    def __new__(cls,
+                api_name='',
+                api_method='',
+                auth_issuer='',
+                auth_audience='',
+                backend_time=None,
+                location='',
+                log_message='',
+                method='',
+                protocol=ReportedProtocols.UNKNOWN,
+                overhead_time=None,
+                request_size=_UNSET_SIZE,
+                request_time=None,
+                response_size=_UNSET_SIZE,
+                url='',
+                **kw):
+        """Invokes the base constructor with default values."""
+        op_info = operation.Info(**kw)
+        _validate_timedelta_arg('backend_time', backend_time)
+        _validate_timedelta_arg('overhead_time', overhead_time)
+        _validate_timedelta_arg('request_time', request_time)
+        _validate_int_arg('request_size', request_size)
+        _validate_int_arg('response_size', response_size)
+        if not isinstance(protocol, ReportedProtocols):
+            raise ValueError('protocol should be a %s' % (ReportedProtocols,))
+        return super(cls, Info).__new__(
+            cls,
+            api_name,
+            api_method,
+            auth_issuer,
+            auth_audience,
+            backend_time,
+            location,
+            log_message,
+            method,
+            protocol,
+            overhead_time,
+            request_size,
+            request_time,
+            response_size,
+            url,
+            **op_info._asdict())
 
 
 class Aggregator(object):
