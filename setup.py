@@ -48,16 +48,21 @@ with open('google/scc/__init__.py', 'r') as f:
 
 install_requires = [
     'cachetools>=1.0.0,<2',
+    "dogpile.cache>=0.6.1,<0.7",
     'enum34>=1.1.6,<2',
     'google-apitools>=0.4.15,<0.5',
     'oauth2client>=1.5.2,<2',
     'ply>=3.8,<4.0',
     'protorpc>=0.11.1,<0.12',
-    'urllib3>=1.16,<2.0',
+    "pylru>=1.0.9,<2.0",
+    "pyjwkest>=1.1.0,<2.0",
+    "requests>=2.10.0,<3.0",
     'strict-rfc3339>=0.7,<0.8',
+    'urllib3>=1.16,<2.0',
 ]
 
 tests_require = [
+    "flask>=0.11.1",
     "httmock>=1.25",
     "mock>=2.0",
     "pytest",

@@ -1,4 +1,5 @@
 expects>=0.7.2
+flask>=0.11.1
 httmock>=1.2
 mock>=2.
 pytest>=2.8.3
