@@ -33,16 +33,14 @@ from __future__ import absolute_import
 
 import collections
 import datetime
+import google.apigen.servicecontrol_v1_messages as messages
 
 __version__ = '0.1.0'
 
-
-class MetricKind(object):
-    """MetricKind is a placeholder for a generated protobuf enum."""
-    METRIC_KIND_UNSPECIFIED = 0
-    GAUGE = 1
-    DELTA = 2
-    CUMULATIVE = 3
+# Alias the generated MetricKind and ValueType enums to simplify their usage
+# elsewhere
+MetricKind = messages.MetricDescriptor.MetricKindValueValuesEnum
+ValueType = messages.MetricDescriptor.ValueTypeValueValuesEnum
 
 
 class ReportAggregationOptions(

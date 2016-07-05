@@ -36,7 +36,7 @@ from expects import be_none, equal, expect, raise_error
 from apitools.base.py import encoding
 
 import google.apigen.servicecontrol_v1_messages as messages
-from google.scc import timestamp, CheckAggregationOptions
+from google.scc import label_descriptor, timestamp, CheckAggregationOptions
 from google.scc.aggregators import check_request, metric_value
 
 
@@ -371,6 +371,7 @@ def _make_test_request(service_name, importance=None):
         check_request=check_request)
 
 
+_WANTED_USER_AGENT = label_descriptor.USER_AGENT
 _START_OF_EPOCH = timestamp.to_rfc3339(datetime.datetime(1970, 1, 1, 0, 0, 0))
 _TEST_SERVICE_NAME = 'a_service_name'
 _INFO_TESTS = [
@@ -382,7 +383,7 @@ _INFO_TESTS = [
      messages.Operation(
          labels = encoding.PyValueToMessage(
              messages.Operation.LabelsValue, {
-                 'servicecontrol.googleapis.com/user_agent': 'ESP',
+                 'servicecontrol.googleapis.com/user_agent': _WANTED_USER_AGENT,
                  'servicecontrol.googleapis.com/referer': 'a_referer'
              }),
          operationId='an_op_id',
@@ -400,7 +401,7 @@ _INFO_TESTS = [
          consumerId='api_key:an_api_key',
          labels = encoding.PyValueToMessage(
              messages.Operation.LabelsValue, {
-                 'servicecontrol.googleapis.com/user_agent': 'ESP',
+                 'servicecontrol.googleapis.com/user_agent': _WANTED_USER_AGENT,
                  'servicecontrol.googleapis.com/referer': 'a_referer'
              }),
          operationId='an_op_id',
@@ -421,7 +422,7 @@ _INFO_TESTS = [
          labels = encoding.PyValueToMessage(
              messages.Operation.LabelsValue, {
                  'servicecontrol.googleapis.com/caller_ip': '127.0.0.1',
-                 'servicecontrol.googleapis.com/user_agent': 'ESP',
+                 'servicecontrol.googleapis.com/user_agent': _WANTED_USER_AGENT,
                  'servicecontrol.googleapis.com/referer': 'a_referer'
              }),
          operationId='an_op_id',

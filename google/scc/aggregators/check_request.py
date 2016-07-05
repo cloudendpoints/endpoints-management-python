@@ -50,7 +50,7 @@ from datetime import datetime
 from apitools.base.py import encoding
 
 import google.apigen.servicecontrol_v1_messages as messages
-from .. import caches, signing
+from .. import caches, label_descriptor, signing
 from . import metric_value, operation
 
 logger = logging.getLogger(__name__)
@@ -94,6 +94,9 @@ def sign(check_request):
     return md5.digest()
 
 
+_KNOWN_LABELS = label_descriptor.KnownLabels
+
+
 class Info(collections.namedtuple('Info',
                                   ('client_ip',) + operation.Info._fields),
            operation.Info):
@@ -129,12 +132,12 @@ class Info(collections.namedtuple('Info',
             raise ValueError('the operation name must be set')
         op = super(Info, self).as_operation(timer=timer)
         labels = {
-            'servicecontrol.googleapis.com/user_agent': 'ESP',
+            _KNOWN_LABELS.SCC_USER_AGENT.label_name: label_descriptor.USER_AGENT
         }
         if self.client_ip:
-            labels['servicecontrol.googleapis.com/caller_ip'] = self.client_ip
+            labels[_KNOWN_LABELS.SCC_CALLER_IP.label_name] = self.client_ip
         if self.referer:
-            labels['servicecontrol.googleapis.com/referer'] = self.referer
+            labels[_KNOWN_LABELS.SCC_REFERER.label_name] = self.referer
         op.labels = encoding.PyValueToMessage(
             messages.Operation.LabelsValue, labels)
         check_request = messages.CheckRequest(operation=op)

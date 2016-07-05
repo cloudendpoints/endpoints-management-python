@@ -84,6 +84,7 @@ class Info(
         service_name(string): the name of service
 
     """
+    # pylint: disable=too-many-arguments
 
     def __new__(cls,
                 api_key='',
@@ -120,7 +121,7 @@ class Info(
         if self.api_key and self.api_key_valid:
             op.consumerId = 'api_key:' + self.api_key
         elif self.consumer_project_id:
-            op.consumerId= 'project:' + self.consumer_project_id
+            op.consumerId = 'project:' + self.consumer_project_id
         return op
 
 

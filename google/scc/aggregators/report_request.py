@@ -52,11 +52,11 @@ from . import operation
 logger = logging.getLogger(__name__)
 
 
-_UNSET_SIZE=-1
+_UNSET_SIZE = -1
 
 
 def _validate_int_arg(name, value):
-    if value == _UNSET_SIZE or (isinstance(value, (int, long)) and value > 0):
+    if value == _UNSET_SIZE or (isinstance(value, int) and value > 0):
         return
     raise ValueError('%s should be a positive int/long' % (name,))
 
@@ -69,10 +69,20 @@ def _validate_timedelta_arg(name, value):
 
 class ReportedProtocols(Enum):
     """Enumerates the protocols that might be reported in a call to report."""
+    # pylint: disable=too-few-public-methods
     UNKNOWN = 0
     HTTP = 1
     HTTP2 = 2
     GRPC = 3
+
+
+class ReportedPlatforms(Enum):
+    """Enumerates the platforms that might be reported in a call to report."""
+    # pylint: disable=too-few-public-methods
+    UNKNOWN = 0
+    GAE = 1
+    GCE = 2
+    GKE = 3
 
 
 class Info(
@@ -80,6 +90,7 @@ class Info(
             'Info', (
                 'api_name',
                 'api_method',
+                'api_version',
                 'auth_issuer',
                 'auth_audience',
                 'backend_time',
@@ -87,9 +98,11 @@ class Info(
                 'log_message',
                 'method',
                 'overhead_time',
+                'platform',
                 'protocol',
                 'request_size',
                 'request_time',
+                'response_code',
                 'response_size',
                 'url',
             ) + operation.Info._fields),
@@ -101,6 +114,7 @@ class Info(
     Attributes:
        api_name (string): the api name and version
        api_method (string): the full api method name
+       api_version (string): the api version
        auth_issuer (string): the auth issuer
        auth_audience (string): the auth audience
        backend_time(datetime.timedelta): the backend request time, None for N/A
@@ -111,24 +125,29 @@ class Info(
        request_size(int): the request size in bytes, -1 means N/A
        request_time(datetime.timedelta): the request time
        response_size(int): the request size in bytes, -1 means N/A
+       response_code(int): the code of the http response
        url (string): the request url
 
     """
+    # pylint: disable=too-many-arguments,too-many-locals
 
     def __new__(cls,
                 api_name='',
                 api_method='',
+                api_version='',
                 auth_issuer='',
                 auth_audience='',
                 backend_time=None,
                 location='',
                 log_message='',
                 method='',
+                platform=ReportedPlatforms.UNKNOWN,
                 protocol=ReportedProtocols.UNKNOWN,
                 overhead_time=None,
                 request_size=_UNSET_SIZE,
                 request_time=None,
                 response_size=_UNSET_SIZE,
+                response_code=200,
                 url='',
                 **kw):
         """Invokes the base constructor with default values."""
@@ -140,20 +159,25 @@ class Info(
         _validate_int_arg('response_size', response_size)
         if not isinstance(protocol, ReportedProtocols):
             raise ValueError('protocol should be a %s' % (ReportedProtocols,))
+        if not isinstance(platform, ReportedPlatforms):
+            raise ValueError('platform should be a %s' % (ReportedPlatforms,))
         return super(cls, Info).__new__(
             cls,
             api_name,
             api_method,
+            api_version,
             auth_issuer,
             auth_audience,
             backend_time,
             location,
             log_message,
             method,
-            protocol,
             overhead_time,
+            platform,
+            protocol,
             request_size,
             request_time,
+            response_code,
             response_size,
             url,
             **op_info._asdict())
@@ -239,9 +263,9 @@ class Aggregator(object):
     def clear(self):
         """Clears the cache."""
         if self._cache is not None:
-            with self._cache as c:
-                c.clear()
-                c.out_deque.clear()
+            with self._cache as k:
+                k.clear()
+                k.out_deque.clear()
 
     def report(self, req):
         """Adds a report request to the cache.

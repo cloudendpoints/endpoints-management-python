@@ -50,9 +50,13 @@ class TestInfo(unittest2.TestCase):
     def test_should_construct_with_no_args(self):
         expect(report_request.Info()).not_to(be_none)
 
-    def test_should_raise_if_constructed_with_a_bad_method(self):
+    def test_should_raise_if_constructed_with_a_bad_protocol(self):
         testf = lambda: report_request.Info(protocol=object())
         # not a report_request.ReportedProtocols
+        expect(testf).to(raise_error(ValueError))
+
+    def test_should_raise_if_constructed_with_a_bad_platform(self):
+        testf = lambda: report_request.Info(platform=object())
         expect(testf).to(raise_error(ValueError))
 
     def test_should_raise_if_constructed_with_a_bad_request_size(self):
@@ -78,6 +82,7 @@ class TestInfo(unittest2.TestCase):
     def test_should_raise_if_constructed_with_a_bad_request_time(self):
         testf = lambda: report_request.Info(request_time=object())
         expect(testf).to(raise_error(ValueError))
+
 
 
 class TestAggregatorReport(unittest2.TestCase):
