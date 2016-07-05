@@ -36,13 +36,217 @@ from expects import be_none, equal, expect, raise_error
 from apitools.base.py import encoding
 
 import google.apigen.servicecontrol_v1_messages as messages
-from google.scc import ReportAggregationOptions
+from google.scc import (label_descriptor, metric_descriptor, timestamp,
+                        ReportAggregationOptions)
 from google.scc.aggregators import report_request, metric_value
+
+
+class TestReportingRules(unittest2.TestCase):
+    subject_cls = report_request.ReportingRules
+    WANTED_LABELS = (label_descriptor.KnownLabels.REFERER,)
+    WANTED_METRICS = (metric_descriptor.KnownMetrics.CONSUMER_REQUEST_COUNT,)
+
+    def test_should_construct_with_no_args(self):
+        rules = self.subject_cls()
+        expect(rules).not_to(be_none)
+        expect(rules.logs).to(equal(set()))
+        expect(rules.metrics).to(equal(tuple()))
+        expect(rules.labels).to(equal(tuple()))
+
+    def test_should_construct_with_ok_expected_args(self):
+        rules = self.subject_cls(logs=['wanted_log'],
+                                 metrics=self.WANTED_METRICS,
+                                 labels=self.WANTED_LABELS)
+        expect(rules).not_to(be_none)
+        expect(rules.logs).to(equal(set(['wanted_log'])))
+        expect(rules.metrics).to(equal(self.WANTED_METRICS))
+        expect(rules.labels).to(equal(self.WANTED_LABELS))
+
+    def test_should_construct_with_alt_constructor(self):
+        rules = self.subject_cls.from_known_inputs()
+        expect(rules).not_to(be_none)
+        expect(rules.logs).to(equal(set()))
+        expect(rules.metrics).to(equal(tuple()))
+        expect(rules.labels).to(equal(tuple()))
+
+    def test_should_construct_with_alt_constructor_with_ok_args(self):
+        logs = ['wanted_log', 'wanted_log']
+        label_names = [x.label_name for x in self.WANTED_LABELS]
+        metric_names = [x.metric_name for x in self.WANTED_METRICS]
+        rules = self.subject_cls.from_known_inputs(
+            logs=logs,
+            label_names=label_names,
+            metric_names=metric_names
+        )
+        expect(rules).not_to(be_none)
+        expect(rules.logs).to(equal(set(['wanted_log'])))
+        expect(rules.metrics).to(equal(self.WANTED_METRICS))
+        expect(rules.labels).to(equal(self.WANTED_LABELS))
 
 
 _TEST_CONSUMER_ID = 'testConsumerID'
 _TEST_OP1_NAME = 'testOp1'
 _TEST_OP2_NAME = 'testOp2'
+_WANTED_USER_AGENT = label_descriptor.USER_AGENT
+_START_OF_EPOCH = timestamp.to_rfc3339(datetime.datetime(1970, 1, 1, 0, 0, 0))
+_TEST_SERVICE_NAME = 'a_service_name'
+_TEST_SIZE=1
+_TEST_LATENCY=datetime.timedelta(seconds=7)
+_EXPECTED_OK_LOG_ENTRY = messages.LogEntry(
+    name = 'endpoints-log',
+    severity = messages.LogEntry.SeverityValueValuesEnum.INFO,
+    structPayload=encoding.PyValueToMessage(messages.LogEntry.StructPayloadValue, {
+        'http_response_code': 200,
+        'http_method': 'GET',
+        'request_latency_in_ms': 7000.0,
+        'timestamp': -32400.0,
+        'response_size': 1,
+        'request_size': 1,
+        'referer': 'a_referer',
+    }),
+    timestamp=_START_OF_EPOCH
+)
+_EXPECTED_NOK_LOG_ENTRY = messages.LogEntry(
+    name = 'endpoints-log',
+    severity = messages.LogEntry.SeverityValueValuesEnum.ERROR,
+    structPayload=encoding.PyValueToMessage(messages.LogEntry.StructPayloadValue, {
+        'http_response_code': 404,
+        'http_method': 'GET',
+        'request_latency_in_ms': 7000.0,
+        'timestamp': -32400.0,
+        'response_size': 1,
+        'request_size': 1,
+        'referer': 'a_referer',
+        'error_cause': 'internal',
+    }),
+    timestamp=_START_OF_EPOCH
+)
+
+_EXPECTED_OK_METRIC = metric_descriptor.KnownMetrics.CONSUMER_REQUEST_COUNT
+_EXPECTED_NOK_METRIC = metric_descriptor.KnownMetrics.CONSUMER_ERROR_COUNT
+_ADD_LOG_TESTS = [
+    (report_request.Info(
+        operation_id='an_op_id',
+        operation_name='an_op_name',
+        method='GET',
+        referer='a_referer',
+        backend_time=_TEST_LATENCY,
+        overhead_time=_TEST_LATENCY,
+        request_time=_TEST_LATENCY,
+        request_size=_TEST_SIZE,
+        response_size=_TEST_SIZE,
+        service_name=_TEST_SERVICE_NAME),
+     messages.Operation(
+         logEntries=[_EXPECTED_OK_LOG_ENTRY],
+         operationId='an_op_id',
+         operationName='an_op_name',
+         startTime=_START_OF_EPOCH,
+         endTime=_START_OF_EPOCH)
+    ),
+    (report_request.Info(
+        response_code=404,
+        operation_id='an_op_id',
+        operation_name='an_op_name',
+        method='GET',
+        referer='a_referer',
+        backend_time=_TEST_LATENCY,
+        overhead_time=_TEST_LATENCY,
+        request_time=_TEST_LATENCY,
+        request_size=_TEST_SIZE,
+        response_size=_TEST_SIZE,
+        service_name=_TEST_SERVICE_NAME),
+     messages.Operation(
+         logEntries=[_EXPECTED_NOK_LOG_ENTRY],
+         operationId='an_op_id',
+         operationName='an_op_name',
+         startTime=_START_OF_EPOCH,
+         endTime=_START_OF_EPOCH)
+    )
+]
+
+_ADD_METRICS_TESTS = [
+    (report_request.Info(
+        operation_id='an_op_id',
+        operation_name='an_op_name',
+        method='GET',
+        referer='a_referer',
+        backend_time=_TEST_LATENCY,
+        overhead_time=_TEST_LATENCY,
+        request_time=_TEST_LATENCY,
+        request_size=_TEST_SIZE,
+        response_size=_TEST_SIZE,
+        service_name=_TEST_SERVICE_NAME),
+     messages.Operation(
+         logEntries=[],
+         metricValueSets = [
+             messages.MetricValueSet(
+                 metricName=_EXPECTED_OK_METRIC.metric_name,
+                 metricValues=[
+                     metric_value.create(int64Value=1),
+                 ]
+             ),
+         ],
+         operationId='an_op_id',
+         operationName='an_op_name',
+         startTime=_START_OF_EPOCH,
+         endTime=_START_OF_EPOCH)
+    ),
+    (report_request.Info(
+        response_code=404,
+        operation_id='an_op_id',
+        operation_name='an_op_name',
+        method='GET',
+        referer='a_referer',
+        backend_time=_TEST_LATENCY,
+        overhead_time=_TEST_LATENCY,
+        request_time=_TEST_LATENCY,
+        request_size=_TEST_SIZE,
+        response_size=_TEST_SIZE,
+        service_name=_TEST_SERVICE_NAME),
+     messages.Operation(
+         logEntries=[],
+         metricValueSets = [
+             messages.MetricValueSet(
+                 metricName=_EXPECTED_OK_METRIC.metric_name,
+                 metricValues=[
+                     metric_value.create(int64Value=1),
+                 ]
+             ),
+             messages.MetricValueSet(
+                 metricName=_EXPECTED_NOK_METRIC.metric_name,
+                 metricValues=[
+                     metric_value.create(int64Value=1),
+                 ]
+             ),
+         ],
+         operationId='an_op_id',
+         operationName='an_op_name',
+         startTime=_START_OF_EPOCH,
+         endTime=_START_OF_EPOCH)
+    ),
+]
+
+_EXPECTED_OK_LABEL = label_descriptor.KnownLabels.REFERER
+_ADD_LABELS_TESTS = [
+    (report_request.Info(
+        operation_id='an_op_id',
+        operation_name='an_op_name',
+        method='GET',
+        referer='a_referer',
+        service_name=_TEST_SERVICE_NAME),
+     messages.Operation(
+         labels=encoding.PyValueToMessage(
+             messages.Operation.LabelsValue, {
+                 _EXPECTED_OK_LABEL.label_name: 'a_referer'
+             }),
+         logEntries=[],
+         operationId='an_op_id',
+         operationName='an_op_name',
+         startTime=_START_OF_EPOCH,
+         endTime=_START_OF_EPOCH)
+    ),
+]
+
 
 
 class TestInfo(unittest2.TestCase):
@@ -82,6 +286,56 @@ class TestInfo(unittest2.TestCase):
     def test_should_raise_if_constructed_with_a_bad_request_time(self):
         testf = lambda: report_request.Info(request_time=object())
         expect(testf).to(raise_error(ValueError))
+
+    def test_should_raise_if_constructed_with_a_bad_error_cause(self):
+        testf = lambda: report_request.Info(error_cause=object())
+        expect(testf).to(raise_error(ValueError))
+
+    def test_should_fail_as_report_request_on_incomplete_info(self):
+        timer = _DateTimeTimer()
+        incomplete = report_request.Info()  # has no service_name
+        rules = report_request.ReportingRules()
+        testf = lambda: incomplete.as_report_request(rules, timer=timer)
+        expect(testf).to(raise_error(ValueError))
+
+    def test_should_add_expected_logs_as_report_request(self):
+        timer = _DateTimeTimer()
+        rules = report_request.ReportingRules(logs=['endpoints-log'])
+        for info, want in _ADD_LOG_TESTS:
+            got = info.as_report_request(rules, timer=timer)
+            expect(got.serviceName).to(equal(_TEST_SERVICE_NAME))
+            # compare the log entry in detail to avoid instability when comparing
+            # the operations directly
+            wantLogEntry = want.logEntries[0]
+            gotLogEntry = got.reportRequest.operations[0].logEntries[0]
+            expect(gotLogEntry.name).to(equal(wantLogEntry.name))
+            expect(gotLogEntry.timestamp).to(equal(wantLogEntry.timestamp))
+            expect(gotLogEntry.severity).to(equal(wantLogEntry.severity))
+            gotStruct = encoding.MessageToPyValue(gotLogEntry.structPayload)
+            wantStruct = encoding.MessageToPyValue(wantLogEntry.structPayload)
+            expect(gotStruct).to(equal(wantStruct))
+
+
+    def test_should_add_expected_metric_as_report_request(self):
+        timer = _DateTimeTimer()
+        rules = report_request.ReportingRules(metrics=[
+            _EXPECTED_OK_METRIC, _EXPECTED_NOK_METRIC
+        ])
+        for info, want in _ADD_METRICS_TESTS:
+            got = info.as_report_request(rules, timer=timer)
+            expect(got.serviceName).to(equal(_TEST_SERVICE_NAME))
+            expect(got.reportRequest.operations[0]).to(equal(want))
+
+    def test_should_add_expected_label_as_report_request(self):
+        timer = _DateTimeTimer()
+        rules = report_request.ReportingRules(labels=[
+            _EXPECTED_OK_LABEL
+        ])
+        for info, want in _ADD_LABELS_TESTS:
+            got = info.as_report_request(rules, timer=timer)
+            expect(got.serviceName).to(equal(_TEST_SERVICE_NAME))
+            expect(got.reportRequest.operations[0]).to(equal(want))
+
 
 
 

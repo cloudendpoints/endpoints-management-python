@@ -41,16 +41,16 @@ import collections
 import functools
 import hashlib
 import logging
+import time
 from datetime import datetime, timedelta
 
 import google.apigen.servicecontrol_v1_messages as messages
 from apitools.base.py import encoding
 from enum import Enum
-from .. import caches, signing
+from .. import caches, label_descriptor, metric_descriptor, signing, timestamp
 from . import operation
 
 logger = logging.getLogger(__name__)
-
 
 _UNSET_SIZE = -1
 
@@ -67,8 +67,68 @@ def _validate_timedelta_arg(name, value):
     raise ValueError('%s should be a timedelta' % (name,))
 
 
+class ReportingRules(collections.namedtuple('ReportingRules',
+                                            ['logs', 'metrics', 'labels'])):
+    """Holds information that determines how to fill a `ReportRequest`.
+
+    Attributes:
+      logs (iterable[string]): the name of logs to be included in the `ReportRequest`
+      metrics (iterable[:class:`google.scc.metric_descriptor.KnownMetrics`]): the
+        metrics to be added to a `ReportRequest`
+      labels (iterable[:class:`google.scc.metric_descriptor.KnownLabels`]): the
+        labels to be added to a `ReportRequest`
+    """
+    # pylint: disable=too-few-public-methods
+
+    def __new__(cls, logs=None, metrics=None, labels=None):
+        """Invokes the base constructor with default values."""
+        logs = set(logs) if logs else set()
+        metrics = tuple(metrics) if metrics else tuple()
+        labels = tuple(labels) if labels else tuple()
+        return super(cls, ReportingRules).__new__(cls, logs, metrics, labels)
+
+    @classmethod
+    def from_known_inputs(cls, logs=None, metric_names=None, label_names=None):
+        """An alternate constructor that assumes known metrics and labels.
+
+        This differs from the default constructor in that the metrics and labels
+        are iterables of names of 'known' metrics and labels respectively. The
+        names are used to obtain the metrics and labels from
+        :class:`google.scc.metric_descriptor.KnownMetrics` and
+        :class:`google.scc.label_descriptor.KnownLabels` respectively.
+
+        names that don't correspond to a known metric or label are ignored; as
+        are metrics or labels that don't yet have a way of updating the
+        `ReportRequest` operation.
+
+        Args:
+          logs (iterable[string]): the name of logs to be included in the
+            `ReportRequest`
+          metric_names (iterable[string]): the name of a known metric to be
+            added to the `ReportRequest`
+          label_names (iterable[string]): the name of a known label to be added
+            to the `ReportRequest`
+
+        """
+        if not metric_names:
+            metric_names = ()
+        if not label_names:
+            label_names = ()
+        known_labels = []
+        known_metrics = []
+        # pylint: disable=no-member
+        # pylint is not aware of the __members__ attributes
+        for l in label_descriptor.KnownLabels.__members__.values():
+            if l.update_label_func and l.label_name in label_names:
+                known_labels.append(l)
+        for m in metric_descriptor.KnownMetrics.__members__.values():
+            if m.update_op_func and m.metric_name in metric_names:
+                known_metrics.append(m)
+        return cls(logs=logs, metrics=known_metrics, labels=known_labels)
+
+
 class ReportedProtocols(Enum):
-    """Enumerates the protocols that might be reported in a call to report."""
+    """Enumerates the protocols that can be reported."""
     # pylint: disable=too-few-public-methods
     UNKNOWN = 0
     HTTP = 1
@@ -77,12 +137,29 @@ class ReportedProtocols(Enum):
 
 
 class ReportedPlatforms(Enum):
-    """Enumerates the platforms that might be reported in a call to report."""
+    """Enumerates the platforms that can be reported."""
     # pylint: disable=too-few-public-methods
     UNKNOWN = 0
     GAE = 1
     GCE = 2
     GKE = 3
+
+
+class ErrorCause(Enum):
+    """Enumerates the causes of errors."""
+    # pylint: disable=too-few-public-methods
+    internal = 0  # default, error in scc library code
+    application = 1  # external application error
+    auth = 2  # authentication error
+    service_control = 3  # error in service control check
+
+
+# alias the severity enum
+_SEVERITY = messages.LogEntry.SeverityValueValuesEnum
+
+
+def _struct_payload_from(a_dict):
+    return encoding.PyValueToMessage(messages.LogEntry.StructPayloadValue, a_dict)
 
 
 class Info(
@@ -94,11 +171,13 @@ class Info(
                 'auth_issuer',
                 'auth_audience',
                 'backend_time',
+                'error_cause',
                 'location',
                 'log_message',
                 'method',
                 'overhead_time',
                 'platform',
+                'producer_project_id',
                 'protocol',
                 'request_size',
                 'request_time',
@@ -118,10 +197,14 @@ class Info(
        auth_issuer (string): the auth issuer
        auth_audience (string): the auth audience
        backend_time(datetime.timedelta): the backend request time, None for N/A
+       error_cause(:class:`ErrorCause`): the cause of error if one has occurred
        location (string): the location of the service
        log_message (string): a message to log as an info log
        method (string): the HTTP method used to make the request
        overhead_time(datetime.timedelta): the overhead time, None for N/A
+       platform (:class:`ReportedPlatform`): the platform in use
+       producer_project_id (string): the producer project id
+       protocol (:class:`ReportedProtocol`): the protocol used
        request_size(int): the request size in bytes, -1 means N/A
        request_time(datetime.timedelta): the request time
        response_size(int): the request size in bytes, -1 means N/A
@@ -131,6 +214,17 @@ class Info(
     """
     # pylint: disable=too-many-arguments,too-many-locals
 
+    COPYABLE_LOG_FIELDS = [
+        'api_name',
+        'api_method',
+        'api_key',
+        'producer_project_id',
+        'referer',
+        'location',
+        'log_message',
+        'url',
+    ]
+
     def __new__(cls,
                 api_name='',
                 api_method='',
@@ -138,12 +232,14 @@ class Info(
                 auth_issuer='',
                 auth_audience='',
                 backend_time=None,
+                error_cause=ErrorCause.internal,
                 location='',
                 log_message='',
                 method='',
-                platform=ReportedPlatforms.UNKNOWN,
-                protocol=ReportedProtocols.UNKNOWN,
                 overhead_time=None,
+                platform=ReportedPlatforms.UNKNOWN,
+                producer_project_id='',
+                protocol=ReportedProtocols.UNKNOWN,
                 request_size=_UNSET_SIZE,
                 request_time=None,
                 response_size=_UNSET_SIZE,
@@ -161,6 +257,8 @@ class Info(
             raise ValueError('protocol should be a %s' % (ReportedProtocols,))
         if not isinstance(platform, ReportedPlatforms):
             raise ValueError('platform should be a %s' % (ReportedPlatforms,))
+        if not isinstance(error_cause, ErrorCause):
+            raise ValueError('error_cause should be a %s' % (ErrorCause,))
         return super(cls, Info).__new__(
             cls,
             api_name,
@@ -169,11 +267,13 @@ class Info(
             auth_issuer,
             auth_audience,
             backend_time,
+            error_cause,
             location,
             log_message,
             method,
             overhead_time,
             platform,
+            producer_project_id,
             protocol,
             request_size,
             request_time,
@@ -181,6 +281,99 @@ class Info(
             response_size,
             url,
             **op_info._asdict())
+
+    def _as_log_entry(self, name, now):
+        """Makes a `LogEntry` from this instance for the given log_name.
+
+        Args:
+          rules (:class:`ReportingRules`): determines what labels, metrics and logs
+            to include in the report request.
+          now (:class:`datetime.DateTime`): the current time
+
+        Return:
+          a ``LogEntry`` generated from this instance with the given name
+          and timestamp
+
+        Raises:
+          ValueError: if the fields in this instance are insufficient to
+            to create a valid ``ServicecontrolServicesReportRequest``
+
+        """
+        # initialize the struct with fields that are always present
+        d = {
+            'http_response_code': self.response_code,
+            'timestamp': time.mktime(now.timetuple())
+        }
+
+        # compute the severity
+        severity = _SEVERITY.INFO
+        if self.response_code >= 400:
+            severity = _SEVERITY.ERROR
+            d['error_cause'] = self.error_cause.name
+
+        # add 'optional' fields to the struct
+        if self.request_size > 0:
+            d['request_size'] = self.request_size
+        if self.response_size > 0:
+            d['response_size'] = self.response_size
+        if self.method:
+            d['http_method'] = self.method
+        if self.request_time:
+            d['request_latency_in_ms'] = self.request_time.total_seconds() * 1000
+
+        # add 'copyable' fields to the struct
+        for key in self.COPYABLE_LOG_FIELDS:
+            value = getattr(self, key, None)
+            if value:
+                d[key] = value
+
+        return messages.LogEntry(
+            name=name,
+            timestamp=timestamp.to_rfc3339(now),
+            severity=severity,
+            structPayload=_struct_payload_from(d))
+
+    def as_report_request(self, rules, timer=datetime.now):
+        """Makes a `ServicecontrolServicesReportRequest` from this instance
+
+        Args:
+          rules (:class:`ReportingRules`): determines what labels, metrics and logs
+            to include in the report request.
+          timer: a function that determines the current time
+
+        Return:
+          a ``ServicecontrolServicesReportRequest`` generated from this instance
+          governed by the provided ``rules``
+
+        Raises:
+          ValueError: if the fields in this instance cannot be used to create
+            a valid ``ServicecontrolServicesReportRequest``
+
+        """
+        if not self.service_name:
+            raise ValueError('the service name must be set')
+        op = super(Info, self).as_operation(timer=timer)
+
+        # Populate metrics and labels if they can be associated with a
+        # method/operation
+        if op.operationId and op.operationName:
+            labels = {}
+            for known_label in rules.labels:
+                known_label.do_labels_update(self, labels)
+            if labels:
+                op.labels = encoding.PyValueToMessage(
+                    messages.Operation.LabelsValue,
+                    labels)
+            for known_metric in rules.metrics:
+                known_metric.do_operation_update(self, op)
+
+        # Populate the log entries
+        now = timer()
+        op.logEntries = [self._as_log_entry(l, now) for l in rules.logs]
+
+        return messages.ServicecontrolServicesReportRequest(
+            serviceName=self.service_name,
+            reportRequest=messages.ReportRequest(operations=[op]))
 
 
 class Aggregator(object):
@@ -192,7 +385,7 @@ class Aggregator(object):
     """
 
     CACHED_OK = object()
-    """A sential returned by :func:`report` when a request is cached OK."""
+    """A sentinel returned by :func:`report` when a request is cached OK."""
 
     MAX_OPERATION_COUNT = 1000
     """The maximum number of operations to send in a report request."""
