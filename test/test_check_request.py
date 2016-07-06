@@ -104,8 +104,7 @@ class TestSign(unittest2.TestCase):
 
     def test_should_change_signature_quota_properties_are_specified(self):
         without_qprops = check_request.sign(self.test_check_request)
-        self.test_op.quotaProperties = messages.QuotaProperties(
-            requestId='test')
+        self.test_op.quotaProperties = messages.QuotaProperties()
         with_qprops = check_request.sign(self.test_check_request)
         expect(with_qprops).not_to(equal(without_qprops))
 
@@ -139,7 +138,7 @@ class TestAggregatorCheck(unittest2.TestCase):
     def test_should_fail_if_operation_is_missing(self):
         req = messages.ServicecontrolServicesCheckRequest(
             serviceName=self.SERVICE_NAME,
-            check_request=messages.CheckRequest())
+            checkRequest=messages.CheckRequest())
         testf = lambda: self.agg.check(req)
         expect(testf).to(raise_error(ValueError))
 
@@ -368,7 +367,7 @@ def _make_test_request(service_name, importance=None):
     check_request = messages.CheckRequest(operation=op)
     return messages.ServicecontrolServicesCheckRequest(
         serviceName=service_name,
-        check_request=check_request)
+        checkRequest=check_request)
 
 
 _WANTED_USER_AGENT = label_descriptor.USER_AGENT
@@ -452,7 +451,7 @@ class TestInfo(unittest2.TestCase):
         timer = _DateTimeTimer()
         for info, want in _INFO_TESTS:
             got = info.as_check_request(timer=timer)
-            expect(got.check_request.operation).to(equal(want))
+            expect(got.checkRequest.operation).to(equal(want))
             expect(got.serviceName).to(equal(_TEST_SERVICE_NAME))
 
     def test_should_fail_as_check_request_on_incomplete_info(self):

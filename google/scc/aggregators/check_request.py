@@ -143,8 +143,7 @@ class Info(collections.namedtuple('Info',
         check_request = messages.CheckRequest(operation=op)
         return messages.ServicecontrolServicesCheckRequest(
             serviceName=self.service_name,
-            check_request=check_request)
-
+            checkRequest=check_request)
 
 
 class Aggregator(object):
@@ -271,7 +270,7 @@ class Aggregator(object):
         """
         if self._cache is None:
             return
-        signature = sign(req.check_request)
+        signature = sign(req.checkRequest)
         with self._cache as c:
             now = self._timer()
             quota_scale = 0  # WIP
@@ -335,7 +334,7 @@ class Aggregator(object):
             logger.error('bad check(): service_name %s does not match ours %s',
                          req.serviceName, self.service_name)
             raise ValueError('Service name mismatch')
-        check_request = req.check_request
+        check_request = req.checkRequest
         if check_request is None:
             logger.error('bad check(): no check_request in %s', req)
             raise ValueError('Expected operation not set')
@@ -407,9 +406,9 @@ class CachedItem(object):
         agg = self._op_aggregator
         if agg is None:
             self._op_aggregator = operation.Aggregator(
-                req.check_request.operation, kinds)
+                req.checkRequest.operation, kinds)
         else:
-            agg.add(req.check_request.operation)
+            agg.add(req.checkRequest.operation)
 
     def extract_request(self):
         if self._op_aggregator is None:
@@ -420,4 +419,4 @@ class CachedItem(object):
         check_request = messages.CheckRequest(operation=op)
         return messages.ServicecontrolServicesCheckRequest(
             serviceName=self._service_name,
-            check_request=check_request)
+            checkRequest=check_request)

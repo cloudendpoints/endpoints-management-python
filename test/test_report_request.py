@@ -171,7 +171,7 @@ class TestCachingAggregator(unittest2.TestCase):
         self.timer.tick() # ... and is now past the flush_interval
         flushed_reqs = agg.flush()
         expect(len(flushed_reqs)).to(equal(1))
-        flushed_ops = flushed_reqs[0].report_request.operations
+        flushed_ops = flushed_reqs[0].reportRequest.operations
         expect(len(flushed_ops)).to(equal(4)) # number of ops in the req{1,2}
 
     def test_should_aggregate_operations_in_requests(self):
@@ -188,7 +188,7 @@ class TestCachingAggregator(unittest2.TestCase):
         self.timer.tick() # ... and is now past the flush_interval
         flushed_reqs = agg.flush()
         expect(len(flushed_reqs)).to(equal(1))
-        flushed_ops = flushed_reqs[0].report_request.operations
+        flushed_ops = flushed_reqs[0].reportRequest.operations
         expect(len(flushed_ops)).to(equal(2)) # many requests, but only two ops
 
     def test_may_clear_aggregated_operations(self):
@@ -241,4 +241,4 @@ def _make_test_request(service_name, importance=None, n=3, start=0):
     report_request = messages.ReportRequest(operations=ops)
     return messages.ServicecontrolServicesReportRequest(
         serviceName=service_name,
-        report_request=report_request)
+        reportRequest=report_request)

@@ -256,7 +256,7 @@ class Aggregator(object):
                 reqs.append(
                     messages.ServicecontrolServicesReportRequest(
                         serviceName=self.service_name,
-                        report_request=report_request))
+                        reportRequest=report_request))
 
             return reqs
 
@@ -289,7 +289,7 @@ class Aggregator(object):
             logger.error('bad report(): service_name %s does not match ours %s',
                          req.serviceName, self.service_name)
             raise ValueError('Service name mismatch')
-        report_req = req.report_request
+        report_req = req.reportRequest
         if report_req is None:
             logger.error('bad report(): no report_request in %s', req)
             raise ValueError('Expected report_request not set')

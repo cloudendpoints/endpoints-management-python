@@ -10,6 +10,10 @@ from __future__ import absolute_import
 from apitools.base.protorpclite import messages as _messages
 from apitools.base.py import encoding
 
+# This is currently not generated, but needs to be present otherwise the methods
+# in apitools.base.py.encoding module that support json struct protobuf types
+# does not work
+from apitools.base.py import extra_types  # pylint: disable=unused-import
 
 package = 'servicecontrol'
 
@@ -26,24 +30,24 @@ class Api(_messages.Message):
       name: The fully qualified name of this api, including package name
         followed by the api's simple name.
       options: Any metadata attached to the API.
-      sourceContext: Source context for the protocol buffer service
-        represented by this message.
+      sourceContext: Source context for the protocol buffer service represented
+        by this message.
       syntax: The source syntax of the service.
       version: A version string for this api. If specified, must have the form
         `major-version.minor-version`, as in `1.10`. If the minor version is
-        omitted, it defaults to zero. If the entire version field is empty,
-        the major version is derived from the package name, as outlined below.
-        If the field is not empty, the version in the package name will be
-        verified to be consistent with what is provided here.  The versioning
-        schema uses [semantic versioning](http://semver.org) where the major
-        version number indicates a breaking change and the minor version an
-        additive, non-breaking change. Both version numbers are signals to
-        users what to expect from different versions, and should be carefully
-        chosen based on the product plan.  The major version is also reflected
-        in the package name of the API, which must end in `v<major-version>`,
-        as in `google.feature.v1`. For major versions 0 and 1, the suffix can
-        be omitted. Zero major versions must only be used for experimental,
-        none-GA apis.
+        omitted, it defaults to zero. If the entire version field is empty, the
+        major version is derived from the package name, as outlined below. If
+        the field is not empty, the version in the package name will be verified
+        to be consistent with what is provided here.  The versioning schema uses
+        [semantic versioning](http://semver.org) where the major version number
+        indicates a breaking change and the minor version an additive, non-
+        breaking change. Both version numbers are signals to users what to
+        expect from different versions, and should be carefully chosen based on
+        the product plan.  The major version is also reflected in the package
+        name of the API, which must end in `v<major-version>`, as in
+        `google.feature.v1`. For major versions 0 and 1, the suffix can be
+        omitted. Zero major versions must only be used for experimental, none-GA
+        apis.
     """
 
     class SyntaxValueValuesEnum(_messages.Enum):
@@ -80,10 +84,10 @@ class AreaUnderCurveParams(_messages.Message):
     Fields:
       changeMetric: Change of resource usage at a particular timestamp. This
         should a DELTA metric.
-      generatedMetric: Metric generated from snapshot_metric and
-        change_metric. This is also a DELTA metric.
-      snapshotMetric: Total usage of a resource at a particular timestamp.
-        This should be a GAUGE metric.
+      generatedMetric: Metric generated from snapshot_metric and change_metric.
+        This is also a DELTA metric.
+      snapshotMetric: Total usage of a resource at a particular timestamp. This
+        should be a GAUGE metric.
     """
 
     changeMetric = _messages.StringField(1)
@@ -91,103 +95,26 @@ class AreaUnderCurveParams(_messages.Message):
     snapshotMetric = _messages.StringField(3)
 
 
-class Auditing(_messages.Message):
-    """CURRENTLY UNDER DEVELOPMENT. DO NOT USE IT UNTIL THIS WARNING IS
-    REMOVED.  `Auditing` defines the configurations on preparing audit log
-    records for services to integrate with audit logging service.
-
-    Messages:
-      LabelsValue: Addtional labels to configure auditing logging behavior.
-
-    Fields:
-      labels: Addtional labels to configure auditing logging behavior.
-      rules: A list of audit rules for configuring the audit logging behavior.
-    """
-
-    @encoding.MapUnrecognizedFields('additionalProperties')
-    class LabelsValue(_messages.Message):
-        """Addtional labels to configure auditing logging behavior.
-
-        Messages:
-          AdditionalProperty: An additional property for a LabelsValue object.
-
-        Fields:
-          additionalProperties: Additional properties of type LabelsValue
-        """
-
-        class AdditionalProperty(_messages.Message):
-            """An additional property for a LabelsValue object.
-
-            Fields:
-              key: Name of the additional property.
-              value: A string attribute.
-            """
-
-            key = _messages.StringField(1)
-            value = _messages.StringField(2)
-
-        additionalProperties = _messages.MessageField('AdditionalProperty', 1,
-                                                      repeated=True)
-
-    labels = _messages.MessageField('LabelsValue', 1)
-    rules = _messages.MessageField('AuditingRule', 2, repeated=True)
-
-
-class AuditingRule(_messages.Message):
-    """CURRENTLY UNDER DEVELOPMENT. DO NOT USE IT UNTIL THIS WARNING IS
-    REMOVED.  An auditing rule provides auditing configuration for an
-    individual API element.
-
-    Fields:
-      directive: List of audit directives (comma separated) to apply to this
-        rule. Currently following values are supported:  - **AUDIT**: The
-        value of this field should be logged during Cloud audit
-        logging. If this field is of message type, the content of
-        this field will not be logged automatically unless that
-        message also has this "AUDIT" directive for its fields. -
-        **AUDIT_ALL**: The whole proto of this message-typed field should be
-        logged during Cloud audit logging. Only applies to fields
-        with message type. - **AUDIT_SIZE**: The size of the repeated field
-        will be used to set the                   number of response items
-        during Cloud audit logging . Only                   applies to
-        repeated field. - **QUERY**: Indicating that the field represents a
-        manually entered query              that users enters. For example, if
-        this service is the backend              of an interactive query-like
-        tool, this directive should be              set to the field
-        representing the full query entered by user.              Only applies
-        to string field. - **READ_ACTION**: Indicating that the method reads
-        user data. Only applies                    to method. -
-        **WRITE_ACTION**: Indicating that the method modifies user data. Only
-        applies to method.
-      selector: Selects fields or methods where this rule applies.  Refer to
-        selector for syntax details.
-    """
-
-    directive = _messages.StringField(1)
-    selector = _messages.StringField(2)
-
-
 class AuthProvider(_messages.Message):
-    """Configuration for an anthentication provider, including support for
-    [JSON Web Token (JWT)](https://tools.ietf.org/html/draft-ietf-oauth-json-
-    web-token-32).
+    """Configuration for an anthentication provider, including support for [JSON
+    Web Token (JWT)](https://tools.ietf.org/html/draft-ietf-oauth-json-web-
+    token-32).
 
     Fields:
-      id: The unique identifier of the auth provider. It will be referred to
-        by `AuthRequirement.provider_id`.  Example: "bookstore_auth".
+      id: The unique identifier of the auth provider. It will be referred to by
+        `AuthRequirement.provider_id`.  Example: "bookstore_auth".
       issuer: Identifies the principal that issued the JWT. See
         https://tools.ietf.org/html/draft-ietf-oauth-json-web-
         token-32#section-4.1.1 Usually a URL or an email address.  Example:
         https://securetoken.google.com Example:
         1234567-compute@developer.gserviceaccount.com
-      jwksUri: URL of the provider's public key set to validate signature of
-        the JWT. See [OpenID Discovery](https://openid.net/specs/openid-
-        connect-discovery-1_0.html#ProviderMetadata). Optional if the key set
-        document:  - can be retrieved from    [OpenID
-        Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html
-        of the issuer.  - can be inferred from the email domain of the issuer
-        (e.g. a Google service account).  Example:
-        https://www.googleapis.com/oauth2/v1/certs
+      jwksUri: URL of the provider's public key set to validate signature of the
+        JWT. See [OpenID Discovery](https://openid.net/specs/openid-connect-
+        discovery-1_0.html#ProviderMetadata). Optional if the key set document:
+        - can be retrieved from    [OpenID Discovery](https://openid.net/specs
+        /openid-connect-discovery-1_0.html    of the issuer.  - can be inferred
+        from the email domain of the issuer (e.g. a Google service account).
+        Example: https://www.googleapis.com/oauth2/v1/certs
     """
 
     id = _messages.StringField(1)
@@ -196,15 +123,15 @@ class AuthProvider(_messages.Message):
 
 
 class AuthRequirement(_messages.Message):
-    """User-defined authentication requirements, including support for [JSON
-    Web Token (JWT)](https://tools.ietf.org/html/draft-ietf-oauth-json-web-
+    """User-defined authentication requirements, including support for [JSON Web
+    Token (JWT)](https://tools.ietf.org/html/draft-ietf-oauth-json-web-
     token-32).
 
     Fields:
-      audiences: The list of JWT [audiences](https://tools.ietf.org/html
-        /draft-ietf-oauth-json-web-token-32#section-4.1.3). that are allowed
-        to access. A JWT containing any of these audiences will be accepted.
-        When this setting is absent, only JWTs with audience
+      audiences: The list of JWT [audiences](https://tools.ietf.org/html/draft-
+        ietf-oauth-json-web-token-32#section-4.1.3). that are allowed to access.
+        A JWT containing any of these audiences will be accepted. When this
+        setting is absent, only JWTs with audience
         "https://Service_name/API_name" will be accepted. For example, if no
         audiences are in the setting, LibraryService API will only accept JWTs
         with the following audience "https://library-
@@ -247,8 +174,8 @@ class AuthenticationRule(_messages.Message):
 
     Fields:
       allowWithoutCredential: Whether to allow requests without a credential.
-        If quota is enabled, an API key is required for such request to pass
-        the quota check.
+        If quota is enabled, an API key is required for such request to pass the
+        quota check.
       oauth: The requirements for OAuth credentials.
       requirements: Requirements for additional authentication providers.
       selector: Selects the methods to which this rule applies.  Refer to
@@ -262,18 +189,11 @@ class AuthenticationRule(_messages.Message):
 
 
 class Backend(_messages.Message):
-    """`Backend` defines the backend configuration for a service.  Example:
-    backend:       rules:       - selector: "*"         address: calendar-
-    prod-backend.gslb.googleapis.com       - selector:
-    google.calendar.Calendar.Delegate         address: calendar-dogfood-
-    backend.gslb.googleapis.com  Here, the default backend for all methods in
-    the service is set to `calendar-prod-backend.gslb.googleapis.com`.  For
-    the method `Delegate`, this is overriden by `calendar-dogfood-
-    backend.gslb.googleapis.com`.
+    """`Backend` defines the backend configuration for a service.
 
     Fields:
-      rules: A list of backend rules providing configuration for individual
-        API elements.
+      rules: A list of backend rules providing configuration for individual API
+        elements.
     """
 
     rules = _messages.MessageField('BackendRule', 1, repeated=True)
@@ -298,24 +218,23 @@ class BackendRule(_messages.Message):
 class Billing(_messages.Message):
     """Billing related configuration of the service.  The following example
     shows how to configure metrics for billing:      metrics:     - name:
-    library.googleapis.com/read_calls       metric_kind: DELTA
-    value_type: INT64     - name: library.googleapis.com/write_calls
-    metric_kind: DELTA       value_type: INT64     billing:       metrics:
-    - library.googleapis.com/read_calls       -
-    library.googleapis.com/write_calls  The next example shows how to enable
-    billing status check and customize the check behavior. It makes sure
-    billing status check is included in the `Check` method of [Service Control
-    API](https://cloud.google.com/service-control/). In the example,
-    "google.storage.Get" method can be served when the billing status is
-    either `current` or `delinquent`, while "google.storage.Write" method can
-    only be served when the billing status is `current`:      billing:
-    rules:       - selector: google.storage.Get         allowed_statuses:
-    - current         - delinquent       - selector: google.storage.Write
-    allowed_statuses: current  Mostly services should only allow `current`
-    status when serving requests. In addition, services can choose to allow
-    both `current` and `delinquent` statuses when serving read-only requests
-    to resources. If there's no matching selector for operation, no billing
-    status check will be performed.
+    library.googleapis.com/read_calls       metric_kind: DELTA       value_type:
+    INT64     - name: library.googleapis.com/write_calls       metric_kind:
+    DELTA       value_type: INT64     billing:       metrics:       -
+    library.googleapis.com/read_calls       - library.googleapis.com/write_calls
+    The next example shows how to enable billing status check and customize the
+    check behavior. It makes sure billing status check is included in the
+    `Check` method of [Service Control API](https://cloud.google.com/service-
+    control/). In the example, "google.storage.Get" method can be served when
+    the billing status is either `current` or `delinquent`, while
+    "google.storage.Write" method can only be served when the billing status is
+    `current`:      billing:       rules:       - selector: google.storage.Get
+    allowed_statuses:         - current         - delinquent       - selector:
+    google.storage.Write         allowed_statuses: current  Mostly services
+    should only allow `current` status when serving requests. In addition,
+    services can choose to allow both `current` and `delinquent` statuses when
+    serving read-only requests to resources. If there's no matching selector for
+    operation, no billing status check will be performed.
 
     Fields:
       areaUnderCurveParams: Per resource grouping for delta billing based
@@ -326,8 +245,7 @@ class Billing(_messages.Message):
         check.
     """
 
-    areaUnderCurveParams = _messages.MessageField('AreaUnderCurveParams', 1,
-                                                  repeated=True)
+    areaUnderCurveParams = _messages.MessageField('AreaUnderCurveParams', 1, repeated=True)
     metrics = _messages.StringField(2, repeated=True)
     rules = _messages.MessageField('BillingStatusRule', 3, repeated=True)
 
@@ -339,17 +257,16 @@ class BillingStatusRule(_messages.Message):
     account is up to date and capable of                paying for resource
     usages. - **delinquent**: the associated billing account has a correctable
     problem,                   such as late payment.  Mostly services should
-    only allow `current` status when serving requests. In addition, services
-    can choose to allow both `current` and `delinquent` statuses when serving
-    read-only requests to resources. If the list of allowed_statuses is empty,
-    it means no billing requirement.
+    only allow `current` status when serving requests. In addition, services can
+    choose to allow both `current` and `delinquent` statuses when serving read-
+    only requests to resources. If the list of allowed_statuses is empty, it
+    means no billing requirement.
 
     Fields:
-      allowedStatuses: Allowed billing statuses. The billing status check
-        passes if the actual billing status matches any of the provided values
-        here.
-      selector: Selects the operation names to which this rule applies. Refer
-        to selector for syntax details.
+      allowedStatuses: Allowed billing statuses. The billing status check passes
+        if the actual billing status matches any of the provided values here.
+      selector: Selects the operation names to which this rule applies. Refer to
+        selector for syntax details.
     """
 
     allowedStatuses = _messages.StringField(1, repeated=True)
@@ -359,8 +276,8 @@ class BillingStatusRule(_messages.Message):
 class CheckError(_messages.Message):
     """Defines the errors to be returned in
     google.api.servicecontrol.v1.CheckResponse.check_errors. NOTE: The list of
-    error code must be in sync with the list in http://cs/google3/tech/interna
-    l/env/framework/wrappers/chemist/chemist_wrapper.cc&l=525
+    error code must be in sync with the list in http://cs/google3/tech/internal/
+    env/framework/wrappers/chemist/chemist_wrapper.cc&l=525
 
     Enums:
       CodeValueValuesEnum: The error code.
@@ -384,37 +301,37 @@ class CheckError(_messages.Message):
           BUDGET_EXCEEDED: Budget check failed.
           DENIAL_OF_SERVICE_DETECTED: The request has been flagged as a DoS
             attack.
-          LOAD_SHEDDING: The request should be rejected in order to protect
-            the service from being overloaded.
+          LOAD_SHEDDING: The request should be rejected in order to protect the
+            service from being overloaded.
           ABUSER_DETECTED: The consumer has been flagged as an abuser.
           SERVICE_NOT_ACTIVATED: The consumer hasn't activated the service.
           VISIBILITY_DENIED: The consumer cannot access the service due to
             visibility configuration.
-          BILLING_DISABLED: The consumer cannot access the service because
-            billing is disabled.
+          BILLING_DISABLED: The consumer cannot access the service because billing
+            is disabled.
           PROJECT_DELETED: Consumer's project has been marked as deleted (soft
             deletion).
-          PROJECT_INVALID: Consumer's project number or id does not represent
-            a valid project.
-          IP_ADDRESS_BLOCKED: Consumer's project does not allow requests from
-            this IP address.
-          REFERER_BLOCKED: Consumer's project does not allow requests from
-            this referer address.
-          CLIENT_APP_BLOCKED: Consumer's project does not allow requests from
-            this client application.
+          PROJECT_INVALID: Consumer's project number or id does not represent a
+            valid project.
+          IP_ADDRESS_BLOCKED: Consumer's project does not allow requests from this
+            IP address.
+          REFERER_BLOCKED: Consumer's project does not allow requests from this
+            referer address.
+          CLIENT_APP_BLOCKED: Consumer's project does not allow requests from this
+            client application.
           API_KEY_INVALID: The consumer's API key is invalid.
           API_KEY_EXPIRED: Consumer's API Key has expired.
           API_KEY_NOT_FOUND: Consumer's API Key not found in config record.
           SPATULA_HEADER_INVALID: Consumer's spatula header is invalid.
-          NAMESPACE_LOOKUP_UNAVAILABLE: The backend server for looking up
-            project id/number is unavailable.
+          NAMESPACE_LOOKUP_UNAVAILABLE: The backend server for looking up project
+            id/number is unavailable.
           SERVICE_STATUS_UNAVAILABLE: The backend server for checking service
             status is unavailable.
           BILLING_STATUS_UNAVAILABLE: The backend server for checking billing
             status is unavailable.
           QUOTA_CHECK_UNAVAILABLE: The quota check feature is temporarily
-            unavailable:  Could be due to either internal config error or
-            server error
+            unavailable:  Could be due to either internal config error or server
+            error
         """
         ERROR_CODE_UNSPECIFIED = 0
         NOT_FOUND = 1
@@ -460,9 +377,8 @@ class CheckResponse(_messages.Message):
 
     Fields:
       checkErrors: Indicate the decision of the check.  If no check errors are
-        present, the service should process the operation. Otherwise the
-        service should use the list of errors to determine the appropriate
-        action.
+        present, the service should process the operation. Otherwise the service
+        should use the list of errors to determine the appropriate action.
       operationId: The same operation_id value used in the CheckRequest. Used
         for logging and diagnostics purpose.
     """
@@ -472,13 +388,12 @@ class CheckResponse(_messages.Message):
 
 
 class Context(_messages.Message):
-    """`Context` defines which contexts an API requests.  Example:
-    context:       rules:       - selector: "*"         requested:         -
-    google.rpc.context.ProjectContext         -
-    google.rpc.context.OriginContext  The above specifies that all methods in
-    the API request `google.rpc.context.ProjectContext` and
-    `google.rpc.context.OriginContext`.  Available context types are defined
-    in package `google.rpc.context`.
+    """`Context` defines which contexts an API requests.  Example:      context:
+    rules:       - selector: "*"         requested:         -
+    google.rpc.context.ProjectContext         - google.rpc.context.OriginContext
+    The above specifies that all methods in the API request
+    `google.rpc.context.ProjectContext` and `google.rpc.context.OriginContext`.
+    Available context types are defined in package `google.rpc.context`.
 
     Fields:
       rules: List of rules for context, applicable to methods.
@@ -506,16 +421,11 @@ class ContextRule(_messages.Message):
 class Control(_messages.Message):
     """Selects and configures the service controller used by the service.  The
     service controller handles features like abuse, quota, billing, logging,
-    monitoring, etc.  Example:      control:       environment:
-    usagemanager.googleprod.com  Supported Usage Manager environments:  *
-    `usagemanager.googleprod.com` * `staging-usagemanager.googleprod.com`
-    Supported Service Control environments:  * `servicecontrol.googleapis.com`
-    * `staging-servicecontrol.sandbox.googleapis.com` * `testgaia-
-    servicecontrol.sandbox.googleapis.com`
+    monitoring, etc.
 
     Fields:
-      environment: The service control environment to use. If empty, no
-        control plane feature (like quota and billing) will be enabled.
+      environment: The service control environment to use. If empty, no control
+        plane feature (like quota and billing) will be enabled.
     """
 
     environment = _messages.StringField(1)
@@ -545,8 +455,8 @@ class CustomErrorRule(_messages.Message):
       isErrorType: Mark this message as possible payload in error response.
         Otherwise, objects of this type will be filtered when they appear in
         error payload.
-      selector: Selects messages to which this rule applies.  Refer to
-        selector for syntax details.
+      selector: Selects messages to which this rule applies.  Refer to selector
+        for syntax details.
     """
 
     isErrorType = _messages.BooleanField(1)
@@ -566,12 +476,12 @@ class CustomHttpPattern(_messages.Message):
 
 
 class Distribution(_messages.Message):
-    """Distribution represents a frequency distribution of double-valued
-    sample points. It contains the size of the population of sample points
-    plus additional optional information:    - the arithmetic mean of the
-    samples   - the minimum and maximum of the samples   - the sum-squared-
-    deviation of the samples, used to compute variance   - a histogram of the
-    values of the sample points
+    """Distribution represents a frequency distribution of double-valued sample
+    points. It contains the size of the population of sample points plus
+    additional optional information:    - the arithmetic mean of the samples   -
+    the minimum and maximum of the samples   - the sum-squared-deviation of the
+    samples, used to compute variance   - a histogram of the values of the
+    sample points
 
     Fields:
       bucketCounts: The number of samples in each histogram bucket.
@@ -614,23 +524,22 @@ class Distribution(_messages.Message):
 
 class Documentation(_messages.Message):
     """`Documentation` provides the information for describing a service.
-    Example: <pre><code>documentation:   summary: >     The Google Calendar
-    API gives access     to most calendar features.   pages:   - name:
-    Overview     content: &#40;== include google/foo/overview.md ==&#41;   -
-    name: Tutorial     content: &#40;== include google/foo/tutorial.md ==&#41;
-    subpages;     - name: Java       content: &#40;== include
-    google/foo/tutorial_java.md ==&#41;   rules:   - selector:
-    google.calendar.Calendar.Get     description: >       ...   - selector:
-    google.calendar.Calendar.Put     description: >       ... </code></pre>
-    Documentation is provided in markdown syntax. In addition to standard
-    markdown features, definition lists, tables and fenced code blocks are
-    supported. Section headers can be provided and are interpreted relative to
-    the section nesting of the context where a documentation fragment is
-    embedded.  Documentation from the IDL is merged with documentation defined
-    via the config at normalization time, where documentation provided by
-    config rules overrides IDL provided.  A number of constructs specific to
-    the API platform are supported in documentation text.  In order to
-    reference a proto element, the following notation can be used:
+    Example: <pre><code>documentation:   summary: >     The Google Calendar API
+    gives access     to most calendar features.   pages:   - name: Overview
+    content: &#40;== include google/foo/overview.md ==&#41;   - name: Tutorial
+    content: &#40;== include google/foo/tutorial.md ==&#41;     subpages;     -
+    name: Java       content: &#40;== include google/foo/tutorial_java.md
+    ==&#41;   rules:   - selector: google.calendar.Calendar.Get     description:
+    >       ...   - selector: google.calendar.Calendar.Put     description: >
+    ... </code></pre> Documentation is provided in markdown syntax. In addition
+    to standard markdown features, definition lists, tables and fenced code
+    blocks are supported. Section headers can be provided and are interpreted
+    relative to the section nesting of the context where a documentation
+    fragment is embedded.  Documentation from the IDL is merged with
+    documentation defined via the config at normalization time, where
+    documentation provided by config rules overrides IDL provided.  A number of
+    constructs specific to the API platform are supported in documentation text.
+    In order to reference a proto element, the following notation can be used:
     <pre><code>&#91;fully.qualified.proto.name]&#91;]</code></pre> To override
     the display text used for the link, this can be used:
     <pre><code>&#91;display text]&#91;fully.qualified.proto.name]</code></pre>
@@ -642,12 +551,12 @@ class Documentation(_messages.Message):
     documentation. Note that directives must appear on a single line to be
     properly identified. The `include` directive includes a markdown file from
     an external source: <pre><code>&#40;== include path/to/file
-    ==&#41;</code></pre> The `resource_for` directive marks a message to be
-    the resource of a collection in REST view. If it is not specified, tools
-    attempt to infer the resource from the operations in a collection:
+    ==&#41;</code></pre> The `resource_for` directive marks a message to be the
+    resource of a collection in REST view. If it is not specified, tools attempt
+    to infer the resource from the operations in a collection:
     <pre><code>&#40;== resource_for v1.shelves.books ==&#41;</code></pre> The
-    directive `suppress_warning` is not directly effecting documentation and
-    is documented together with service config validation.
+    directive `suppress_warning` does not directly affect documentation and is
+    documented together with service config validation.
 
     Fields:
       documentationRootUrl: The URL to the root of documentation.
@@ -655,13 +564,13 @@ class Documentation(_messages.Message):
         <pre><code>documentation:   summary: ...   overview: &#40;== include
         overview.md ==&#41; </code></pre> This is a shortcut for the following
         declaration (using pages style): <pre><code>documentation:   summary:
-        ...   pages:   - name: Overview     content: &#40;== include
-        overview.md ==&#41; </code></pre> Note: you cannot specify both
-        `overview` field and `pages` field.
+        ...   pages:   - name: Overview     content: &#40;== include overview.md
+        ==&#41; </code></pre> Note: you cannot specify both `overview` field and
+        `pages` field.
       pages: The top level pages for the documentation set.
       rules: Documentation rules for individual elements of the service.
-      summary: A short summary of what the service does. Can only be provided
-        by plain text.
+      summary: A short summary of what the service does. Can only be provided by
+        plain text.
     """
 
     documentationRootUrl = _messages.StringField(1)
@@ -672,21 +581,23 @@ class Documentation(_messages.Message):
 
 
 class DocumentationRule(_messages.Message):
-    """A documentation rule provides information about individual API
-    elements.
+    """A documentation rule provides information about individual API elements.
 
     Fields:
+      deprecationDescription: Deprecation description of the selected
+        element(s). It can be provided if an element is marked as `deprecated`.
       description: Description of the selected API(s).
-      selector: The selector is a comma-separated list of pattern. Each
-        parttern is a qualified name of the element which may end in "*",
-        indicating a wildcard. Wildcards are only allowed at the end and for a
-        whole component of the qualified name, i.e. "foo.*" is ok, but not
-        "foo.b*" or "foo.*.bar". To specify a default for all applicable
-        elements, the whole pattern "*" is used.
+      selector: The selector is a comma-separated list of patterns. Each pattern
+        is a qualified name of the element which may end in "*", indicating a
+        wildcard. Wildcards are only allowed at the end and for a whole
+        component of the qualified name, i.e. "foo.*" is ok, but not "foo.b*" or
+        "foo.*.bar". To specify a default for all applicable elements, the whole
+        pattern "*" is used.
     """
 
-    description = _messages.StringField(1)
-    selector = _messages.StringField(2)
+    deprecationDescription = _messages.StringField(1)
+    description = _messages.StringField(2)
+    selector = _messages.StringField(3)
 
 
 class Enum(_messages.Message):
@@ -742,13 +653,13 @@ class ExplicitBuckets(_messages.Message):
         buckets. Note that a list of length N-1 defines N buckets because of
         fenceposting. See comments on `bucket_options` for details.  The i'th
         finite bucket covers the interval   [bound[i-1], bound[i]) where i
-        ranges from 1 to bound_size() - 1. Note that there are no finite
-        buckets at all if 'bound' only contains a single element; in that
-        special case the single bound defines the boundary between the
-        underflow and overflow buckets.  bucket number                   lower
-        bound    upper bound  i == 0 (underflow)              -inf
-        bound[i]  0 < i < bound_size()            bound[i-1]     bound[i]  i
-        == bound_size() (overflow)    bound[i-1]     +inf
+        ranges from 1 to bound_size() - 1. Note that there are no finite buckets
+        at all if 'bound' only contains a single element; in that special case
+        the single bound defines the boundary between the underflow and overflow
+        buckets.  bucket number                   lower bound    upper bound  i
+        == 0 (underflow)              -inf           bound[i]  0 < i <
+        bound_size()            bound[i-1]     bound[i]  i == bound_size()
+        (overflow)    bound[i-1]     +inf
     """
 
     bounds = _messages.FloatField(1, repeated=True)
@@ -762,16 +673,15 @@ class ExponentialBuckets(_messages.Message):
         growth_factor^(i-1), scale * growth_factor^i) where i ranges from 1 to
         num_finite_buckets inclusive. Must be larger than 1.0.
       numFiniteBuckets: The number of finite buckets. With the underflow and
-        overflow buckets, the total number of buckets is `num_finite_buckets`
-        + 2. See comments on `bucket_options` for details.
+        overflow buckets, the total number of buckets is `num_finite_buckets` +
+        2. See comments on `bucket_options` for details.
       scale: The i'th exponential bucket covers the interval   [scale *
         growth_factor^(i-1), scale * growth_factor^i) where i ranges from 1 to
         num_finite_buckets inclusive. Must be strictly positive.
     """
 
     growthFactor = _messages.FloatField(1)
-    numFiniteBuckets = _messages.IntegerField(
-        2, variant=_messages.Variant.INT32)
+    numFiniteBuckets = _messages.IntegerField(2, variant=_messages.Variant.INT32)
     scale = _messages.FloatField(3)
 
 
@@ -784,8 +694,8 @@ class Field(_messages.Message):
 
     Fields:
       cardinality: The field cardinality.
-      defaultValue: The string value of the default value of this field.
-        Proto2 syntax only.
+      defaultValue: The string value of the default value of this field. Proto2
+        syntax only.
       jsonName: The field JSON name.
       kind: The field type.
       name: The field name.
@@ -886,151 +796,153 @@ class HttpRequest(_messages.Message):
     """A common proto for logging HTTP requests.
 
     Fields:
-      cacheFillBytes: The number of HTTP response bytes inserted into cache.
-        Set only when a cache fill was attempted.
-      cacheHit: Whether or not an entity was served from cache (with or
-        without validation).
+      cacheFillBytes: The number of HTTP response bytes inserted into cache. Set
+        only when a cache fill was attempted.
+      cacheHit: Whether or not an entity was served from cache (with or without
+        validation).
       cacheLookup: Whether or not a cache lookup was attempted.
+      cacheValidatedWithOriginServer: Whether or not the response was validated
+        with the origin server before being served from cache. This field is
+        only meaningful if `cache_hit` is True.
       referer: The referer URL of the request, as defined in [HTTP/1.1 Header
         Field
         Definitions](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html).
-      remoteIp: The IP address (IPv4 or IPv6) of the client that issued the
-        HTTP request. Examples: `"192.168.1.1"`,
-        `"FE80::0202:B3FF:FE1E:8329"`.
+      remoteIp: The IP address (IPv4 or IPv6) of the client that issued the HTTP
+        request. Examples: `"192.168.1.1"`, `"FE80::0202:B3FF:FE1E:8329"`.
       requestMethod: The request method. Examples: `"GET"`, `"HEAD"`, `"PUT"`,
         `"POST"`.
-      requestSize: The size of the HTTP request message in bytes, including
-        the request headers and the request body.
+      requestSize: The size of the HTTP request message in bytes, including the
+        request headers and the request body.
       requestUrl: The scheme (http, https), the host name, the path and the
         query portion of the URL that was requested. Example:
         `"http://example.com/some/info?color=red"`.
       responseSize: The size of the HTTP response message sent back to the
-        client, in bytes, including the response headers and the response
-        body.
+        client, in bytes, including the response headers and the response body.
+      serverIp: The IP address (IPv4 or IPv6) of the origin server that the
+        request was sent to.
       status: The response code indicating the status of response. Examples:
         200, 404.
       userAgent: The user agent sent by the client. Example: `"Mozilla/4.0
         (compatible; MSIE 6.0; Windows 98; Q312461; .NET CLR 1.0.3705)"`.
-      validatedWithOriginServer: Whether or not the response was validated
-        with the origin server before being served from cache. This field is
-        only meaningful if `cache_hit` is True.
     """
 
     cacheFillBytes = _messages.IntegerField(1)
     cacheHit = _messages.BooleanField(2)
     cacheLookup = _messages.BooleanField(3)
-    referer = _messages.StringField(4)
-    remoteIp = _messages.StringField(5)
-    requestMethod = _messages.StringField(6)
-    requestSize = _messages.IntegerField(7)
-    requestUrl = _messages.StringField(8)
-    responseSize = _messages.IntegerField(9)
-    status = _messages.IntegerField(10, variant=_messages.Variant.INT32)
-    userAgent = _messages.StringField(11)
-    validatedWithOriginServer = _messages.BooleanField(12)
+    cacheValidatedWithOriginServer = _messages.BooleanField(4)
+    referer = _messages.StringField(5)
+    remoteIp = _messages.StringField(6)
+    requestMethod = _messages.StringField(7)
+    requestSize = _messages.IntegerField(8)
+    requestUrl = _messages.StringField(9)
+    responseSize = _messages.IntegerField(10)
+    serverIp = _messages.StringField(11)
+    status = _messages.IntegerField(12, variant=_messages.Variant.INT32)
+    userAgent = _messages.StringField(13)
 
 
 class HttpRule(_messages.Message):
-    """`HttpRule` defines the mapping of an RPC method to one or more HTTP
-    REST APIs.  The mapping determines what portions of the request message
-    are populated from the path, query parameters, or body of the HTTP
-    request.  The mapping is typically specified as an `google.api.http`
-    annotation, see "google/api/annotations.proto" for details.  The mapping
-    consists of a field specifying the path template and method kind.  The
-    path template can refer to fields in the request message, as in the
-    example below which describes a REST GET operation on a resource
-    collection of messages:  ```proto service Messaging {   rpc
-    GetMessage(GetMessageRequest) returns (Message) {     option
-    (google.api.http).get = "/v1/messages/{message_id}";   } } message
-    GetMessageRequest {   string message_id = 1; // mapped to the URL }
-    message Message {   string text = 1; // content of the resource } ```
-    This definition enables an automatic, bidrectional mapping of HTTP JSON to
-    RPC. Example:  HTTP | RPC -----|----- `GET /v1/messages/123456`  |
-    `GetMessage(message_id: "123456")`  In general, not only fields but also
-    field paths can be referenced from a path pattern. Fields mapped to the
-    path pattern cannot be repeated and must have a primitive (non-message)
-    type.  Any fields in the request message which are not bound by the path
-    pattern automatically become (optional) HTTP query parameters. Assume the
-    following definition of the request message:  ```proto message
-    GetMessageRequest {   string message_id = 1; // mapped to the URL   int64
-    revision = 2;    // becomes a parameter } ```  This enables a HTTP JSON to
-    RPC mapping as below:  HTTP | RPC -----|----- `GET
-    /v1/messages/123456?revision=2` | `GetMessage(message_id: "123456"
-    revision: 2)`  Note that fields which are mapped to HTTP parameters must
-    have a primitive type or a repeated primitive type. Message types are not
-    allowed. In the case of a repeated type, the parameter can be repeated in
-    the URL, as in `...?param=A&param=B`.  For HTTP method kinds which allow a
-    request body, the `body` field specifies the mapping. Consider a REST
-    update method on the message resource collection:  ```proto service
-    Messaging {   rpc UpdateMessage(UpdateMessageRequest) returns (Message) {
+    """`HttpRule` defines the mapping of an RPC method to one or more HTTP REST
+    APIs.  The mapping determines what portions of the request message are
+    populated from the path, query parameters, or body of the HTTP request.  The
+    mapping is typically specified as an `google.api.http` annotation, see
+    "google/api/annotations.proto" for details.  The mapping consists of a field
+    specifying the path template and method kind.  The path template can refer
+    to fields in the request message, as in the example below which describes a
+    REST GET operation on a resource collection of messages:  ```proto service
+    Messaging {   rpc GetMessage(GetMessageRequest) returns (Message) {
+    option (google.api.http).get = "/v1/messages/{message_id}/{sub.subfield}";
+    } } message GetMessageRequest {   message SubMessage {     string subfield =
+    1;   }   string message_id = 1; // mapped to the URL   SubMessage sub = 2;
+    // `sub.subfield` is url-mapped } message Message {   string text = 1; //
+    content of the resource } ```  This definition enables an automatic,
+    bidrectional mapping of HTTP JSON to RPC. Example:  HTTP | RPC -----|-----
+    `GET /v1/messages/123456/foo`  | `GetMessage(message_id: "123456" sub:
+    SubMessage(subfield: "foo"))`  In general, not only fields but also field
+    paths can be referenced from a path pattern. Fields mapped to the path
+    pattern cannot be repeated and must have a primitive (non-message) type.
+    Any fields in the request message which are not bound by the path pattern
+    automatically become (optional) HTTP query parameters. Assume the following
+    definition of the request message:  ```proto message GetMessageRequest {
+    message SubMessage {     string subfield = 1;   }   string message_id = 1;
+    // mapped to the URL   int64 revision = 2;    // becomes a parameter
+    SubMessage sub = 3;    // `sub.subfield` becomes a parameter } ```  This
+    enables a HTTP JSON to RPC mapping as below:  HTTP | RPC -----|----- `GET
+    /v1/messages/123456?revision=2&sub.subfield=foo` | `GetMessage(message_id:
+    "123456" revision: 2 sub: SubMessage(subfield: "foo"))`  Note that fields
+    which are mapped to HTTP parameters must have a primitive type or a repeated
+    primitive type. Message types are not allowed. In the case of a repeated
+    type, the parameter can be repeated in the URL, as in `...?param=A&param=B`.
+    For HTTP method kinds which allow a request body, the `body` field specifies
+    the mapping. Consider a REST update method on the message resource
+    collection:  ```proto service Messaging {   rpc
+    UpdateMessage(UpdateMessageRequest) returns (Message) {     option
+    (google.api.http) = {       put: "/v1/messages/{message_id}"       body:
+    "message"     };   } } message UpdateMessageRequest {   string message_id =
+    1; // mapped to the URL   Message message = 2;   // mapped to the body } ```
+    The following HTTP JSON to RPC mapping is enabled, where the representation
+    of the JSON in the request body is determined by protos JSON encoding:  HTTP
+    | RPC -----|----- `PUT /v1/messages/123456 { "text": "Hi!" }` |
+    `UpdateMessage(message_id: "123456" message { text: "Hi!" })`  The special
+    name `*` can be used in the body mapping to define that every field not
+    bound by the path template should be mapped to the request body.  This
+    enables the following alternative definition of the update method:  ```proto
+    service Messaging {   rpc UpdateMessage(Message) returns (Message) {
     option (google.api.http) = {       put: "/v1/messages/{message_id}"
-    body: "message"     };   } } message UpdateMessageRequest {   string
-    message_id = 1; // mapped to the URL   Message message = 2;   // mapped to
-    the body } ```  The following HTTP JSON to RPC mapping is enabled, where
-    the representation of the JSON in the request body is determined by protos
-    JSON encoding:  HTTP | RPC -----|----- `PUT /v1/messages/123456 { "text":
-    "Hi!" }` | `UpdateMessage(message_id: "123456" message { text: "Hi!" })`
-    The special name `*` can be used in the body mapping to define that every
-    field not bound by the path template should be mapped to the request body.
-    This enables the following alternative definition of the update method:
-    ```proto service Messaging {   rpc UpdateMessage(Message) returns
-    (Message) {     option (google.api.http) = {       put:
-    "/v1/messages/{message_id}"       body: "*"     };   } } message Message {
-    string message_id = 1;   string text = 2; } ```  The following HTTP JSON
-    to RPC mapping is enabled:  HTTP | RPC -----|----- `PUT
-    /v1/messages/123456 { "text": "Hi!" }` | `UpdateMessage(message_id:
-    "123456" text: "Hi!")`  Note that when using `*` in the body mapping, it
-    is not possible to have HTTP parameters, as all fields not bound by the
-    path end in the body. This makes this option more rarely used in practice
-    of defining REST APIs. The common usage of `*` is in custom methods which
-    don't use the URL at all for transferring data.  It is possible to define
-    multiple HTTP methods for one RPC by using the `additional_bindings`
-    option. Example:  ```proto service Messaging {   rpc
+    body: "*"     };   } } message Message {   string message_id = 1;   string
+    text = 2; } ```  The following HTTP JSON to RPC mapping is enabled:  HTTP |
+    RPC -----|----- `PUT /v1/messages/123456 { "text": "Hi!" }` |
+    `UpdateMessage(message_id: "123456" text: "Hi!")`  Note that when using `*`
+    in the body mapping, it is not possible to have HTTP parameters, as all
+    fields not bound by the path end in the body. This makes this option more
+    rarely used in practice of defining REST APIs. The common usage of `*` is in
+    custom methods which don't use the URL at all for transferring data.  It is
+    possible to define multiple HTTP methods for one RPC by using the
+    `additional_bindings` option. Example:  ```proto service Messaging {   rpc
     GetMessage(GetMessageRequest) returns (Message) {     option
     (google.api.http) = {       get: "/v1/messages/{message_id}"
     additional_bindings {         get:
     "/v1/users/{user_id}/messages/{message_id}"       }     };   } } message
     GetMessageRequest {   string message_id = 1;   string user_id = 2; } ```
-    This enables the following two alternative HTTP JSON to RPC mappings:
-    HTTP | RPC -----|----- `GET /v1/messages/123456` | `GetMessage(message_id:
+    This enables the following two alternative HTTP JSON to RPC mappings:  HTTP
+    | RPC -----|----- `GET /v1/messages/123456` | `GetMessage(message_id:
     "123456")` `GET /v1/users/me/messages/123456` | `GetMessage(user_id: "me"
-    message_id: "123456")`  # Rules for HTTP mapping  The rules for mapping
-    HTTP path, query parameters, and body fields to the request message are as
+    message_id: "123456")`  # Rules for HTTP mapping  The rules for mapping HTTP
+    path, query parameters, and body fields to the request message are as
     follows:  1. The `body` field specifies either `*` or a field path, or is
     omitted. If omitted, it assumes there is no HTTP body. 2. Leaf fields
-    (recursive expansion of nested messages in the    request) can be
-    classified into three types:     (a) Matched in the URL template.     (b)
-    Covered by body (if body is `*`, everything except (a) fields;
-    else everything under the body field)     (c) All other fields. 3. URL
-    query parameters found in the HTTP request are mapped to (c) fields. 4.
-    Any body sent with an HTTP request can contain only (b) fields.  The
-    syntax of the path template is as follows:      Template = "/" Segments [
-    Verb ] ;     Segments = Segment { "/" Segment } ;     Segment  = "*" |
-    "**" | LITERAL | Variable ;     Variable = "{" FieldPath [ "=" Segments ]
-    "}" ;     FieldPath = IDENT { "." IDENT } ;     Verb     = ":" LITERAL ;
-    The syntax `*` matches a single path segment. It follows the semantics of
-    [RFC 6570](https://tools.ietf.org/html/rfc6570) Section 3.2.2 Simple
-    String Expansion.  The syntax `**` matches zero or more path segments. It
-    follows the semantics of [RFC 6570](https://tools.ietf.org/html/rfc6570)
-    Section 3.2.3 Reserved Expansion.  The syntax `LITERAL` matches literal
-    text in the URL path.  The syntax `Variable` matches the entire path as
-    specified by its template; this nested template must not contain further
-    variables. If a variable matches a single path segment, its template may
-    be omitted, e.g. `{var}` is equivalent to `{var=*}`.  NOTE: the field
-    paths in variables and in the `body` must not refer to repeated fields or
-    map fields.  Use CustomHttpPattern to specify any HTTP method that is not
-    included in the `pattern` field, such as HEAD, or "*" to leave the HTTP
-    method unspecified for a given URL path rule. The wild-card rule is useful
-    for services that provide content to Web (HTML) clients.
+    (recursive expansion of nested messages in the    request) can be classified
+    into three types:     (a) Matched in the URL template.     (b) Covered by
+    body (if body is `*`, everything except (a) fields;         else everything
+    under the body field)     (c) All other fields. 3. URL query parameters
+    found in the HTTP request are mapped to (c) fields. 4. Any body sent with an
+    HTTP request can contain only (b) fields.  The syntax of the path template
+    is as follows:      Template = "/" Segments [ Verb ] ;     Segments =
+    Segment { "/" Segment } ;     Segment  = "*" | "**" | LITERAL | Variable ;
+    Variable = "{" FieldPath [ "=" Segments ] "}" ;     FieldPath = IDENT { "."
+    IDENT } ;     Verb     = ":" LITERAL ;  The syntax `*` matches a single path
+    segment. It follows the semantics of [RFC
+    6570](https://tools.ietf.org/html/rfc6570) Section 3.2.2 Simple String
+    Expansion.  The syntax `**` matches zero or more path segments. It follows
+    the semantics of [RFC 6570](https://tools.ietf.org/html/rfc6570) Section
+    3.2.3 Reserved Expansion.  The syntax `LITERAL` matches literal text in the
+    URL path.  The syntax `Variable` matches the entire path as specified by its
+    template; this nested template must not contain further variables. If a
+    variable matches a single path segment, its template may be omitted, e.g.
+    `{var}` is equivalent to `{var=*}`.  NOTE: the field paths in variables and
+    in the `body` must not refer to repeated fields or map fields.  Use
+    CustomHttpPattern to specify any HTTP method that is not included in the
+    `pattern` field, such as HEAD, or "*" to leave the HTTP method unspecified
+    for a given URL path rule. The wild-card rule is useful for services that
+    provide content to Web (HTML) clients.
 
     Fields:
       additionalBindings: Additional HTTP bindings for the selector. Nested
         bindings must not contain an `additional_bindings` field themselves
         (that is, the nesting may only be one level deep).
       body: The name of the request field whose value is mapped to the HTTP
-        body, or `*` for mapping all fields not captured by the path pattern
-        to the HTTP body. NOTE: the referred field must not be a repeated
-        field.
+        body, or `*` for mapping all fields not captured by the path pattern to
+        the HTTP body. NOTE: the referred field must not be a repeated field.
       custom: Custom pattern is used for defining custom verbs.
       delete: Used for deleting a resource.
       get: Used for listing and getting information about resources.
@@ -1093,14 +1005,14 @@ class LinearBuckets(_messages.Message):
 
     Fields:
       numFiniteBuckets: The number of finite buckets. With the underflow and
-        overflow buckets, the total number of buckets is `num_finite_buckets`
-        + 2. See comments on `bucket_options` for details.
+        overflow buckets, the total number of buckets is `num_finite_buckets` +
+        2. See comments on `bucket_options` for details.
       offset: The i'th linear bucket covers the interval   [offset + (i-1) *
-        width, offset + i * width) where i ranges from 1 to
-        num_finite_buckets, inclusive.
+        width, offset + i * width) where i ranges from 1 to num_finite_buckets,
+        inclusive.
       width: The i'th linear bucket covers the interval   [offset + (i-1) *
-        width, offset + i * width) where i ranges from 1 to
-        num_finite_buckets, inclusive. Must be strictly positive.
+        width, offset + i * width) where i ranges from 1 to num_finite_buckets,
+        inclusive. Must be strictly positive.
     """
 
     numFiniteBuckets = _messages.IntegerField(1, variant=_messages.Variant.INT32)
@@ -1124,9 +1036,9 @@ class LogDescriptor(_messages.Message):
         entry. Runtime requests that contain labels not specified here are
         considered invalid.
       name: The name of the log. It must be less than 512 characters long and
-        can include the following characters: upper- and lower-case
-        alphanumeric characters [A-Za-z0-9], and punctuation characters
-        including slash, underscore, hyphen, period [/_-.].
+        can include the following characters: upper- and lower-case alphanumeric
+        characters [A-Za-z0-9], and punctuation characters including slash,
+        underscore, hyphen, period [/_-.].
     """
 
     description = _messages.StringField(1)
@@ -1136,170 +1048,66 @@ class LogDescriptor(_messages.Message):
 
 
 class LogEntry(_messages.Message):
-    """An individual entry in a log.
+    """An individual log entry.
+
+    Enums:
+      SeverityValueValuesEnum: Optional. The severity of the log entry. The
+        default value is `LogSeverity.DEFAULT`.
 
     Messages:
-      ProtoPayloadValue: The log entry payload, represented as a protocol
-        buffer that is expressed as a JSON object. You can only pass
-        `protoPayload` values that belong to a set of approved types.
-      StructPayloadValue: The log entry payload, represented as a structure
-        that is expressed as a JSON object.
+      LabelsValue: Optional. A set of user-defined (key, value) data that
+        provides additional information about the log entry.
+      ProtoPayloadValue: The log entry payload, represented as a protocol buffer
+        that is expressed as a JSON object. You can only pass `protoPayload`
+        values that belong to a set of approved types.
+      StructPayloadValue: The log entry payload, represented as a structure that
+        is expressed as a JSON object.
 
     Fields:
       httpRequest: Information about the HTTP request associated with this log
-        entry, if applicable.
-      insertId: A unique ID for the log entry. If you provide this field, the
-        logging service considers other log entries in the same log with the
-        same ID as duplicates which can be removed.
-      log: The log to which this entry belongs. When a log entry is ingested,
-        the value of this field is set by the logging system.
-      metadata: Information about the log entry.
+        entry, if applicable.  Deprecated. Please use fields 10-13.
+      insertId: A unique ID for the log entry used for deduplication. If
+        omitted, the implementation will generate one based on operation_id.
+      labels: Optional. A set of user-defined (key, value) data that provides
+        additional information about the log entry.
+      log: The log to which this entry belongs. When a log entry is written, the
+        value of this field is set by the logging system.  Deprecated. Please
+        use fields 10-13.
+      metadata: Information about the log entry.  Deprecated. Please use fields
+        10-13.
+      name: Required. The log to which this log entry belongs. Examples:
+        `"syslog"`, `"book_log"`.
       operation: Optional. Information about an operation associated with the
-        log entry, if applicable.
-      protoPayload: The log entry payload, represented as a protocol buffer
-        that is expressed as a JSON object. You can only pass `protoPayload`
-        values that belong to a set of approved types.
+        log entry, if applicable.  Deprecated. Please use fields 10-13.
+      protoPayload: The log entry payload, represented as a protocol buffer that
+        is expressed as a JSON object. You can only pass `protoPayload` values
+        that belong to a set of approved types.
+      severity: Optional. The severity of the log entry. The default value is
+        `LogSeverity.DEFAULT`.
       structPayload: The log entry payload, represented as a structure that is
         expressed as a JSON object.
       textPayload: The log entry payload, represented as a Unicode string
         (UTF-8).
-    """
-
-    @encoding.MapUnrecognizedFields('additionalProperties')
-    class ProtoPayloadValue(_messages.Message):
-        """The log entry payload, represented as a protocol buffer that is
-        expressed as a JSON object. You can only pass `protoPayload` values
-        that belong to a set of approved types.
-
-        Messages:
-          AdditionalProperty: An additional property for a ProtoPayloadValue
-            object.
-
-        Fields:
-          additionalProperties: Properties of the object. Contains field @ype
-            with type URL.
-        """
-
-        class AdditionalProperty(_messages.Message):
-            """An additional property for a ProtoPayloadValue object.
-
-            Fields:
-              key: Name of the additional property.
-              value: A extra_types.JsonValue attribute.
-            """
-
-            key = _messages.StringField(1)
-            value = _messages.MessageField('extra_types.JsonValue', 2)
-
-        additionalProperties = _messages.MessageField('AdditionalProperty', 1,
-                                                      repeated=True)
-
-    @encoding.MapUnrecognizedFields('additionalProperties')
-    class StructPayloadValue(_messages.Message):
-        """The log entry payload, represented as a structure that is expressed
-        as a JSON object.
-
-        Messages:
-          AdditionalProperty: An additional property for a StructPayloadValue
-            object.
-
-        Fields:
-          additionalProperties: Properties of the object.
-        """
-
-        class AdditionalProperty(_messages.Message):
-            """An additional property for a StructPayloadValue object.
-
-            Fields:
-              key: Name of the additional property.
-              value: A extra_types.JsonValue attribute.
-            """
-
-            key = _messages.StringField(1)
-            value = _messages.MessageField('extra_types.JsonValue', 2)
-
-        additionalProperties = _messages.MessageField('AdditionalProperty', 1,
-                                                      repeated=True)
-
-    httpRequest = _messages.MessageField('HttpRequest', 1)
-    insertId = _messages.StringField(2)
-    log = _messages.StringField(3)
-    metadata = _messages.MessageField('LogEntryMetadata', 4)
-    operation = _messages.MessageField('LogEntryOperation', 5)
-    protoPayload = _messages.MessageField('ProtoPayloadValue', 6)
-    structPayload = _messages.MessageField('StructPayloadValue', 7)
-    textPayload = _messages.StringField(8)
-
-
-class LogEntryMetadata(_messages.Message):
-    """Additional data that is associated with a log entry, set by the service
-    creating the log entry.
-
-    Enums:
-      SeverityValueValuesEnum: The severity of the log entry.
-
-    Messages:
-      LabelsValue: A set of (key, value) data that provides additional
-        information about the log entry. If the log entry is from one of the
-        Google Cloud Platform sources listed below, the indicated (key, value)
-        information must be provided:  Google App Engine, service_name
-        `appengine.googleapis.com`:
-        "appengine.googleapis.com/module_id", <module ID>
-        "appengine.googleapis.com/version_id", <version ID>           and one
-        of:       "appengine.googleapis.com/replica_index", <instance index>
-        "appengine.googleapis.com/clone_id", <instance ID>      or else
-        provide the following Compute Engine labels:  Google Compute Engine,
-        service_name `compute.googleapis.com`:
-        "compute.googleapis.com/resource_type", "instance"
-        "compute.googleapis.com/resource_id", <instance ID>
-
-    Fields:
-      labels: A set of (key, value) data that provides additional information
-        about the log entry. If the log entry is from one of the Google Cloud
-        Platform sources listed below, the indicated (key, value) information
-        must be provided:  Google App Engine, service_name
-        `appengine.googleapis.com`:
-        "appengine.googleapis.com/module_id", <module ID>
-        "appengine.googleapis.com/version_id", <version ID>           and one
-        of:       "appengine.googleapis.com/replica_index", <instance index>
-        "appengine.googleapis.com/clone_id", <instance ID>      or else
-        provide the following Compute Engine labels:  Google Compute Engine,
-        service_name `compute.googleapis.com`:
-        "compute.googleapis.com/resource_type", "instance"
-        "compute.googleapis.com/resource_id", <instance ID>
-      projectId: The project ID of the Google Cloud Platform service that
-        created the log entry.
-      region: The region name of the Google Cloud Platform service that
-        created the log entry.  For example, `"us-central1"`.
-      serviceName: The API name of the Google Cloud Platform service that
-        created the log entry.  For example, `"compute.googleapis.com"`.
-      severity: The severity of the log entry.
-      timestamp: The time the event described by the log entry occurred.
-        Timestamps must be later than January 1, 1970.
-      userId: The fully-qualified email address of the authenticated user that
-        performed or requested the action represented by the log entry. If the
-        log entry does not apply to an action taken by an authenticated user,
-        then the field should be empty.
-      zone: The zone of the Google Cloud Platform service that created the log
-        entry. For example, `"us-central1-a"`.
+      timestamp: Optional. The time the event described by the log entry
+        occurred. If omitted, defaults to operation start time.
     """
 
     class SeverityValueValuesEnum(_messages.Enum):
-        """The severity of the log entry.
+        """Optional. The severity of the log entry. The default value is
+      `LogSeverity.DEFAULT`.
 
-        Values:
-          DEFAULT: The log entry has no assigned severity level.
-          DEBUG: Debug or trace information.
-          INFO: Routine information, such as ongoing status or performance.
-          NOTICE: Normal but significant events, such as start up, shut down,
-            or configuration.
-          WARNING: Warning events might cause problems.
-          ERROR: Error events are likely to cause problems.
-          CRITICAL: Critical events cause more severe problems or brief
-            outages.
-          ALERT: A person must take an action immediately.
-          EMERGENCY: One or more systems are unusable.
-        """
+      Values:
+        DEFAULT: The log entry has no assigned severity level.
+        DEBUG: Debug or trace information.
+        INFO: Routine information, such as ongoing status or performance.
+        NOTICE: Normal but significant events, such as start up, shut down, or
+          configuration.
+        WARNING: Warning events might cause problems.
+        ERROR: Error events are likely to cause problems.
+        CRITICAL: Critical events cause more severe problems or brief outages.
+        ALERT: A person must take an action immediately.
+        EMERGENCY: One or more systems are unusable.
+      """
         DEFAULT = 0
         DEBUG = 1
         INFO = 2
@@ -1312,19 +1120,8 @@ class LogEntryMetadata(_messages.Message):
 
     @encoding.MapUnrecognizedFields('additionalProperties')
     class LabelsValue(_messages.Message):
-        """A set of (key, value) data that provides additional information
-        about the log entry. If the log entry is from one of the Google Cloud
-        Platform sources listed below, the indicated (key, value) information
-        must be provided:  Google App Engine, service_name
-        `appengine.googleapis.com`:
-        "appengine.googleapis.com/module_id", <module ID>
-        "appengine.googleapis.com/version_id", <version ID>           and one
-        of:       "appengine.googleapis.com/replica_index", <instance index>
-        "appengine.googleapis.com/clone_id", <instance ID>      or else
-        provide the following Compute Engine labels:  Google Compute Engine,
-        service_name `compute.googleapis.com`:
-        "compute.googleapis.com/resource_type", "instance"
-        "compute.googleapis.com/resource_id", <instance ID>
+        """Optional. A set of user-defined (key, value) data that provides
+        additional information about the log entry.
 
         Messages:
           AdditionalProperty: An additional property for a LabelsValue object.
@@ -1344,8 +1141,189 @@ class LogEntryMetadata(_messages.Message):
             key = _messages.StringField(1)
             value = _messages.StringField(2)
 
-        additionalProperties = _messages.MessageField('AdditionalProperty', 1,
-                                                      repeated=True)
+        additionalProperties = _messages.MessageField('AdditionalProperty', 1, repeated=True)
+
+    @encoding.MapUnrecognizedFields('additionalProperties')
+    class ProtoPayloadValue(_messages.Message):
+        """The log entry payload, represented as a protocol buffer that is
+        expressed as a JSON object. You can only pass `protoPayload` values that
+        belong to a set of approved types.
+
+        Messages:
+          AdditionalProperty: An additional property for a ProtoPayloadValue
+            object.
+
+        Fields:
+          additionalProperties: Properties of the object. Contains field @ype with
+            type URL.
+        """
+
+        class AdditionalProperty(_messages.Message):
+            """An additional property for a ProtoPayloadValue object.
+
+            Fields:
+              key: Name of the additional property.
+              value: A extra_types.JsonValue attribute.
+            """
+
+            key = _messages.StringField(1)
+            value = _messages.MessageField('extra_types.JsonValue', 2)
+
+        additionalProperties = _messages.MessageField('AdditionalProperty', 1, repeated=True)
+
+    @encoding.MapUnrecognizedFields('additionalProperties')
+    class StructPayloadValue(_messages.Message):
+        """The log entry payload, represented as a structure that is expressed as
+        a JSON object.
+
+        Messages:
+          AdditionalProperty: An additional property for a StructPayloadValue
+            object.
+
+        Fields:
+          additionalProperties: Properties of the object.
+        """
+
+        class AdditionalProperty(_messages.Message):
+            """An additional property for a StructPayloadValue object.
+
+            Fields:
+              key: Name of the additional property.
+             value: A extra_types.JsonValue attribute.
+            """
+
+            key = _messages.StringField(1)
+            value = _messages.MessageField('extra_types.JsonValue', 2)
+
+        additionalProperties = _messages.MessageField('AdditionalProperty', 1, repeated=True)
+
+    httpRequest = _messages.MessageField('HttpRequest', 1)
+    insertId = _messages.StringField(2)
+    labels = _messages.MessageField('LabelsValue', 3)
+    log = _messages.StringField(4)
+    metadata = _messages.MessageField('LogEntryMetadata', 5)
+    name = _messages.StringField(6)
+    operation = _messages.MessageField('LogEntryOperation', 7)
+    protoPayload = _messages.MessageField('ProtoPayloadValue', 8)
+    severity = _messages.EnumField('SeverityValueValuesEnum', 9)
+    structPayload = _messages.MessageField('StructPayloadValue', 10)
+    textPayload = _messages.StringField(11)
+    timestamp = _messages.StringField(12)
+
+
+class LogEntryMetadata(_messages.Message):
+    """Additional data that is associated with a log entry, set by the service
+    creating the log entry.
+
+    Enums:
+      SeverityValueValuesEnum: The severity of the log entry. If omitted,
+        `LogSeverity.DEFAULT` is used.
+
+    Messages:
+      LabelsValue: A set of (key, value) data that provides additional
+        information about the log entry. If the log entry is from one of the
+        Google Cloud Platform sources listed below, the indicated (key, value)
+        information must be provided:  Google App Engine, service_name
+        `appengine.googleapis.com`:        "appengine.googleapis.com/module_id",
+        <module ID>       "appengine.googleapis.com/version_id", <version ID>
+        and one of:       "appengine.googleapis.com/replica_index", <instance
+        index>       "appengine.googleapis.com/clone_id", <instance ID>      or
+        else provide the following Compute Engine labels:  Google Compute
+        Engine, service_name `compute.googleapis.com`:
+        "compute.googleapis.com/resource_type", "instance"
+        "compute.googleapis.com/resource_id", <instance ID>
+
+    Fields:
+      labels: A set of (key, value) data that provides additional information
+        about the log entry. If the log entry is from one of the Google Cloud
+        Platform sources listed below, the indicated (key, value) information
+        must be provided:  Google App Engine, service_name
+        `appengine.googleapis.com`:        "appengine.googleapis.com/module_id",
+        <module ID>       "appengine.googleapis.com/version_id", <version ID>
+        and one of:       "appengine.googleapis.com/replica_index", <instance
+        index>       "appengine.googleapis.com/clone_id", <instance ID>      or
+        else provide the following Compute Engine labels:  Google Compute
+        Engine, service_name `compute.googleapis.com`:
+        "compute.googleapis.com/resource_type", "instance"
+        "compute.googleapis.com/resource_id", <instance ID>
+      projectId: The project ID of the Google Cloud Platform service that
+        created the log entry.
+      region: The region name of the Google Cloud Platform service that created
+        the log entry.  For example, `"us-central1"`.
+      serviceName: Required. The API name of the Google Cloud Platform service
+        that created the log entry.  For example, `"compute.googleapis.com"`.
+      severity: The severity of the log entry. If omitted, `LogSeverity.DEFAULT`
+        is used.
+      timestamp: The time the event described by the log entry occurred.
+        Timestamps must be later than January 1, 1970.  If omitted, Stackdriver
+        Logging will use the time the log entry is received.
+      userId: The fully-qualified email address of the authenticated user that
+        performed or requested the action represented by the log entry. If the
+        log entry does not apply to an action taken by an authenticated user,
+        then the field should be empty.
+      zone: The zone of the Google Cloud Platform service that created the log
+        entry. For example, `"us-central1-a"`.
+    """
+
+    class SeverityValueValuesEnum(_messages.Enum):
+        """The severity of the log entry. If omitted, `LogSeverity.DEFAULT` is
+        used.
+
+        Values:
+          DEFAULT: The log entry has no assigned severity level.
+          DEBUG: Debug or trace information.
+          INFO: Routine information, such as ongoing status or performance.
+          NOTICE: Normal but significant events, such as start up, shut down, or
+            configuration.
+          WARNING: Warning events might cause problems.
+          ERROR: Error events are likely to cause problems.
+          CRITICAL: Critical events cause more severe problems or brief outages.
+          ALERT: A person must take an action immediately.
+          EMERGENCY: One or more systems are unusable.
+        """
+        DEFAULT = 0
+        DEBUG = 1
+        INFO = 2
+        NOTICE = 3
+        WARNING = 4
+        ERROR = 5
+        CRITICAL = 6
+        ALERT = 7
+        EMERGENCY = 8
+
+    @encoding.MapUnrecognizedFields('additionalProperties')
+    class LabelsValue(_messages.Message):
+        """A set of (key, value) data that provides additional information about
+        the log entry. If the log entry is from one of the Google Cloud Platform
+        sources listed below, the indicated (key, value) information must be
+        provided:  Google App Engine, service_name `appengine.googleapis.com`:
+        "appengine.googleapis.com/module_id", <module ID>
+        "appengine.googleapis.com/version_id", <version ID>           and one of:
+        "appengine.googleapis.com/replica_index", <instance index>
+        "appengine.googleapis.com/clone_id", <instance ID>      or else provide
+        the following Compute Engine labels:  Google Compute Engine, service_name
+        `compute.googleapis.com`:         "compute.googleapis.com/resource_type",
+        "instance"        "compute.googleapis.com/resource_id", <instance ID>
+
+        Messages:
+          AdditionalProperty: An additional property for a LabelsValue object.
+
+        Fields:
+          additionalProperties: Additional properties of type LabelsValue
+        """
+
+        class AdditionalProperty(_messages.Message):
+            """An additional property for a LabelsValue object.
+
+            Fields:
+              key: Name of the additional property.
+              value: A string attribute.
+            """
+
+            key = _messages.StringField(1)
+            value = _messages.StringField(2)
+
+        additionalProperties = _messages.MessageField('AdditionalProperty', 1, repeated=True)
 
     labels = _messages.MessageField('LabelsValue', 1)
     projectId = _messages.StringField(2)
@@ -1379,48 +1357,46 @@ class LogEntryOperation(_messages.Message):
 
 
 class Logging(_messages.Message):
-    """Logging configuration of the service.  The following example shows how
-    to configure logs to be sent to the producer and consumer projects. In the
+    """Logging configuration of the service.  The following example shows how to
+    configure logs to be sent to the producer and consumer projects. In the
     example, the `library.googleapis.com/activity_history` log is sent to both
     the producer and consumer projects, whereas the
     `library.googleapis.com/purchase_history` log is only sent to the producer
-    project:      monitored_resources:     - type:
-    library.googleapis.com/branch       labels:       - key: /city
-    description: The city where the library branch is located in.       - key:
-    /name         description: The name of the branch.     logs:     - name:
-    library.googleapis.com/activity_history       labels:       - key:
-    /customer_id     - name: library.googleapis.com/purchase_history
-    logging:       producer_destinations:       - monitored_resource:
+    project:      monitored_resources:     - type: library.googleapis.com/branch
+    labels:       - key: /city         description: The city where the library
+    branch is located in.       - key: /name         description: The name of
+    the branch.     logs:     - name: library.googleapis.com/activity_history
+    labels:       - key: /customer_id     - name:
+    library.googleapis.com/purchase_history     logging:
+    producer_destinations:       - monitored_resource:
     library.googleapis.com/branch         logs:         -
     library.googleapis.com/activity_history         -
-    library.googleapis.com/purchase_history       consumer_destinations:
-    - monitored_resource: library.googleapis.com/branch         logs:
-    - library.googleapis.com/activity_history
+    library.googleapis.com/purchase_history       consumer_destinations:       -
+    monitored_resource: library.googleapis.com/branch         logs:         -
+    library.googleapis.com/activity_history
 
     Fields:
       consumerDestinations: Logging configurations for sending logs to the
-        consumer project. There can be multiple consumer destinations, each
-        one must have a different monitored resource type. A log can be used
-        in at most one consumer destination.
+        consumer project. There can be multiple consumer destinations, each one
+        must have a different monitored resource type. A log can be used in at
+        most one consumer destination.
       producerDestinations: Logging configurations for sending logs to the
-        producer project. There can be multiple producer destinations, each
-        one must have a different monitored resource type. A log can be used
-        in at most one producer destination.
+        producer project. There can be multiple producer destinations, each one
+        must have a different monitored resource type. A log can be used in at
+        most one producer destination.
     """
 
-    consumerDestinations = _messages.MessageField('LoggingDestination', 1,
-                                                  repeated=True)
-    producerDestinations = _messages.MessageField('LoggingDestination', 2,
-                                                  repeated=True)
+    consumerDestinations = _messages.MessageField('LoggingDestination', 1, repeated=True)
+    producerDestinations = _messages.MessageField('LoggingDestination', 2, repeated=True)
 
 
 class LoggingDestination(_messages.Message):
-    """Configuration of a specific logging destination (the producer project
-    or the consumer project).
+    """Configuration of a specific logging destination (the producer project or
+    the consumer project).
 
     Fields:
-      logs: Names of the logs to be sent to this destination. Each name must
-        be defined in the Service.logs section.
+      logs: Names of the logs to be sent to this destination. Each name must be
+        defined in the Service.logs section.
       monitoredResource: The monitored resource type. The type must be defined
         in Service.monitored_resources section.
     """
@@ -1470,10 +1446,10 @@ class Method(_messages.Message):
     class SyntaxValueValuesEnum(_messages.Enum):
         """The source syntax of this method.
 
-        Values:
-          SYNTAX_PROTO2: Syntax `proto2`.
-          SYNTAX_PROTO3: Syntax `proto3`.
-        """
+      Values:
+        SYNTAX_PROTO2: Syntax `proto2`.
+        SYNTAX_PROTO3: Syntax `proto3`.
+      """
         SYNTAX_PROTO2 = 0
         SYNTAX_PROTO3 = 1
 
@@ -1487,7 +1463,7 @@ class Method(_messages.Message):
 
 
 class MetricDescriptor(_messages.Message):
-    """A description of a type of metric.
+    """Defines a metric type and its schema.
 
     Enums:
       MetricKindValueValuesEnum: Whether the metric records instantaneous
@@ -1496,70 +1472,71 @@ class MetricDescriptor(_messages.Message):
         floating-point number, etc.
 
     Fields:
-      description: A detailed description of the metric, which is used in
+      description: A detailed description of the metric, which can be used in
         documentation.
-      displayName: A concise name for the metric, which is displayed in user
-        interfaces.
-      labels: The set of labels that can be used to describe a specific
-        instance of this metric type. For example, the
+      displayName: A concise name for the metric, which can be displayed in user
+        interfaces. Use sentence case without an ending period, for example
+        "Request count".
+      labels: The set of labels that can be used to describe a specific instance
+        of this metric type. For example, the
         `compute.googleapis.com/instance/network/received_bytes_count` metric
-        type has a label, `loadbalanced`, that specifies whether the traffic
-        was received through a load balanced IP address.
-      metricKind: Whether the metric records instantaneous values, changes to
-        a value, etc.
-      name: Resource name of the metric descriptor. For example:
-        projects/{project_id}/metricDescriptors/{type}
-      type: The metric type, including a domain prefix, such as
-        `"compute.googleapis.com/instance/cpu/utilization"`. Metric types
-        should use a natural hierarchical grouping such as the following:
+        type has a label, `loadbalanced`, that specifies whether the traffic was
+        received through a load balanced IP address.
+      metricKind: Whether the metric records instantaneous values, changes to a
+        value, etc.
+      name: Resource name. The format of the name may vary between different
+        implementations. For examples:
+        projects/{project_id}/metricDescriptors/{type=**}
+        metricDescriptors/{type=**}
+      type: The metric type including a DNS name prefix, for example
+        `"compute.googleapis.com/instance/cpu/utilization"`. Metric types should
+        use a natural hierarchical grouping such as the following:
         compute.googleapis.com/instance/cpu/utilization
         compute.googleapis.com/instance/disk/read_ops_count
-        compute.googleapis.com/instance/network/received_bytes_count  Note
-        that if the metric type changes, the monitoring data will be
-        discontinued, and anything depends on it will break, such as
-        monitoring dashboards, alerting rules and quota limits. Therefore,
-        once a metric has been published, its type should be immutable. You
-        can use the display_name field to provide a user-friendly name for the
-        metric.
+        compute.googleapis.com/instance/network/received_bytes_count  Note that
+        if the metric type changes, the monitoring data will be discontinued,
+        and anything depends on it will break, such as monitoring dashboards,
+        alerting rules and quota limits. Therefore, once a metric has been
+        published, its type should be immutable.
       unit: The unit in which the metric value is reported. It is only
-        applicable if the `value_type` is `INT64`, `DOUBLE`, or
-        `DISTRIBUTION`. The supported units are a subset of [The Unified Code
-        for Units of Measure](http://unitsofmeasure.org/ucum.html) standard:
-        **Basic units (UNIT)**  * `bit`   bit * `By`    byte * `s`     second
-        * `min`   minute * `h`     hour * `d`     day  **Prefixes (PREFIX)**
-        * `k`     kilo    (10**3) * `M`     mega    (10**6) * `G`     giga
-        (10**9) * `T`     tera    (10**12) * `P`     peta    (10**15) * `E`
-        exa     (10**18) * `Z`     zetta   (10**21) * `Y`     yotta   (10**24)
-        * `m`     milli   (10**-3) * `u`     micro   (10**-6) * `n`     nano
-        (10**-9) * `p`     pico    (10**-12) * `f`     femto   (10**-15) * `a`
-        atto    (10**-18) * `z`     zepto   (10**-21) * `y`     yocto
-        (10**-24) * `Ki`    kibi    (2**10) * `Mi`    mebi    (2**20) * `Gi`
-        gibi    (2**30) * `Ti`    tebi    (2**40)  **Grammar**  The grammar
-        includes the dimensionless unit `1`, such as `1/s`.  The grammar also
-        includes these connectors:  * `/`    division (as an infix operator,
-        e.g. `1/s`). * `.`    multiplication (as an infix operator, e.g.
-        `GBy.d`)  The grammar for a unit is as follows:      Expression =
-        Component { "." Component } { "/" Component } ;      Component = [
-        PREFIX ] UNIT [ Annotation ]               | Annotation
-        | "1"               ;      Annotation = "{" NAME "}" ;  Notes:  *
-        `Annotation` is just a comment if it follows a `UNIT` and is
-        equivalent to `1` if it is used alone. For examples,    `{requests}/s
-        == 1/s`, `By{transmitted}/s == By/s`. * `NAME` is a sequence of non-
-        blank printable ASCII characters not    containing '{' or '}'.
-      valueType: Whether the measurement is an integer, a floating-point
-        number, etc.
+        applicable if the `value_type` is `INT64`, `DOUBLE`, or `DISTRIBUTION`.
+        The supported units are a subset of [The Unified Code for Units of
+        Measure](http://unitsofmeasure.org/ucum.html) standard:  **Basic units
+        (UNIT)**  * `bit`   bit * `By`    byte * `s`     second * `min`   minute
+        * `h`     hour * `d`     day  **Prefixes (PREFIX)**  * `k`     kilo
+        (10**3) * `M`     mega    (10**6) * `G`     giga    (10**9) * `T`
+        tera    (10**12) * `P`     peta    (10**15) * `E`     exa     (10**18) *
+        `Z`     zetta   (10**21) * `Y`     yotta   (10**24) * `m`     milli
+        (10**-3) * `u`     micro   (10**-6) * `n`     nano    (10**-9) * `p`
+        pico    (10**-12) * `f`     femto   (10**-15) * `a`     atto
+        (10**-18) * `z`     zepto   (10**-21) * `y`     yocto   (10**-24) * `Ki`
+        kibi    (2**10) * `Mi`    mebi    (2**20) * `Gi`    gibi    (2**30) *
+        `Ti`    tebi    (2**40)  **Grammar**  The grammar includes the
+        dimensionless unit `1`, such as `1/s`.  The grammar also includes these
+        connectors:  * `/`    division (as an infix operator, e.g. `1/s`). * `.`
+        multiplication (as an infix operator, e.g. `GBy.d`)  The grammar for a
+        unit is as follows:      Expression = Component { "." Component } { "/"
+        Component } ;      Component = [ PREFIX ] UNIT [ Annotation ]
+        | Annotation               | "1"               ;      Annotation = "{"
+        NAME "}" ;  Notes:  * `Annotation` is just a comment if it follows a
+        `UNIT` and is    equivalent to `1` if it is used alone. For examples,
+        `{requests}/s == 1/s`, `By{transmitted}/s == By/s`. * `NAME` is a
+        sequence of non-blank printable ASCII characters not    containing '{'
+        or '}'.
+      valueType: Whether the measurement is an integer, a floating-point number,
+        etc.
     """
 
     class MetricKindValueValuesEnum(_messages.Enum):
-        """Whether the metric records instantaneous values, changes to a
-        value, etc.
+        """Whether the metric records instantaneous values, changes to a value,
+        etc.
 
         Values:
           METRIC_KIND_UNSPECIFIED: Do not use this default value.
           GAUGE: Instantaneous measurements of a varying quantity.
           DELTA: Changes over non-overlapping time intervals.
-          CUMULATIVE: Cumulative value over time intervals that can overlap.
-            The overlapping intervals must have the same start time.
+          CUMULATIVE: Cumulative value over time intervals that can overlap. The
+            overlapping intervals must have the same start time.
         """
         METRIC_KIND_UNSPECIFIED = 0
         GAUGE = 1
@@ -1567,20 +1544,19 @@ class MetricDescriptor(_messages.Message):
         CUMULATIVE = 3
 
     class ValueTypeValueValuesEnum(_messages.Enum):
-        """Whether the measurement is an integer, a floating-point number,
-        etc.
+        """Whether the measurement is an integer, a floating-point number, etc.
 
-        Values:
-          VALUE_TYPE_UNSPECIFIED: Do not use this default value.
-          BOOL: The value is a boolean. This value type can be used only if
-            the metric kind is `GAUGE`.
-          INT64: The value is a signed 64-bit integer.
-          DOUBLE: The value is a double precision floating point number.
-          STRING: The value is a text string. This value type can be used only
-            if the metric kind is `GAUGE`.
-          DISTRIBUTION: The value is a distribution.
-          MONEY: The value is money.
-        """
+      Values:
+        VALUE_TYPE_UNSPECIFIED: Do not use this default value.
+        BOOL: The value is a boolean. This value type can be used only if the
+          metric kind is `GAUGE`.
+        INT64: The value is a signed 64-bit integer.
+        DOUBLE: The value is a double precision floating point number.
+        STRING: The value is a text string. This value type can be used only if
+          the metric kind is `GAUGE`.
+        DISTRIBUTION: The value is a `Distribution`.
+        MONEY: The value is money.
+      """
         VALUE_TYPE_UNSPECIFIED = 0
         BOOL = 1
         INT64 = 2
@@ -1646,8 +1622,7 @@ class MetricValue(_messages.Message):
             key = _messages.StringField(1)
             value = _messages.StringField(2)
 
-        additionalProperties = _messages.MessageField('AdditionalProperty', 1,
-                                                      repeated=True)
+        additionalProperties = _messages.MessageField('AdditionalProperty', 1, repeated=True)
 
     boolValue = _messages.BooleanField(1)
     distributionValue = _messages.MessageField('Distribution', 2)
@@ -1678,31 +1653,30 @@ class Mixin(_messages.Message):
     """Declares an API to be included in this API. The including API must
     redeclare all the methods from the included API, but documentation and
     options are inherited as follows:  - If after comment and whitespace
-    stripping, the documentation   string of the redeclared method is empty,
-    it will be inherited   from the original method.  - Each annotation
-    belonging to the service config (http,   visibility) which is not set in
-    the redeclared method will be   inherited.  - If an http annotation is
+    stripping, the documentation   string of the redeclared method is empty, it
+    will be inherited   from the original method.  - Each annotation belonging
+    to the service config (http,   visibility) which is not set in the
+    redeclared method will be   inherited.  - If an http annotation is
     inherited, the path pattern will be   modified as follows. Any version
-    prefix will be replaced by the   version of the including API plus the
-    root path if specified.  Example of a simple mixin:      package
-    google.acl.v1;     service AccessControl {       // Get the underlying ACL
-    object.       rpc GetAcl(GetAclRequest) returns (Acl) {         option
-    (google.api.http).get = "/v1/{resource=**}:getAcl";       }     }
-    package google.storage.v2;     service Storage {       //       rpc
-    GetAcl(GetAclRequest) returns (Acl);        // Get a data record.
-    rpc GetData(GetDataRequest) returns (Data) {         option
-    (google.api.http).get = "/v2/{resource=**}";       }     }  Example of a
-    mixin configuration:      apis:     - name: google.storage.v2.Storage
+    prefix will be replaced by the   version of the including API plus the root
+    path if specified.  Example of a simple mixin:      package google.acl.v1;
+    service AccessControl {       // Get the underlying ACL object.       rpc
+    GetAcl(GetAclRequest) returns (Acl) {         option (google.api.http).get =
+    "/v1/{resource=**}:getAcl";       }     }      package google.storage.v2;
+    service Storage {       //       rpc GetAcl(GetAclRequest) returns (Acl);
+    // Get a data record.       rpc GetData(GetDataRequest) returns (Data) {
+    option (google.api.http).get = "/v2/{resource=**}";       }     }  Example
+    of a mixin configuration:      apis:     - name: google.storage.v2.Storage
     mixins:       - name: google.acl.v1.AccessControl  The mixin construct
-    implies that all methods in `AccessControl` are also declared with same
-    name and request/response types in `Storage`. A documentation generator or
+    implies that all methods in `AccessControl` are also declared with same name
+    and request/response types in `Storage`. A documentation generator or
     annotation processor will see the effective `Storage.GetAcl` method after
     inherting documentation and annotations as follows:      service Storage {
     // Get the underlying ACL object.       rpc GetAcl(GetAclRequest) returns
     (Acl) {         option (google.api.http).get = "/v2/{resource=**}:getAcl";
     }       ...     }  Note how the version in the path pattern changed from
-    `v1` to `v2`.  If the `root` field in the mixin is specified, it should be
-    a relative path under which inherited HTTP paths are placed. Example:
+    `v1` to `v2`.  If the `root` field in the mixin is specified, it should be a
+    relative path under which inherited HTTP paths are placed. Example:
     apis:     - name: google.storage.v2.Storage       mixins:       - name:
     google.acl.v1.AccessControl         root: acls  This implies the following
     inherited HTTP annotation:      service Storage {       // Get the
@@ -1726,11 +1700,11 @@ class Money(_messages.Message):
     Fields:
       currencyCode: The 3-letter currency code defined in ISO 4217.
       nanos: Number of nano (10^-9) units of the amount. The value must be
-        between -999,999,999 and +999,999,999 inclusive. If `units` is
-        positive, `nanos` must be positive or zero. If `units` is zero,
-        `nanos` can be positive, zero, or negative. If `units` is negative,
-        `nanos` must be negative or zero. For example $-1.75 is represented as
-        `units`=-1 and `nanos`=-750,000,000.
+        between -999,999,999 and +999,999,999 inclusive. If `units` is positive,
+        `nanos` must be positive or zero. If `units` is zero, `nanos` can be
+        positive, zero, or negative. If `units` is negative, `nanos` must be
+        negative or zero. For example $-1.75 is represented as `units`=-1 and
+        `nanos`=-750,000,000.
       units: The whole units of the amount. For example if `currencyCode` is
         `"USD"`, then 1 unit is one US dollar.
     """
@@ -1741,20 +1715,31 @@ class Money(_messages.Message):
 
 
 class MonitoredResourceDescriptor(_messages.Message):
-    """A descriptor that describes the schema of MonitoredResource.
+    """An object that describes the schema of a MonitoredResource object using a
+    type name and a set of labels.  For example, the monitored resource
+    descriptor for Google Compute Engine VM instances has a type of
+    `"gce_instance"` and specifies the use of the labels `"instance_id"` and
+    `"zone"` to identify particular VM instances.  Different APIs can support
+    different monitored resource types. APIs generally provide a `list` method
+    that returns the monitored resource descriptors used by the API.
 
     Fields:
-      description: A detailed description of the monitored resource type that
-        can be used in documentation.
-      displayName: A concise name for the monitored resource type that can be
-        displayed in user interfaces. For example, `"Google Cloud SQL
+      description: Optional. A detailed description of the monitored resource
+        type that might be used in documentation.
+      displayName: Optional. A concise name for the monitored resource type that
+        might be displayed in user interfaces. For example, `"Google Cloud SQL
         Database"`.
-      labels: A set of labels that can be used to describe instances of this
-        monitored resource type. For example, Google Cloud SQL databases can
-        be labeled with their `"database_id"` and their `"zone"`.
-      name: Resource name of the monitored resource descriptor. For example:
-        projects/{project_id}/monitoredResourceDescriptors/{type}
-      type: The monitored resource type. For example, the type
+      labels: Required. A set of labels used to describe instances of this
+        monitored resource type. For example, an individual Google Cloud SQL
+        database is identified by values for the labels `"database_id"` and
+        `"zone"`.
+      name: Optional. The resource name of the monitored resource descriptor:
+        `"projects/{project_id}/monitoredResourceDescriptors/{type}"` where
+        {type} is the value of the `type` field in this object and {project_id}
+        is a project ID that provides API-specific context for accessing the
+        type.  APIs that do not use project information can use the resource
+        name format `"monitoredResourceDescriptors/{type}"`.
+      type: Required. The monitored resource type. For example, the type
         `"cloudsql_database"` represents databases in Google Cloud SQL.
     """
 
@@ -1766,17 +1751,17 @@ class MonitoredResourceDescriptor(_messages.Message):
 
 
 class Monitoring(_messages.Message):
-    """Monitoring configuration of the service.  The example below shows how
-    to configure monitored resources and metrics for monitoring. In the
-    example, a monitored resource and two metrics are defined. The
-    `library.googleapis.com/book/returned_count` metric is sent to both
-    producer and consumer projects, whereas the
+    """Monitoring configuration of the service.  The example below shows how to
+    configure monitored resources and metrics for monitoring. In the example, a
+    monitored resource and two metrics are defined. The
+    `library.googleapis.com/book/returned_count` metric is sent to both producer
+    and consumer projects, whereas the
     `library.googleapis.com/book/overdue_count` metric is only sent to the
     consumer project.      monitored_resources:     - type:
     library.googleapis.com/branch       labels:       - key: /city
     description: The city where the library branch is located in.       - key:
-    /name         description: The name of the branch.     metrics:     -
-    name: library.googleapis.com/book/returned_count       metric_kind: DELTA
+    /name         description: The name of the branch.     metrics:     - name:
+    library.googleapis.com/book/returned_count       metric_kind: DELTA
     value_type: INT64       labels:       - key: /customer_id     - name:
     library.googleapis.com/book/overdue_count       metric_kind: GAUGE
     value_type: INT64       labels:       - key: /customer_id     monitoring:
@@ -1788,25 +1773,23 @@ class Monitoring(_messages.Message):
     library.googleapis.com/book/overdue_count
 
     Fields:
-      consumerDestinations: Monitoring configurations for sending metrics to
-        the consumer project. There can be multiple consumer destinations,
-        each one must have a different monitored resource type. A metric can
-        be used in at most one consumer destination.
-      producerDestinations: Monitoring configurations for sending metrics to
-        the producer project. There can be multiple producer destinations,
-        each one must have a different monitored resource type. A metric can
-        be used in at most one producer destination.
+      consumerDestinations: Monitoring configurations for sending metrics to the
+        consumer project. There can be multiple consumer destinations, each one
+        must have a different monitored resource type. A metric can be used in
+        at most one consumer destination.
+      producerDestinations: Monitoring configurations for sending metrics to the
+        producer project. There can be multiple producer destinations, each one
+        must have a different monitored resource type. A metric can be used in
+        at most one producer destination.
     """
 
-    consumerDestinations = _messages.MessageField('MonitoringDestination', 1,
-                                                  repeated=True)
-    producerDestinations = _messages.MessageField('MonitoringDestination', 2,
-                                                  repeated=True)
+    consumerDestinations = _messages.MessageField('MonitoringDestination', 1, repeated=True)
+    producerDestinations = _messages.MessageField('MonitoringDestination', 2, repeated=True)
 
 
 class MonitoringDestination(_messages.Message):
-    """Configuration of a specific monitoring destination (the producer
-    project or the consumer project).
+    """Configuration of a specific monitoring destination (the producer project
+    or the consumer project).
 
     Fields:
       metrics: Names of the metrics to report to this monitoring destination.
@@ -1821,19 +1804,19 @@ class MonitoringDestination(_messages.Message):
 
 class OAuthRequirements(_messages.Message):
     """OAuth scopes are a way to define data and permissions on data. For
-    example, there are scopes defined for "Read-only access to Google
-    Calendar" and "Access to Cloud Platform". Users can consent to a scope for
-    an application, giving it permission to access that data on their behalf.
-    OAuth scope specifications should be fairly coarse grained; a user will
-    need to see and understand the text description of what your scope means.
-    In most cases: use one or at most two OAuth scopes for an entire family of
-    products. If your product has multiple APIs, you should probably be
-    sharing the OAuth scope across all of those APIs.  When you need finer
-    grained OAuth consent screens: talk with your product management about how
-    developers will use them in practice.  Please note that even though each
-    of the canonical scopes is enough for a request to be accepted and passed
-    to the backend, a request can still fail due to the backend requiring
-    additional scopes or permissions.
+    example, there are scopes defined for "Read-only access to Google Calendar"
+    and "Access to Cloud Platform". Users can consent to a scope for an
+    application, giving it permission to access that data on their behalf.
+    OAuth scope specifications should be fairly coarse grained; a user will need
+    to see and understand the text description of what your scope means.  In
+    most cases: use one or at most two OAuth scopes for an entire family of
+    products. If your product has multiple APIs, you should probably be sharing
+    the OAuth scope across all of those APIs.  When you need finer grained OAuth
+    consent screens: talk with your product management about how developers will
+    use them in practice.  Please note that even though each of the canonical
+    scopes is enough for a request to be accepted and passed to the backend, a
+    request can still fail due to the backend requiring additional scopes or
+    permissions.
 
     Fields:
       canonicalScopes: The list of publicly documented OAuth scopes that are
@@ -1854,69 +1837,47 @@ class Operation(_messages.Message):
         operation.
 
     Messages:
-      LabelsValue: Labels describing the operation. The names of these labels
-        are either defined and documented by Google Cloud Platform, or defined
-        in the service configuration. Any label whose name is not known to the
-        system is ignored. Besides defining service-specific label keys, the
-        service configuration also specifies what set of labels are used in
-        which metrics.  The set of labels here and the set of labels in
-        MetricValue and LogEntry form a hierarchy of overrides. The effective
-        set of labels in a MetricValue is the union of this label set and the
-        label set in the MetricValue. If a label key appears in both sets,
-        then the value of the label in this set is ignored and the one in the
-        MetricValue is used. Same for LogEntry.  Example of a label defined by
-        Google Cloud Platform:     compute.googleapis.com/instance_type:
-        "n1-standard-1"
+      LabelsValue: Labels describing the operation. Only the following labels
+        are allowed:  Labels describing the monitored resource. The labels must
+        be defined in the service configuration.  Default labels of the metric
+        values. When specified, labels defined in the metric value overrule.
+        Labels are defined and documented by Google Cloud Platform. For example:
+        `cloud.googleapis.com/location: "us-east1"`.
 
     Fields:
-      consumerId: Identity of the consumer who is using the service. This
-        field should be filled in for the operations initiated by a consumer,
-        but not for service initiated operations that are not related to a
-        specific consumer.  The accepted format is dependent on the
-        implementation. The Google Service Control implementation accepts four
-        forms: "project:<project_id>", "project_number:<project_number>",
+      consumerId: Identity of the consumer who is using the service. This field
+        should be filled in for the operations initiated by a consumer, but not
+        for service initiated operations that are not related to a specific
+        consumer.  The accepted format is dependent on the implementation. The
+        Google Service Control implementation accepts four forms:
+        "project:<project_id>", "project_number:<project_number>",
         "api_key:<api_key>" and "spatula_header:<spatula_header>".
-      endTime: End time of the operation. Required when the operation is used
-        in ControllerService.Report, but optional when the operation is used
-        in ControllerService.Check.
+      endTime: End time of the operation. Required when the operation is used in
+        ControllerService.Report, but optional when the operation is used in
+        ControllerService.Check.
       importance: The importance of the data contained in the operation.
-      labels: Labels describing the operation. The names of these labels are
-        either defined and documented by Google Cloud Platform, or defined in
-        the service configuration. Any label whose name is not known to the
-        system is ignored. Besides defining service-specific label keys, the
-        service configuration also specifies what set of labels are used in
-        which metrics.  The set of labels here and the set of labels in
-        MetricValue and LogEntry form a hierarchy of overrides. The effective
-        set of labels in a MetricValue is the union of this label set and the
-        label set in the MetricValue. If a label key appears in both sets,
-        then the value of the label in this set is ignored and the one in the
-        MetricValue is used. Same for LogEntry.  Example of a label defined by
-        Google Cloud Platform:     compute.googleapis.com/instance_type:
-        "n1-standard-1"
-      logEntries: Represents information to be logged.  LogEntry.log field is
-        required to specify the name of the log resource. If
-        LogEntry.insert_id is not specified, the implementation will generate
-        one based on operation_id.  The only fields useful in LogEntryMetadata
-        are timestamp, severity, and labels, all other fields are ignored. If
-        LogEntryMetadata.timestamp is not specified, Operation.end_time value
-        is used in its place.
+      labels: Labels describing the operation. Only the following labels are
+        allowed:  Labels describing the monitored resource. The labels must be
+        defined in the service configuration.  Default labels of the metric
+        values. When specified, labels defined in the metric value overrule.
+        Labels are defined and documented by Google Cloud Platform. For example:
+        `cloud.googleapis.com/location: "us-east1"`.
+      logEntries: Represents information to be logged.
       metricValueSets: Represents information about this operation. Each
         MetricValueSet corresponds to a metric defined in the service
-        configuration. The data type used in the MetricValueSet must agree
-        with the data type specified in the metric definition.  Within a
-        single operation, it is not allowed to have more than one MetricValue
-        instances that have the same metric names and identical label value
-        combinations. The existence of such duplicated MetricValue instances
-        in a request causes the entire request being rejected with an invalid
-        argument error.
-      operationId: Identity of the operation. It must be unique within the
-        scope of the service that the operation is generated. If the service
-        calls Check() and Report() on the same operation, the two calls should
-        carry the same id.  UUID version 4 is recommended, though not
-        required. In the scenarios where an operation is computed from
-        existing information and an idempotent id is desirable for
-        deduplication purpose, UUID version 5 is recommended. See RFC 4122 for
-        details.
+        configuration. The data type used in the MetricValueSet must agree with
+        the data type specified in the metric definition.  Within a single
+        operation, it is not allowed to have more than one MetricValue instances
+        that have the same metric names and identical label value combinations.
+        The existence of such duplicated MetricValue instances in a request
+        causes the entire request being rejected with an invalid argument error.
+      operationId: Identity of the operation. It must be unique within the scope
+        of the service that the operation is generated. If the service calls
+        Check() and Report() on the same operation, the two calls should carry
+        the same id.  UUID version 4 is recommended, though not required. In the
+        scenarios where an operation is computed from existing information and
+        an idempotent id is desirable for deduplication purpose, UUID version 5
+        is recommended. See RFC 4122 for details.
       operationName: Fully qualified name of the operation. Example of an RPC
         method name used as operation name:
         google.example.library.v1.LibraryService.CreateShelf Example of a
@@ -1931,34 +1892,27 @@ class Operation(_messages.Message):
         """The importance of the data contained in the operation.
 
         Values:
-          LOW: The operation doesn't contain significant monetary value or
-            audit trail. The API implementation may cache and aggregate the
-            data. There is no deduplication based on `operation_id`. The data
-            may be lost when rare and unexpected system failures occur.
-          HIGH: The operation contains significant monetary value or audit
-            trail. The API implementation doesn't cache and aggregate the
-            data. Deduplication based on `operation_id` is performed for
-            monetary values. If the method returns successfully, it's
-            guaranteed that the data are persisted in durable storage.
+          LOW: The operation doesn't contain significant monetary value or audit
+            trail. The API implementation may cache and aggregate the data. There
+            is no deduplication based on `operation_id`. The data may be lost when
+            rare and unexpected system failures occur.
+          HIGH: The operation contains significant monetary value or audit trail.
+            The API implementation doesn't cache and aggregate the data.
+            Deduplication based on `operation_id` is performed for monetary
+            values. If the method returns successfully, it's guaranteed that the
+            data are persisted in durable storage.
         """
         LOW = 0
         HIGH = 1
 
     @encoding.MapUnrecognizedFields('additionalProperties')
     class LabelsValue(_messages.Message):
-        """Labels describing the operation. The names of these labels are
-        either defined and documented by Google Cloud Platform, or defined in
-        the service configuration. Any label whose name is not known to the
-        system is ignored. Besides defining service-specific label keys, the
-        service configuration also specifies what set of labels are used in
-        which metrics.  The set of labels here and the set of labels in
-        MetricValue and LogEntry form a hierarchy of overrides. The effective
-        set of labels in a MetricValue is the union of this label set and the
-        label set in the MetricValue. If a label key appears in both sets,
-        then the value of the label in this set is ignored and the one in the
-        MetricValue is used. Same for LogEntry.  Example of a label defined by
-        Google Cloud Platform:     compute.googleapis.com/instance_type:
-        "n1-standard-1"
+        """Labels describing the operation. Only the following labels are allowed:
+        Labels describing the monitored resource. The labels must be defined in
+        the service configuration.  Default labels of the metric values. When
+        specified, labels defined in the metric value overrule.  Labels are
+        defined and documented by Google Cloud Platform. For example:
+        `cloud.googleapis.com/location: "us-east1"`.
 
         Messages:
           AdditionalProperty: An additional property for a LabelsValue object.
@@ -1978,8 +1932,7 @@ class Operation(_messages.Message):
             key = _messages.StringField(1)
             value = _messages.StringField(2)
 
-        additionalProperties = _messages.MessageField('AdditionalProperty', 1,
-                                                      repeated=True)
+        additionalProperties = _messages.MessageField('AdditionalProperty', 1, repeated=True)
 
     consumerId = _messages.StringField(1)
     endTime = _messages.StringField(2)
@@ -2013,8 +1966,8 @@ class Option(_messages.Message):
           AdditionalProperty: An additional property for a ValueValue object.
 
         Fields:
-          additionalProperties: Properties of the object. Contains field @ype
-            with type URL.
+          additionalProperties: Properties of the object. Contains field @ype with
+            type URL.
         """
 
         class AdditionalProperty(_messages.Message):
@@ -2028,31 +1981,29 @@ class Option(_messages.Message):
             key = _messages.StringField(1)
             value = _messages.MessageField('extra_types.JsonValue', 2)
 
-        additionalProperties = _messages.MessageField('AdditionalProperty', 1,
-                                                      repeated=True)
+        additionalProperties = _messages.MessageField('AdditionalProperty', 1, repeated=True)
 
     name = _messages.StringField(1)
     value = _messages.MessageField('ValueValue', 2)
 
 
 class Page(_messages.Message):
-    """Represents a documentation page. A page can contain subpages to
-    represent nested documentation set structure.
+    """Represents a documentation page. A page can contain subpages to represent
+    nested documentation set structure.
 
     Fields:
       content: The Markdown content of the page. You can use <code>&#40;==
         include {path} ==&#41;</code> to include content from a Markdown file.
-      name: The name of the page. It will be used as an identity of the page
-        to generate URI of the page, text of the link to this page in
-        navigation, etc. The full page name (start from the root page name to
-        this page concatenated with `.`) can be used as reference to the page
-        in your documentation. For example: <pre><code>pages: - name: Tutorial
-        content: &#40;== include tutorial.md ==&#41;   subpages:   - name:
-        Java     content: &#40;== include tutorial_java.md ==&#41;
-        </code></pre> You can reference `Java` page using Markdown reference
-        link syntax: `Java`.
-      subpages: Subpages of this page. The order of subpages specified here
-        will be honored in the generated docset.
+      name: The name of the page. It will be used as an identity of the page to
+        generate URI of the page, text of the link to this page in navigation,
+        etc. The full page name (start from the root page name to this page
+        concatenated with `.`) can be used as reference to the page in your
+        documentation. For example: <pre><code>pages: - name: Tutorial
+        content: &#40;== include tutorial.md ==&#41;   subpages:   - name: Java
+        content: &#40;== include tutorial_java.md ==&#41; </code></pre> You can
+        reference `Java` page using Markdown reference link syntax: `Java`.
+      subpages: Subpages of this page. The order of subpages specified here will
+        be honored in the generated docset.
     """
 
     content = _messages.StringField(1)
@@ -2066,11 +2017,11 @@ class ProjectProperties(_messages.Message):
     differently depending on some properties on the project. For example, a
     project may be associated with a school, or a business, or a government
     agency, a business type property on the project may affect how a service
-    responds to the client. This descriptor defines which properties are
-    allowed to be set on a project.  Example:     project_properties:
-    properties:      - name: NO_WATERMARK        type: BOOL
-    description: Allows usage of the API without watermarks.      - name:
-    EXTENDED_TILE_CACHE_PERIOD        type: INT64
+    responds to the client. This descriptor defines which properties are allowed
+    to be set on a project.  Example:     project_properties:      properties:
+    - name: NO_WATERMARK        type: BOOL        description: Allows usage of
+    the API without watermarks.      - name: EXTENDED_TILE_CACHE_PERIOD
+    type: INT64
 
     Fields:
       properties: List of per consumer project-specific properties.
@@ -2080,13 +2031,13 @@ class ProjectProperties(_messages.Message):
 
 
 class Property(_messages.Message):
-    """Defines project properties.  API services can define properties that
-    can be assigned to consumer projects so that backends can perform response
-    customization without having to make additional calls or maintain
-    additional storage. For example, Maps API defines properties that controls
-    map tile cache period, or whether to embed a watermark in a result.  These
-    values can be set via API producer console. Only API providers can define
-    and set these properties.
+    """Defines project properties.  API services can define properties that can
+    be assigned to consumer projects so that backends can perform response
+    customization without having to make additional calls or maintain additional
+    storage. For example, Maps API defines properties that controls map tile
+    cache period, or whether to embed a watermark in a result.  These values can
+    be set via API producer console. Only API providers can define and set these
+    properties.
 
     Enums:
       TypeValueValuesEnum: The type of this property.
@@ -2121,53 +2072,51 @@ class Property(_messages.Message):
 class Quota(_messages.Message):
     """Quota configuration helps to achieve fairness and budgeting in service
     usage.  - Fairness is achieved through the use of short-term quota limits
-    that are usually defined over a time window of several seconds or
-    minutes. When such a limit is applied, for example at the user   level, it
-    ensures that no single user will monopolize the service   or a given
-    customer's allocated portion of it. - Budgeting is achieved through the
-    use of long-term quota limits   that are usually defined over a time
-    window of one or more   days. These limits help client application
-    developers predict the   usage and help budgeting.  Quota enforcement uses
-    a simple token-based algorithm for resource sharing.  The quota
-    configuration structure is as follows:  - `QuotaLimit` defines a single
-    enforceable limit with a specified   token amount that can be consumed
-    over a specific duration and   applies to a particular entity, like a
-    project or an end user. If   the limit applies to a user, each user making
-    the request will   get the specified number of tokens to consume. When the
-    tokens   run out, the requests from that user will be blocked until the
-    duration elapses and the next duration window starts.  - `QuotaGroup`
-    groups a set of quota limits.  - `QuotaRule` maps a method to a set of
-    quota groups. This allows   sharing of quota groups across methods as well
-    as one method   consuming tokens from more than one quota group. When a
-    group   contains multiple limits, requests to a method consuming tokens
-    from that group must satisfy all the limits in that group.  Example:
-    quota:       groups:       - name: ReadGroup         limits:         -
-    description: Daily Limit           name: ProjectQpd
+    that are usually defined over a time window of several seconds or   minutes.
+    When such a limit is applied, for example at the user   level, it ensures
+    that no single user will monopolize the service   or a given customer's
+    allocated portion of it. - Budgeting is achieved through the use of long-
+    term quota limits   that are usually defined over a time window of one or
+    more   days. These limits help client application developers predict the
+    usage and help budgeting.  Quota enforcement uses a simple token-based
+    algorithm for resource sharing.  The quota configuration structure is as
+    follows:  - `QuotaLimit` defines a single enforceable limit with a specified
+    token amount that can be consumed over a specific duration and   applies to
+    a particular entity, like a project or an end user. If   the limit applies
+    to a user, each user making the request will   get the specified number of
+    tokens to consume. When the tokens   run out, the requests from that user
+    will be blocked until the   duration elapses and the next duration window
+    starts.  - `QuotaGroup` groups a set of quota limits.  - `QuotaRule` maps a
+    method to a set of quota groups. This allows   sharing of quota groups
+    across methods as well as one method   consuming tokens from more than one
+    quota group. When a group   contains multiple limits, requests to a method
+    consuming tokens   from that group must satisfy all the limits in that
+    group.  Example:      quota:       groups:       - name: ReadGroup
+    limits:         - description: Daily Limit           name: ProjectQpd
     default_limit: 10000           duration: 1d           limit_by:
     CLIENT_PROJECT          - description: Per-second Limit           name:
     UserQps           default_limit: 20000           duration: 100s
     limit_by: USER        - name: WriteGroup         limits:         -
-    description: Daily Limit           name: ProjectQpd
-    default_limit: 1000           max_limit: 1000           duration: 1d
-    limit_by: CLIENT_PROJECT          - description: Per-second Limit
-    name: UserQps           default_limit: 2000           max_limit: 4000
-    duration: 100s           limit_by: USER        rules:       - selector:
-    "*"         groups:         - group: ReadGroup       - selector:
-    google.calendar.Calendar.Update         groups:         - group:
-    WriteGroup           cost: 2       - selector:
-    google.calendar.Calendar.Delete         groups:         - group:
-    WriteGroup  Here, the configuration defines two quota groups: ReadGroup
-    and WriteGroup, each defining its own daily and per-second limits. Note
-    that One Platform enforces per-second limits averaged over a duration of
-    100 seconds. The rules map ReadGroup for all methods, except for the
+    description: Daily Limit           name: ProjectQpd           default_limit:
+    1000           max_limit: 1000           duration: 1d           limit_by:
+    CLIENT_PROJECT          - description: Per-second Limit           name:
+    UserQps           default_limit: 2000           max_limit: 4000
+    duration: 100s           limit_by: USER        rules:       - selector: "*"
+    groups:         - group: ReadGroup       - selector:
+    google.calendar.Calendar.Update         groups:         - group: WriteGroup
+    cost: 2       - selector: google.calendar.Calendar.Delete         groups:
+    - group: WriteGroup  Here, the configuration defines two quota groups:
+    ReadGroup and WriteGroup, each defining its own daily and per-second limits.
+    Note that One Platform enforces per-second limits averaged over a duration
+    of 100 seconds. The rules map ReadGroup for all methods, except for the
     Update and Delete methods. These two methods consume from WriteGroup, with
-    Update method consuming at twice the rate as Delete method.  Multiple
-    quota groups can be specified for a method. The quota limits in all of
-    those groups will be enforced. Example:      quota:       groups:       -
-    name: WriteGroup         limits:         - description: Daily Limit
+    Update method consuming at twice the rate as Delete method.  Multiple quota
+    groups can be specified for a method. The quota limits in all of those
+    groups will be enforced. Example:      quota:       groups:       - name:
+    WriteGroup         limits:         - description: Daily Limit
     name: ProjectQpd           default_limit: 1000           max_limit: 1000
-    duration: 1d           limit_by: CLIENT_PROJECT          - description:
-    Per-second Limit           name: UserQps           default_limit: 2000
+    duration: 1d           limit_by: CLIENT_PROJECT          - description: Per-
+    second Limit           name: UserQps           default_limit: 2000
     max_limit: 4000           duration: 100s           limit_by: USER        -
     name: StorageGroup         limits:         - description: Storage Quota
     name: StorageQuota           default_limit: 1000           duration: 0
@@ -2175,19 +2124,19 @@ class Quota(_messages.Message):
     google.calendar.Calendar.Create         groups:         - group:
     StorageGroup         - group: WriteGroup       - selector:
     google.calendar.Calendar.Delete         groups:         - group:
-    StorageGroup  In the above example, the Create and Delete methods manage
-    the user's storage space. In addition, Create method uses WriteGroup to
-    manage the requests. In this case, requests to Create method need to
-    satisfy all quota limits defined in both quota groups.  One can disable
-    quota for selected method(s) identified by the selector by setting
-    disable_quota to ture. For example,        rules:       - selector: "*"
-    group:         - group ReadGroup       - selector:
-    google.calendar.Calendar.Select         disable_quota: true
+    StorageGroup  In the above example, the Create and Delete methods manage the
+    user's storage space. In addition, Create method uses WriteGroup to manage
+    the requests. In this case, requests to Create method need to satisfy all
+    quota limits defined in both quota groups.  One can disable quota for
+    selected method(s) identified by the selector by setting disable_quota to
+    ture. For example,        rules:       - selector: "*"         group:
+    - group ReadGroup       - selector: google.calendar.Calendar.Select
+    disable_quota: true
 
     Fields:
       groups: List of `QuotaGroup` definitions for the service.
-      rules: List of `QuotaRule` definitions, each one mapping a selected
-        method to one or more quota groups.
+      rules: List of `QuotaRule` definitions, each one mapping a selected method
+        to one or more quota groups.
     """
 
     groups = _messages.MessageField('QuotaGroup', 1, repeated=True)
@@ -2198,19 +2147,19 @@ class QuotaGroup(_messages.Message):
     """`QuotaGroup` defines a set of quota limits to enforce.
 
     Fields:
-      billable: Indicates if the quota limits defined in this quota group
-        apply to consumers who have active billing. Quota limits defined in
-        billable groups will be applied only to consumers who have active
-        billing. The amount of tokens consumed from billable quota group will
-        also be reported for billing. Quota limits defined in non-billable
-        groups will be applied only to consumers who have no active billing.
+      billable: Indicates if the quota limits defined in this quota group apply
+        to consumers who have active billing. Quota limits defined in billable
+        groups will be applied only to consumers who have active billing. The
+        amount of tokens consumed from billable quota group will also be
+        reported for billing. Quota limits defined in non-billable groups will
+        be applied only to consumers who have no active billing.
       description: User-visible description of this quota group.
       limits: Quota limits to be enforced when this quota group is used. A
         request must satisfy all the limits in a group for it to be permitted.
-      name: Name of this quota group. Must be unique within the service.
-        Quota group name is used as part of the id for quota limits. Once the
-        quota group has been put into use, the name of the quota group should
-        be immutable.
+      name: Name of this quota group. Must be unique within the service.  Quota
+        group name is used as part of the id for quota limits. Once the quota
+        group has been put into use, the name of the quota group should be
+        immutable.
     """
 
     billable = _messages.BooleanField(1)
@@ -2223,13 +2172,11 @@ class QuotaGroupMapping(_messages.Message):
     """A quota group mapping.
 
     Fields:
-      cost: Number of tokens to consume for each request. This allows
-        different cost to be associated with different methods that consume
-        from the same quota group. By default, each request will cost one
-        token.
-      group: The `QuotaGroup.name` of the group. Requests for the mapped
-        methods will consume tokens from each of the limits defined in this
-        group.
+      cost: Number of tokens to consume for each request. This allows different
+        cost to be associated with different methods that consume from the same
+        quota group. By default, each request will cost one token.
+      group: The `QuotaGroup.name` of the group. Requests for the mapped methods
+        will consume tokens from each of the limits defined in this group.
     """
 
     cost = _messages.IntegerField(1, variant=_messages.Variant.INT32)
@@ -2238,29 +2185,34 @@ class QuotaGroupMapping(_messages.Message):
 
 class QuotaLimit(_messages.Message):
     """`QuotaLimit` defines a specific limit that applies over a specified
-    duration for a limit type. There can be at most one limit for a duration
-    and limit type combination defined within a `QuotaGroup`.
+    duration for a limit type. There can be at most one limit for a duration and
+    limit type combination defined within a `QuotaGroup`.
 
     Enums:
-      LimitByValueValuesEnum: Limit type to use for enforcing this quota
-        limit. Each unique value gets the defined number of tokens to consume
-        from. For a quota limit that uses user type, each user making requests
-        through the same client application project will get his/her own pool
-        of tokens to consume, whereas for a limit that uses client project
-        type, all users making requests through the same client application
-        project share a single pool of tokens.
+      LimitByValueValuesEnum: Limit type to use for enforcing this quota limit.
+        Each unique value gets the defined number of tokens to consume from. For
+        a quota limit that uses user type, each user making requests through the
+        same client application project will get his/her own pool of tokens to
+        consume, whereas for a limit that uses client project type, all users
+        making requests through the same client application project share a
+        single pool of tokens.
 
     Fields:
       defaultLimit: Default number of tokens that can be consumed during the
-        specified duration. This is the number of tokens assigned when a
-        client application developer activates the service for his/her
-        project.  Specifying a value of 0 will block all requests. This can be
-        used if you are provisioning quota to selected consumers and blocking
-        others. Similarly, a value of -1 will indicate an unlimited quota. No
-        other negative values are allowed.
-      description: User-visible description for this quota limit.
-      displayName: The UI display name of the limit. If empty, client should
-        use 'name' field instead.
+        specified duration. This is the number of tokens assigned when a client
+        application developer activates the service for his/her project.
+        Specifying a value of 0 will block all requests. This can be used if you
+        are provisioning quota to selected consumers and blocking others.
+        Similarly, a value of -1 will indicate an unlimited quota. No other
+        negative values are allowed.
+      description: Optional. User-visible, extended description for this quota
+        limit. Should be used only when more context is needed to understand
+        this limit than provided by the limit's display name (see:
+        `display_name`).
+      displayName: User-visible display name for this limit. Optional. If not
+        set, the UI will provide a default display name based on the quota
+        configuration. This field can be used to override the default display
+        name generated from the configuration.
       duration: Duration of this limit in textual notation. Example: "100s",
         "24h", "1d". For duration longer than a day, only multiple of days is
         supported. We support only "100s" and "1d" for now. Additional support
@@ -2268,9 +2220,9 @@ class QuotaLimit(_messages.Message):
       freeTier: Free tier value displayed in the Developers Console for this
         limit. The free tier is the number of tokens that will be subtracted
         from the billed amount when billing is enabled. This field can only be
-        set on a limit with duration "1d", in a billable group; it is invalid
-        on any other limit. If this field is not set, it defaults to 0,
-        indicating that there is no free tier for this service.
+        set on a limit with duration "1d", in a billable group; it is invalid on
+        any other limit. If this field is not set, it defaults to 0, indicating
+        that there is no free tier for this service.
       limitBy: Limit type to use for enforcing this quota limit. Each unique
         value gets the defined number of tokens to consume from. For a quota
         limit that uses user type, each user making requests through the same
@@ -2280,29 +2232,29 @@ class QuotaLimit(_messages.Message):
         single pool of tokens.
       maxLimit: Maximum number of tokens that can be consumed during the
         specified duration. Client application developers can override the
-        default limit up to this maximum. If specified, this value cannot be
-        set to a value less than the default limit. If not specified, it is
-        set to the default limit.  To allow clients to apply overrides with no
-        upper bound, set this to -1, indicating unlimited maximum quota.
+        default limit up to this maximum. If specified, this value cannot be set
+        to a value less than the default limit. If not specified, it is set to
+        the default limit.  To allow clients to apply overrides with no upper
+        bound, set this to -1, indicating unlimited maximum quota.
       name: Name of the quota limit.  Must be unique within the quota group.
         This name is used to refer to the limit when overriding the limit on a
-        per-project basis.  If a name is not provided, it will be generated
-        from the limit_by and duration fields.  The maximum length of the
-        limit name is 64 characters.  The name of a limit is used as a unique
-        identifier for this limit. Therefore, once a limit has been put into
-        use, its name should be immutable. You can use the display_name field
-        to provide a user-friendly name for the limit. The display name can be
-        evolved over time without affecting the identity of the limit.
+        per-project basis.  If a name is not provided, it will be generated from
+        the limit_by and duration fields.  The maximum length of the limit name
+        is 64 characters.  The name of a limit is used as a unique identifier
+        for this limit. Therefore, once a limit has been put into use, its name
+        should be immutable. You can use the display_name field to provide a
+        user-friendly name for the limit. The display name can be evolved over
+        time without affecting the identity of the limit.
     """
 
     class LimitByValueValuesEnum(_messages.Enum):
         """Limit type to use for enforcing this quota limit. Each unique value
-        gets the defined number of tokens to consume from. For a quota limit
-        that uses user type, each user making requests through the same client
+        gets the defined number of tokens to consume from. For a quota limit that
+        uses user type, each user making requests through the same client
         application project will get his/her own pool of tokens to consume,
         whereas for a limit that uses client project type, all users making
-        requests through the same client application project share a single
-        pool of tokens.
+        requests through the same client application project share a single pool
+        of tokens.
 
         Values:
           CLIENT_PROJECT: ID of the project owned by the client application
@@ -2324,171 +2276,77 @@ class QuotaLimit(_messages.Message):
 
 
 class QuotaProperties(_messages.Message):
-    """Represents the properties needed for quota check.  Use the
+    """Represents the properties needed for quota operations.  Use the
     metric_value_sets field in Operation message to provide cost override with
     metric_name in <service_name>/quota/<quota_group_name>/cost format.
-    Overrides for unmatched quota groups will be ignored.
+    Overrides for unmatched quota groups will be ignored. Costs are expected to
+    be >= 0. Cost 0 will cause no quota check, but still traffic restrictions
+    will be enforced.
 
     Enums:
-      QuotaModeValueValuesEnum: Quota mode for this request. If none
-        specified, it defaults to NORMAL mode.
+      QuotaModeValueValuesEnum: Quota mode for this operation.
 
     Messages:
-      ContainerMapValue: A map of containers to be used for metric quota
-        checking. The key is one of the valid container types defined in
-        QuotaLimit2. The value is the specific container value. For example,
-        to specify a quota limit for a virtual machine resource "VM 1", you
-        need "RESOURCE": "VM 1".
-      DimensionMapValue: A map of dimensions to be used for metric quota
-        checking. The key is one of the valid dimension types defined in
-        QuotaLimit2. The value is the specific dimension value. For example,
-        to specify a quota limit for region "us-east1", you need "REGION":
-        "us-east1".
-      LimitByIdsValue: LimitType IDs that should be used for checking quota.
-        Key in this map should be a valid LimitType string, and the value is
-        the ID to be used. For ex., an entry <USER, 123> will cause all user
-        quota limits to use 123 as the user ID. See google/api/quota.proto for
-        the definition of LimitType. CLIENT_PROJECT: Not supported. USER:
-        Value of this entry will be used for enforcing user-level quota
-        limits. If none specified, caller IP passed in the
+      LimitByIdsValue: LimitType IDs that should be used for checking quota. Key
+        in this map should be a valid LimitType string, and the value is the ID
+        to be used. For ex., an entry <USER, 123> will cause all user quota
+        limits to use 123 as the user ID. See google/api/quota.proto for the
+        definition of LimitType. CLIENT_PROJECT: Not supported. USER: Value of
+        this entry will be used for enforcing user-level quota       limits. If
+        none specified, caller IP passed in the
         servicecontrol.googleapis.com/caller_ip label will be used instead.
         If the server cannot resolve a value for this LimitType, an error
         will be thrown. No validation will be performed on this ID.
 
     Fields:
-      containerMap: A map of containers to be used for metric quota checking.
-        The key is one of the valid container types defined in QuotaLimit2.
-        The value is the specific container value. For example, to specify a
-        quota limit for a virtual machine resource "VM 1", you need
-        "RESOURCE": "VM 1".
-      dimensionMap: A map of dimensions to be used for metric quota checking.
-        The key is one of the valid dimension types defined in QuotaLimit2.
-        The value is the specific dimension value. For example, to specify a
-        quota limit for region "us-east1", you need "REGION": "us-east1".
       limitByIds: LimitType IDs that should be used for checking quota. Key in
-        this map should be a valid LimitType string, and the value is the ID
-        to be used. For ex., an entry <USER, 123> will cause all user quota
-        limits to use 123 as the user ID. See google/api/quota.proto for the
-        definition of LimitType. CLIENT_PROJECT: Not supported. USER: Value of
-        this entry will be used for enforcing user-level quota       limits.
-        If none specified, caller IP passed in the
+        this map should be a valid LimitType string, and the value is the ID to
+        be used. For ex., an entry <USER, 123> will cause all user quota limits
+        to use 123 as the user ID. See google/api/quota.proto for the definition
+        of LimitType. CLIENT_PROJECT: Not supported. USER: Value of this entry
+        will be used for enforcing user-level quota       limits. If none
+        specified, caller IP passed in the
         servicecontrol.googleapis.com/caller_ip label will be used instead.
         If the server cannot resolve a value for this LimitType, an error
         will be thrown. No validation will be performed on this ID.
-      quotaMode: Quota mode for this request. If none specified, it defaults
-        to NORMAL mode.
-      requestId: For resource allocation request only. Unique identifier to
-        identify this resource allocation quota request. The ID is used to
-        guarantee idempotency. The same ID will be used to reallocate and
-        release resource.  The request ID can be in any format. For example,
-        it could be the URI of the associated resource or a generic ID like
-        "Storage - <project name>".  The request ID needs only to be unique
-        for a given resource. For example, if GCE uses quotas for both VMs and
-        IP addresses, the request IDs for VM only need to be unique relative
-        to all VM request IDs, not relative to IP address request IDs. If such
-        a unique identifier doesn't exist, then using (machine name +
-        timestamp) is a reasonable substitute. The problem with using machine
-        name and other magic numbers is that the client will need to store
-        this request ID in order to know the name of the value for releasing
-        the resource.
+      quotaMode: Quota mode for this operation.
     """
 
     class QuotaModeValueValuesEnum(_messages.Enum):
-        """Quota mode for this request. If none specified, it defaults to
-        NORMAL mode.
+        """Quota mode for this operation.
 
         Values:
-          NORMAL: Consumes the number of tokens specified in the cost for the
-            operation. Returns error if there are not enough tokens, in which
-            case the request consumes no tokens. All costs are expected to be
-            >= 0. Cost 0 will cause no quota check, but still traffic
-            restrictions will be enforced.
-          RETROACTIVE: Consumes as many tokens as available within the
-            specified cost for the operation. Returns error if there are not
-            enough tokens, but still consumes the available tokens.
-          CHECK_ONLY: Does not consume any tokens but just checks if there are
-            enough tokens available for this operation. No lock is placed on
-            the available tokens.
+          ACQUIRE: Decreases available quota by the cost specified for the
+            operation. If cost is higher than available quota, operation fails and
+            returns error.
+          ACQUIRE_BEST_EFFORT: Decreases available quota by the cost specified for
+            the operation. If cost is higher than available quota, operation does
+            not fail and available quota goes down to zero but it returns error.
+          CHECK: Does not change any available quota. Only checks if there is
+            enough quota. No lock is placed on the checked tokens neither.
+          RELEASE: Increases available quota by the operation cost specified for
+            the operation.
         """
-        NORMAL = 0
-        RETROACTIVE = 1
-        CHECK_ONLY = 2
-
-    @encoding.MapUnrecognizedFields('additionalProperties')
-    class ContainerMapValue(_messages.Message):
-        """A map of containers to be used for metric quota checking. The key
-        is one of the valid container types defined in QuotaLimit2. The value
-        is the specific container value. For example, to specify a quota limit
-        for a virtual machine resource "VM 1", you need "RESOURCE": "VM 1".
-
-        Messages:
-          AdditionalProperty: An additional property for a ContainerMapValue
-            object.
-
-        Fields:
-          additionalProperties: Additional properties of type
-            ContainerMapValue
-        """
-
-        class AdditionalProperty(_messages.Message):
-            """An additional property for a ContainerMapValue object.
-
-            Fields:
-              key: Name of the additional property.
-              value: A string attribute.
-            """
-
-            key = _messages.StringField(1)
-            value = _messages.StringField(2)
-
-        additionalProperties = _messages.MessageField('AdditionalProperty', 1, repeated=True)
-
-    @encoding.MapUnrecognizedFields('additionalProperties')
-    class DimensionMapValue(_messages.Message):
-        """A map of dimensions to be used for metric quota checking. The key
-        is one of the valid dimension types defined in QuotaLimit2. The value
-        is the specific dimension value. For example, to specify a quota limit
-        for region "us-east1", you need "REGION": "us-east1".
-
-        Messages:
-          AdditionalProperty: An additional property for a DimensionMapValue
-            object.
-
-        Fields:
-          additionalProperties: Additional properties of type
-            DimensionMapValue
-        """
-
-        class AdditionalProperty(_messages.Message):
-            """An additional property for a DimensionMapValue object.
-
-            Fields:
-              key: Name of the additional property.
-              value: A string attribute.
-            """
-
-            key = _messages.StringField(1)
-            value = _messages.StringField(2)
-
-        additionalProperties = _messages.MessageField('AdditionalProperty', 1,
-                                                      repeated=True)
+        ACQUIRE = 0
+        ACQUIRE_BEST_EFFORT = 1
+        CHECK = 2
+        RELEASE = 3
 
     @encoding.MapUnrecognizedFields('additionalProperties')
     class LimitByIdsValue(_messages.Message):
-        """LimitType IDs that should be used for checking quota. Key in this
-        map should be a valid LimitType string, and the value is the ID to be
-        used. For ex., an entry <USER, 123> will cause all user quota limits
-        to use 123 as the user ID. See google/api/quota.proto for the
-        definition of LimitType. CLIENT_PROJECT: Not supported. USER: Value of
-        this entry will be used for enforcing user-level quota       limits.
-        If none specified, caller IP passed in the
-        servicecontrol.googleapis.com/caller_ip label will be used instead.
-        If the server cannot resolve a value for this LimitType, an error
-        will be thrown. No validation will be performed on this ID.
+        """LimitType IDs that should be used for checking quota. Key in this map
+        should be a valid LimitType string, and the value is the ID to be used.
+        For ex., an entry <USER, 123> will cause all user quota limits to use 123
+        as the user ID. See google/api/quota.proto for the definition of
+        LimitType. CLIENT_PROJECT: Not supported. USER: Value of this entry will
+        be used for enforcing user-level quota       limits. If none specified,
+        caller IP passed in the       servicecontrol.googleapis.com/caller_ip
+        label will be used instead.       If the server cannot resolve a value for
+        this LimitType, an error       will be thrown. No validation will be
+        performed on this ID.
 
         Messages:
-          AdditionalProperty: An additional property for a LimitByIdsValue
-            object.
+          AdditionalProperty: An additional property for a LimitByIdsValue object.
 
         Fields:
           additionalProperties: Additional properties of type LimitByIdsValue
@@ -2505,14 +2363,10 @@ class QuotaProperties(_messages.Message):
             key = _messages.StringField(1)
             value = _messages.StringField(2)
 
-        additionalProperties = _messages.MessageField('AdditionalProperty', 1,
-                                                      repeated=True)
+        additionalProperties = _messages.MessageField('AdditionalProperty', 1, repeated=True)
 
-    containerMap = _messages.MessageField('ContainerMapValue', 1)
-    dimensionMap = _messages.MessageField('DimensionMapValue', 2)
-    limitByIds = _messages.MessageField('LimitByIdsValue', 3)
-    quotaMode = _messages.EnumField('QuotaModeValueValuesEnum', 4)
-    requestId = _messages.StringField(5)
+    limitByIds = _messages.MessageField('LimitByIdsValue', 1)
+    quotaMode = _messages.EnumField('QuotaModeValueValuesEnum', 2)
 
 
 class QuotaRule(_messages.Message):
@@ -2523,8 +2377,8 @@ class QuotaRule(_messages.Message):
         be disabled for methods without quota rules or with quota rules having
         this field set to true. When this field is set to true, no quota group
         mapping is allowed.
-      groups: Quota groups to be used for this method. This supports
-        associating a cost with each quota group.
+      groups: Quota groups to be used for this method. This supports associating
+        a cost with each quota group.
       selector: Selects methods to which this rule applies.  Refer to selector
         for syntax details.
     """
@@ -2532,39 +2386,6 @@ class QuotaRule(_messages.Message):
     disableQuota = _messages.BooleanField(1)
     groups = _messages.MessageField('QuotaGroupMapping', 2, repeated=True)
     selector = _messages.StringField(3)
-
-
-class Redaction(_messages.Message):
-    """`Redaction` defines which request fields contain sensitive information
-    and should be redacted in logs. NOTE: only a subset of request fields will
-    ever get logged, typically the fields that are mapped to request URLs.
-    Example:      redaction:       rules:       - selector:
-    google.calendar.v3.Calendar.GetCalendar.user         redact: true
-    **NOTE:** this message **should** be treated as deprecated. Sensitive
-    information, such as passwords and credit card numbers, **must not** be
-    logged even without using `Redaction`. For example, sensitive information
-    **must not** be put into URLs, which are more likely to get logged by
-    various systems.
-
-    Fields:
-      rules: List of redaction rules.
-    """
-
-    rules = _messages.MessageField('RedactionRule', 1, repeated=True)
-
-
-class RedactionRule(_messages.Message):
-    """A redaction rule, which specifies which fields should be redacted in
-    logs.
-
-    Fields:
-      redact: Whether the field should be redacted.
-      selector: Selects fields to which this rule applies.  Refer to selector
-        for syntax details.
-    """
-
-    redact = _messages.BooleanField(1)
-    selector = _messages.StringField(2)
 
 
 class ReportError(_messages.Message):
@@ -2600,16 +2421,16 @@ class ReportResponse(_messages.Message):
 
     Fields:
       reportErrors: The partial failures, one for each `Operation` in the
-        request that failed processing. There are three possible combinations
-        of the RPC status and this list:  1. The combination of a successful
-        RPC status and an empty `report_errors`    list indicates a complete
-        success where all `Operation`s in the    request are processed
-        successfully. 2. The combination of a successful RPC status and a non-
-        empty    `report_errors` list indicates a partial success where some
+        request that failed processing. There are three possible combinations of
+        the RPC status and this list:  1. The combination of a successful RPC
+        status and an empty `report_errors`    list indicates a complete success
+        where all `Operation`s in the    request are processed successfully. 2.
+        The combination of a successful RPC status and a non-empty
+        `report_errors` list indicates a partial success where some
         `Operation`s in the request are processed successfully. Each
         `Operation` that failed processing has a corresponding item    in this
-        list. 3. A failed RPC status indicates a complete failure where none
-        of the    `Operation`s in the request is processed successfully.
+        list. 3. A failed RPC status indicates a complete failure where none of
+        the    `Operation`s in the request is processed successfully.
     """
 
     reportErrors = _messages.MessageField('ReportError', 1, repeated=True)
@@ -2620,11 +2441,9 @@ class Service(_messages.Message):
     basic information like the name of the service and the exposed API
     interfaces, and delegates other aspects to configuration sub-sections.
     Example:      type: google.api.Service     config_version: 1     name:
-    calendar.googleapis.com     title: Google Calendar API     apis:     -
-    name: google.calendar.Calendar     visibility:       rules:       -
-    selector: "*"         restriction: TRUSTED_TESTER     backend:
-    rules:       - selector: "*"         address: calendar-prod-
-    backend.gslb.googleapis.com
+    calendar.googleapis.com     title: Google Calendar API     apis:     - name:
+    google.calendar.Calendar     backend:       rules:       - selector: "*"
+    address: calendar.example.com
 
     Fields:
       apis: A list of API interfaces exported by this service. Only the `name`
@@ -2633,15 +2452,13 @@ class Service(_messages.Message):
         IDL during the normalization process. It is an error to specify an API
         interface here which cannot be resolved against the associated IDL
         files.
-      auditing: CURRENTLY UNDER DEVELOPMENT. DO NOT USE IT UNTIL THIS WARNING
-        IS REMOVED.  Auditing configuration of the service.
       authentication: Auth configuration.
       backend: API backend configuration.
       billing: Billing configuration of the service.
       configVersion: The version of the service configuration. The config
-        version may influence interpretation of the configuration, for example
-        determine defaults. This is documented together with applicable
-        options. The current default for the config version itself is `2`.
+        version may influence interpretation of the configuration, for example,
+        to determine defaults. This is documented together with applicable
+        options. The current default for the config version itself is `3`.
       context: Context configuration.
       control: Configuration for the service control plane.
       customError: Custom error configuration.
@@ -2652,12 +2469,15 @@ class Service(_messages.Message):
         be listed here by name. Example:      enums:     - name:
         google.someapi.v1.SomeEnum
       http: HTTP configuration.
+      id: A unique ID for a specific instance of this message, typically
+        assigned by the client for tracking purpose. If empty, the server may
+        choose to generate one instead.
       logging: Logging configuration of the service.
       logs: Defines the logs used by this service.
       metrics: Defines the metrics used by this service.
-      monitoredResources: Defines the monitored resources used by this
-        service. This is required by the Service.monitoring and
-        Service.logging configurations.
+      monitoredResources: Defines the monitored resources used by this service.
+        This is required by the Service.monitoring and Service.logging
+        configurations.
       monitoring: Monitoring configuration of the service.
       name: The DNS address at which this service is available, e.g.
         `calendar.googleapis.com`.
@@ -2666,65 +2486,62 @@ class Service(_messages.Message):
         manage consumption of the service, etc.
       projectProperties: Configuration of per-consumer project properties.
       quota: Quota configuration.
-      redaction: Log redaction configuration.
       systemParameters: Configuration for system parameters.
       systemTypes: A list of all proto message types included in this API
-        service. It serves similar purpose as [google.api.Service.types],
-        except that these types are not needed by user-defined APIs.
-        Therefore, they will not show up in the generated discovery doc. This
-        field should only be used to define system APIs in ESF.
+        service. It serves similar purpose as [google.api.Service.types], except
+        that these types are not needed by user-defined APIs. Therefore, they
+        will not show up in the generated discovery doc. This field should only
+        be used to define system APIs in ESF.
       title: The product title associated with this service.
       types: A list of all proto message types included in this API service.
-        Types referenced directly or indirectly by the `apis` are
-        automatically included.  Messages which are not referenced but shall
-        be included, such as types used by the `google.protobuf.Any` type,
-        should be listed here by name. Example:      types:     - name:
-        google.protobuf.Int32
+        Types referenced directly or indirectly by the `apis` are automatically
+        included.  Messages which are not referenced but shall be included, such
+        as types used by the `google.protobuf.Any` type, should be listed here
+        by name. Example:      types:     - name: google.protobuf.Int32
       usage: Configuration controlling usage of this service.
       visibility: API visibility configuration.
     """
 
     apis = _messages.MessageField('Api', 1, repeated=True)
-    auditing = _messages.MessageField('Auditing', 2)
-    authentication = _messages.MessageField('Authentication', 3)
-    backend = _messages.MessageField('Backend', 4)
-    billing = _messages.MessageField('Billing', 5)
-    configVersion = _messages.IntegerField(6, variant=_messages.Variant.UINT32)
-    context = _messages.MessageField('Context', 7)
-    control = _messages.MessageField('Control', 8)
-    customError = _messages.MessageField('CustomError', 9)
-    documentation = _messages.MessageField('Documentation', 10)
-    enums = _messages.MessageField('Enum', 11, repeated=True)
-    http = _messages.MessageField('Http', 12)
+    authentication = _messages.MessageField('Authentication', 2)
+    backend = _messages.MessageField('Backend', 3)
+    billing = _messages.MessageField('Billing', 4)
+    configVersion = _messages.IntegerField(5, variant=_messages.Variant.UINT32)
+    context = _messages.MessageField('Context', 6)
+    control = _messages.MessageField('Control', 7)
+    customError = _messages.MessageField('CustomError', 8)
+    documentation = _messages.MessageField('Documentation', 9)
+    enums = _messages.MessageField('Enum', 10, repeated=True)
+    http = _messages.MessageField('Http', 11)
+    id = _messages.StringField(12)
     logging = _messages.MessageField('Logging', 13)
     logs = _messages.MessageField('LogDescriptor', 14, repeated=True)
     metrics = _messages.MessageField('MetricDescriptor', 15, repeated=True)
-    monitoredResources = _messages.MessageField('MonitoredResourceDescriptor',
-                                                16, repeated=True)
+    monitoredResources = _messages.MessageField('MonitoredResourceDescriptor', 16, repeated=True)
     monitoring = _messages.MessageField('Monitoring', 17)
     name = _messages.StringField(18)
     producerProjectId = _messages.StringField(19)
     projectProperties = _messages.MessageField('ProjectProperties', 20)
     quota = _messages.MessageField('Quota', 21)
-    redaction = _messages.MessageField('Redaction', 22)
-    systemParameters = _messages.MessageField('SystemParameters', 23)
-    systemTypes = _messages.MessageField('Type', 24, repeated=True)
-    title = _messages.StringField(25)
-    types = _messages.MessageField('Type', 26, repeated=True)
-    usage = _messages.MessageField('Usage', 27)
-    visibility = _messages.MessageField('Visibility', 28)
+    systemParameters = _messages.MessageField('SystemParameters', 22)
+    systemTypes = _messages.MessageField('Type', 23, repeated=True)
+    title = _messages.StringField(24)
+    types = _messages.MessageField('Type', 25, repeated=True)
+    usage = _messages.MessageField('Usage', 26)
+    visibility = _messages.MessageField('Visibility', 27)
 
 
 class ServicecontrolServicesCheckRequest(_messages.Message):
     """A ServicecontrolServicesCheckRequest object.
 
     Fields:
-      check_request: A CheckRequest resource to be passed as the request body.
-      serviceName: Identity of the service. For example
-        'fortuneteller.example.com'.
+      checkRequest: A CheckRequest resource to be passed as the request body.
+      serviceName: The service name. The DNS address at which this service is
+        available, such as `"pubsub.googleapis.com"`.  Please see
+        `google.api.Service` for the definition of service name.
     """
 
-    check_request = _messages.MessageField('CheckRequest', 1)
+    checkRequest = _messages.MessageField('CheckRequest', 1)
     serviceName = _messages.StringField(2, required=True)
 
 
@@ -2732,13 +2549,13 @@ class ServicecontrolServicesReportRequest(_messages.Message):
     """A ServicecontrolServicesReportRequest object.
 
     Fields:
-      report_request: A ReportRequest resource to be passed as the request
-        body.
-      serviceName: The service name that the following operations will be
-        reported against. For example 'fortuneteller.example.com'.
+      reportRequest: A ReportRequest resource to be passed as the request body.
+      serviceName: The service name. The DNS address at which this service is
+        available, such as `"pubsub.googleapis.com"`.  Please see
+        `google.api.Service` for the definition of service name.
     """
 
-    report_request = _messages.MessageField('ReportRequest', 1)
+    reportRequest = _messages.MessageField('ReportRequest', 1)
     serviceName = _messages.StringField(2, required=True)
 
 
@@ -2768,21 +2585,19 @@ class StandardQueryParameters(_messages.Message):
       alt: Data format for response.
       bearer_token: OAuth bearer token.
       callback: JSONP
-      fields: Selector specifying which fields to include in a partial
-        response.
+      fields: Selector specifying which fields to include in a partial response.
       key: API key. Your API key identifies your project and provides you with
-        API access, quota, and reports. Required unless you provide an OAuth
-        2.0 token.
+        API access, quota, and reports. Required unless you provide an OAuth 2.0
+        token.
       oauth_token: OAuth 2.0 token for the current user.
       pp: Pretty-print response.
       prettyPrint: Returns response with indentations and line breaks.
       quotaUser: Available to use for quota purposes for server-side
-        applications. Can be any arbitrary string assigned to a user, but
-        should not exceed 40 characters.
+        applications. Can be any arbitrary string assigned to a user, but should
+        not exceed 40 characters.
       trace: A tracing token of the form "token:<tokenid>" to include in api
         requests.
-      uploadType: Legacy upload protocol for media (e.g. "media",
-        "multipart").
+      uploadType: Legacy upload protocol for media (e.g. "media", "multipart").
       upload_protocol: Upload protocol for media (e.g. "raw", "multipart").
     """
 
@@ -2826,50 +2641,49 @@ class StandardQueryParameters(_messages.Message):
 
 class Status(_messages.Message):
     """The `Status` type defines a logical error model that is suitable for
-    different programming environments, including REST APIs and RPC APIs. It
-    is used by [gRPC](https://github.com/grpc). The error model is designed to
-    be:  - Simple to use and understand for most users - Flexible enough to
-    meet unexpected needs  # Overview  The `Status` message contains three
-    pieces of data: error code, error message, and error details. The error
-    code should be an enum value of google.rpc.Code, but it may accept
-    additional error codes if needed.  The error message should be a
-    developer-facing English message that helps developers *understand* and
-    *resolve* the error. If a localized user-facing error message is needed,
-    put the localized message in the error details or localize it in the
-    client. The optional error details may contain arbitrary information about
-    the error. There is a predefined set of error detail types in the package
-    `google.rpc` which can be used for common error conditions.  # Language
-    mapping  The `Status` message is the logical representation of the error
-    model, but it is not necessarily the actual wire format. When the `Status`
-    message is exposed in different client libraries and different wire
-    protocols, it can be mapped differently. For example, it will likely be
-    mapped to some exceptions in Java, but more likely mapped to some error
-    codes in C.  # Other uses  The error model and the `Status` message can be
-    used in a variety of environments, either with or without APIs, to provide
-    a consistent developer experience across different environments.  Example
-    uses of this error model include:  - Partial errors. If a service needs to
-    return partial errors to the client,     it may embed the `Status` in the
-    normal response to indicate the partial     errors.  - Workflow errors. A
-    typical workflow has multiple steps. Each step may     have a `Status`
-    message for error reporting purpose.  - Batch operations. If a client uses
-    batch request and batch response, the     `Status` message should be used
-    directly inside batch response, one for     each error sub-response.  -
-    Asynchronous operations. If an API call embeds asynchronous operation
-    results in its response, the status of those operations should be
-    represented directly using the `Status` message.  - Logging. If some API
-    errors are stored in logs, the message `Status` could     be used directly
-    after any stripping needed for security/privacy reasons.
+    different programming environments, including REST APIs and RPC APIs. It is
+    used by [gRPC](https://github.com/grpc). The error model is designed to be:
+    - Simple to use and understand for most users - Flexible enough to meet
+    unexpected needs  # Overview  The `Status` message contains three pieces of
+    data: error code, error message, and error details. The error code should be
+    an enum value of google.rpc.Code, but it may accept additional error codes
+    if needed.  The error message should be a developer-facing English message
+    that helps developers *understand* and *resolve* the error. If a localized
+    user-facing error message is needed, put the localized message in the error
+    details or localize it in the client. The optional error details may contain
+    arbitrary information about the error. There is a predefined set of error
+    detail types in the package `google.rpc` which can be used for common error
+    conditions.  # Language mapping  The `Status` message is the logical
+    representation of the error model, but it is not necessarily the actual wire
+    format. When the `Status` message is exposed in different client libraries
+    and different wire protocols, it can be mapped differently. For example, it
+    will likely be mapped to some exceptions in Java, but more likely mapped to
+    some error codes in C.  # Other uses  The error model and the `Status`
+    message can be used in a variety of environments, either with or without
+    APIs, to provide a consistent developer experience across different
+    environments.  Example uses of this error model include:  - Partial errors.
+    If a service needs to return partial errors to the client,     it may embed
+    the `Status` in the normal response to indicate the partial     errors.  -
+    Workflow errors. A typical workflow has multiple steps. Each step may
+    have a `Status` message for error reporting purpose.  - Batch operations. If
+    a client uses batch request and batch response, the     `Status` message
+    should be used directly inside batch response, one for     each error sub-
+    response.  - Asynchronous operations. If an API call embeds asynchronous
+    operation     results in its response, the status of those operations should
+    be     represented directly using the `Status` message.  - Logging. If some
+    API errors are stored in logs, the message `Status` could     be used
+    directly after any stripping needed for security/privacy reasons.
 
     Messages:
-      DetailsValueListEntry: A DetailsValueListEntry object.
+       DetailsValueListEntry: A DetailsValueListEntry object.
 
     Fields:
       code: The status code, which should be an enum value of google.rpc.Code.
-      details: A list of messages that carry the error details.  There will be
-        a common set of message types for APIs to use.
-      message: A developer-facing error message, which should be in English.
-        Any user-facing error message should be localized and sent in the
-        google.rpc.Status.details field, or localized by the client.
+      details: A list of messages that carry the error details.  There will be a
+          common set of message types for APIs to use.
+      message: A developer-facing error message, which should be in English. Any
+          user-facing error message should be localized and sent in the
+          google.rpc.Status.details field, or localized by the client.
     """
 
     @encoding.MapUnrecognizedFields('additionalProperties')
@@ -2877,12 +2691,12 @@ class Status(_messages.Message):
         """A DetailsValueListEntry object.
 
         Messages:
-          AdditionalProperty: An additional property for a
-            DetailsValueListEntry object.
+          AdditionalProperty: An additional property for a DetailsValueListEntry
+          object.
 
         Fields:
-          additionalProperties: Properties of the object. Contains field @ype
-            with type URL.
+           additionalProperties: Properties of the object. Contains field @ype with
+           type URL.
         """
 
         class AdditionalProperty(_messages.Message):
@@ -2896,8 +2710,7 @@ class Status(_messages.Message):
             key = _messages.StringField(1)
             value = _messages.MessageField('extra_types.JsonValue', 2)
 
-        additionalProperties = _messages.MessageField('AdditionalProperty', 1,
-                                                      repeated=True)
+        additionalProperties = _messages.MessageField('AdditionalProperty', 1, repeated=True)
 
     code = _messages.IntegerField(1, variant=_messages.Variant.INT32)
     details = _messages.MessageField('DetailsValueListEntry', 2, repeated=True)
@@ -2929,13 +2742,12 @@ class SystemParameterRule(_messages.Message):
 
     Fields:
       parameters: Define parameters. Multiple names may be defined for a
-        parameter. For a given method call, only one of them should be used.
-        If multiple names are used the behavior is implementation-dependent.
-        If none of the specified names are present the behavior is parameter-
+        parameter. For a given method call, only one of them should be used. If
+        multiple names are used the behavior is implementation-dependent. If
+        none of the specified names are present the behavior is parameter-
         dependent.
       selector: Selects the methods to which this rule applies. Use '*' to
-        indicate all methods in all APIs.  Refer to selector for syntax
-        details.
+        indicate all methods in all APIs.  Refer to selector for syntax details.
     """
 
     parameters = _messages.MessageField('SystemParameter', 1, repeated=True)
@@ -2943,25 +2755,24 @@ class SystemParameterRule(_messages.Message):
 
 
 class SystemParameters(_messages.Message):
-    """### System parameter configuration  A system parameter is a special
-    kind of parameter defined by the API system, not by an individual API. It
-    is typically mapped to an HTTP header and/or a URL query parameter. This
+    """### System parameter configuration  A system parameter is a special kind
+    of parameter defined by the API system, not by an individual API. It is
+    typically mapped to an HTTP header and/or a URL query parameter. This
     configuration specifies which methods change the names of the system
     parameters.
 
     Fields:
       rules: Define system parameters.  The parameters defined here will
-        override the default parameters implemented by the system. If this
-        field is missing from the service config, default system parameters
-        will be used. Default system parameters and names is implementation-
-        dependent.  Example: define api key and alt name for all methods
-        SystemParameters   rules:     - selector: "*"       parameters:
-        - name: api_key           url_query_parameter: api_key         - name:
-        alt           http_header: Response-Content-Type  Example: define 2
-        api key names for a specific method.  SystemParameters   rules:     -
-        selector: "/ListShelves"       parameters:         - name: api_key
-        http_header: Api-Key1         - name: api_key           http_header:
-        Api-Key2
+        override the default parameters implemented by the system. If this field
+        is missing from the service config, default system parameters will be
+        used. Default system parameters and names is implementation-dependent.
+        Example: define api key and alt name for all methods  SystemParameters
+        rules:     - selector: "*"       parameters:         - name: api_key
+        url_query_parameter: api_key         - name: alt           http_header:
+        Response-Content-Type  Example: define 2 api key names for a specific
+        method.  SystemParameters   rules:     - selector: "/ListShelves"
+        parameters:         - name: api_key           http_header: Api-Key1
+        - name: api_key           http_header: Api-Key2
     """
 
     rules = _messages.MessageField('SystemParameterRule', 1, repeated=True)
@@ -3004,19 +2815,19 @@ class Usage(_messages.Message):
     """Configuration controlling usage of a service.
 
     Enums:
-      ServiceAccessValueValuesEnum: Controls which users can see or activate
-        the service.
+      ServiceAccessValueValuesEnum: Controls which users can see or activate the
+        service.
 
     Fields:
       activationHooks: Services that must be contacted before a consumer can
         begin using the service. Each service will be contacted in sequence,
-        and, if any activation call fails, the entire activation will fail.
-        Each hook is of the form <service.name>/<hook-id>, where <hook-id> is
+        and, if any activation call fails, the entire activation will fail. Each
+        hook is of the form <service.name>/<hook-id>, where <hook-id> is
         optional; for example: 'robotservice.googleapis.com/default'.
       deactivationHooks: Services that must be contacted before a consumer can
         deactivate a service. Each service will be contacted in sequence, and,
-        if any deactivation call fails, the entire deactivation will fail.
-        Each hook is of the form <service.name>/<hook-id>, where <hook-id> is
+        if any deactivation call fails, the entire deactivation will fail. Each
+        hook is of the form <service.name>/<hook-id>, where <hook-id> is
         optional; for example: 'compute.googleapis.com/'.
       dependsOnServices: Services that must be activated in order for this
         service to be used. The set of services activated as a result of these
@@ -3035,19 +2846,20 @@ class Usage(_messages.Message):
         """Controls which users can see or activate the service.
 
         Values:
-          RESTRICTED: The service can only be seen/used by users identified in
-            the service's access control policy.  If the service has not been
-            whitelisted by your domain administrator for out-of-org
-            publishing, then this mode will be treated like ORG_RESTRICTED.
-          PUBLIC: The service can be seen/used by anyone.  If the service has
-            not been whitelisted by your domain administrator for out-of-org
+          RESTRICTED: The service can only be seen/used by users identified in the
+            service's access control policy.  If the service has not been
+            whitelisted by your domain administrator for out-of-org publishing,
+            then this mode will be treated like ORG_RESTRICTED.
+          PUBLIC: The service can be seen/used by anyone.  If the service has not
+            been whitelisted by your domain administrator for out-of-org
             publishing, then this mode will be treated like ORG_PUBLIC.  The
             discovery document for the service will also be public and allow
-            allow unregistered access.
-          ORG_RESTRICTED: The service can be seen/used by users identified in
-            the service's access control policy.  Access is further
-            constrained to the group controlled by the administrator of the
-            project/org that owns the service.
+            unregistered access.
+          ORG_RESTRICTED: The service can be seen/used by users identified in the
+            service's access control policy and they are within the organization
+            that owns the service.  Access is further constrained to the group
+            controlled by the administrator of the project/org that owns the
+            service.
           ORG_PUBLIC: The service can be seen/used by the group of users
             controlled by the administrator of the project/org that owns the
             service.
@@ -3067,15 +2879,15 @@ class Usage(_messages.Message):
 
 class UsageRule(_messages.Message):
     """Usage configuration rules for the service.  NOTE: Under development.
-    Use this rule to configure unregistered calls for the service.
-    Unregistered calls are calls that do not contain consumer project
-    identity. (Example: calls that do not contain an API key). By default, API
-    methods do not allow unregistered calls, and each method call must be
-    identified by a consumer project identity. Use this rule to allow/disallow
-    unregistered calls.  Example of an API that wants to allow unregistered
-    calls for entire service.      usage:       rules:       - selector: "*"
-    allow_unregistered_calls: true  Example of a method that wants to allow
-    unregistered calls.      usage:       rules:       - selector:
+    Use this rule to configure unregistered calls for the service. Unregistered
+    calls are calls that do not contain consumer project identity. (Example:
+    calls that do not contain an API key). By default, API methods do not allow
+    unregistered calls, and each method call must be identified by a consumer
+    project identity. Use this rule to allow/disallow unregistered calls.
+    Example of an API that wants to allow unregistered calls for entire service.
+    usage:       rules:       - selector: "*"         allow_unregistered_calls:
+    true  Example of a method that wants to allow unregistered calls.
+    usage:       rules:       - selector:
     "google.example.library.v1.LibraryService.CreateBook"
     allow_unregistered_calls: true
 
@@ -3083,8 +2895,7 @@ class UsageRule(_messages.Message):
       allowUnregisteredCalls: True, if the method allows unregistered calls;
         false otherwise.
       selector: Selects the methods to which this rule applies. Use '*' to
-        indicate all methods in all APIs.  Refer to selector for syntax
-        details.
+        indicate all methods in all APIs.  Refer to selector for syntax details.
     """
 
     allowUnregisteredCalls = _messages.BooleanField(1)
@@ -3092,63 +2903,52 @@ class UsageRule(_messages.Message):
 
 
 class Visibility(_messages.Message):
-    """`Visibility` defines restrictions for the visibility of service
-    elements.  Restrictions are specified using visibility labels (e.g.,
-    TRUSTED_TESTER) that are elsewhere linked to users and projects.  User and
-    projects can have access to more than one visibility label. The effective
-    visibility for multiple labels is the union of each label's elements, plus
-    any unrestricted elements. You must list any supported label combinations
-    in `label_combinations`.  If an element and its parents have no
-    restrictions, visibility is unconditionally granted.  Example:
-    visibility:       label_combinations:       - GOOGLE_INTERNAL,
-    TRUSTED_TESTER       rules:       - selector:
-    google.calendar.Calendar.EnhancedSearch         restriction:
+    """`Visibility` defines restrictions for the visibility of service elements.
+    Restrictions are specified using visibility labels (e.g., TRUSTED_TESTER)
+    that are elsewhere linked to users and projects.  Users and projects can
+    have access to more than one visibility label. The effective visibility for
+    multiple labels is the union of each label's elements, plus any unrestricted
+    elements.  If an element and its parents have no restrictions, visibility is
+    unconditionally granted.  Example:      visibility:       rules:       -
+    selector: google.calendar.Calendar.EnhancedSearch         restriction:
     TRUSTED_TESTER       - selector: google.calendar.Calendar.Delegate
-    restriction: GOOGLE_INTERNAL  Here, all methods are publicly visible
-    except for the restricted methods EnhancedSearch and Delegate. In
-    addition, since `label_combinations` lists both GOOGLE_INTERNAL and
-    TRUSTED_TESTER, users and projects can be given access to a combined
-    visibility with both EnhancedSearch and Delegate.
+    restriction: GOOGLE_INTERNAL  Here, all methods are publicly visible except
+    for the restricted methods EnhancedSearch and Delegate.
 
     Fields:
       enforceRuntimeVisibility: Controls whether visibility rules are enforced
         at runtime for requests to all APIs and methods.  If true, requests
         without method visibility will receive a NOT_FOUND error, and any non-
-        visible fields will be scrubbed from the response messages. The
-        default is false.  Note, the `enforce_runtime_visibility` specified in
-        a visibility rule overrides this setting for the APIs or methods
-        asscoiated with the rule.
-      labelCombinations: Lists valid label combinations for this service in
-        comma-delimited form. This lets users and projects see the union of
-        these labels' elements.  Removing a label combination can be a
-        breaking change, as clients with access to the combination will now
-        see non-restricted elements only.
+        visible fields will be scrubbed from the response messages. In service
+        config version 0, the default is false. In later config versions, it's
+        true.  Note, the `enforce_runtime_visibility` specified in a visibility
+        rule overrides this setting for the APIs or methods asscoiated with the
+        rule.
       rules: A list of visibility rules providing visibility configuration for
         individual API elements.
     """
 
     enforceRuntimeVisibility = _messages.BooleanField(1)
-    labelCombinations = _messages.StringField(2, repeated=True)
-    rules = _messages.MessageField('VisibilityRule', 3, repeated=True)
+    rules = _messages.MessageField('VisibilityRule', 2, repeated=True)
 
 
 class VisibilityRule(_messages.Message):
-    """A visibility rule provides visibility configuration for an individual
-    API element.
+    """A visibility rule provides visibility configuration for an individual API
+    element.
 
     Fields:
       enforceRuntimeVisibility: Controls whether visibility is enforced at
         runtime for requests to an API method. This setting has meaning only
         when the selector applies to a method or an API.  If true, requests
         without method visibility will receive a NOT_FOUND error, and any non-
-        visible fields will be scrubbed from the response messages. The
-        default is determined by the value of
+        visible fields will be scrubbed from the response messages. The default
+        is determined by the value of
         google.api.Visibility.enforce_runtime_visibility.
-      restriction: Lists the visibility labels for this rule. Any of the
-        listed labels grants visibility to the element.  If a rule has
-        multiple labels, removing one of the labels but not all of them can
-        break clients.  Example:      visibility:       rules:       -
-        selector: google.calendar.Calendar.EnhancedSearch         restriction:
+      restriction: Lists the visibility labels for this rule. Any of the listed
+        labels grants visibility to the element.  If a rule has multiple labels,
+        removing one of the labels but not all of them can break clients.
+        Example:      visibility:       rules:       - selector:
+        google.calendar.Calendar.EnhancedSearch         restriction:
         GOOGLE_INTERNAL, TRUSTED_TESTER  Removing GOOGLE_INTERNAL from this
         restriction will break clients that rely on this method and only had
         access to it through GOOGLE_INTERNAL.
