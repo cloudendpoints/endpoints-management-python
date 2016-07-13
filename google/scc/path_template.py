@@ -71,6 +71,7 @@ class PathTemplate(object):
     def __init__(self, data):
         parser = _Parser()
         self.segments = parser.parse(data)
+        self.verb = parser.verb
         self.segment_count = parser.segment_count
 
     def __len__(self):
@@ -180,12 +181,12 @@ class _Parser(object):
 
     t_ignore = ' \t'
 
-    binding_var_count = 0
-    segment_count = 0
-
     def __init__(self):
         self.lexer = lex.lex(module=self)
         self.parser = yacc.yacc(module=self, debug=False, write_tables=False)
+        self.verb = ''
+        self.binding_var_count = 0
+        self.segment_count = 0
 
     def parse(self, data):
         """Returns a list of path template segments parsed from data.
@@ -208,6 +209,13 @@ class _Parser(object):
                         'validation error: path template cannot contain more '
                         'than one path wildcard')
                 path_wildcard = True
+        if segments and segments[-1].kind == _TERMINAL:
+            final_term = segments[-1].literal
+            last_colon_pos = final_term.rfind(':')
+            if last_colon_pos != -1:
+                self.verb = final_term[last_colon_pos + 1:]
+                segments[-1] = _Segment(_TERMINAL, final_term[:last_colon_pos])
+
         return segments
 
     def p_template(self, p):

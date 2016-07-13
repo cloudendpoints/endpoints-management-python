@@ -101,7 +101,7 @@ class TestPathTemplate(unittest2.TestCase):
         template = PathTemplate('buckets/*/*/*/objects/*')
         url = template.render({
             '$0': 'f', '$1': 'o', '$2': 'o', '$3': 'google.com:a-b'})
-        self.assertEqual(url, 'buckets/f/o/o/objects/google.com:a-b')
+        self.assertEqual(url, 'buckets/f/o/o/objects/google.com')
 
     def test_render_fail_when_too_few_variables(self):
         template = PathTemplate('buckets/*/*/*/objects/*')
