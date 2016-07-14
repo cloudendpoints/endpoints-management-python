@@ -30,6 +30,7 @@
 from __future__ import absolute_import
 
 import datetime
+import httplib
 import unittest2
 from expects import be_none, equal, expect, raise_error
 
@@ -460,6 +461,40 @@ class TestInfo(unittest2.TestCase):
             testf = lambda: info.as_check_request(timer=timer)
             expect(testf).to(raise_error(ValueError))
 
+
+class TestConvertResponse(unittest2.TestCase):
+    PROJECT_ID = 'test_convert_response'
+
+    def test_should_be_ok_with_no_errors(self):
+        code, message, _ = check_request.convert_response(
+            messages.CheckResponse(), self.PROJECT_ID)
+        expect(code).to(equal(httplib.OK))
+        expect(message).to(equal(''))
+
+    def test_should_include_project_id_in_error_text_when_needed(self):
+        resp = messages.CheckResponse(
+            checkErrors = [
+                messages.CheckError(
+                    code=messages.CheckError.CodeValueValuesEnum.PROJECT_DELETED)
+            ]
+        )
+        code, got, _ = check_request.convert_response(resp, self.PROJECT_ID)
+        want = 'Project %s has been deleted' % (self.PROJECT_ID,)
+        expect(code).to(equal(httplib.FORBIDDEN))
+        expect(got).to(equal(want))
+
+    def test_should_include_detail_in_error_text_when_needed(self):
+        detail = 'details, details, details'
+        resp = messages.CheckResponse(
+            checkErrors = [
+                messages.CheckError(
+                    code=messages.CheckError.CodeValueValuesEnum.IP_ADDRESS_BLOCKED,
+                    detail=detail)
+            ]
+        )
+        code, got, _ = check_request.convert_response(resp, self.PROJECT_ID)
+        expect(code).to(equal(httplib.FORBIDDEN))
+        expect(got).to(equal(detail))
 
 
 class _DateTimeTimer(object):

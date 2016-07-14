@@ -51,37 +51,16 @@ from __future__ import absolute_import
 import collections
 import logging
 import threading
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import cachetools
 
-from google.scc import CheckAggregationOptions, ReportAggregationOptions
+from google.scc import CheckAggregationOptions, ReportAggregationOptions, to_cache_timer
 
 logger = logging.getLogger(__name__)
 
 
 ZERO_INTERVAL = timedelta()
-
-
-def _to_cache_timer(datetime_func):
-    """Converts a datetime_func to a timestamp_func.
-
-    Args:
-       datetime_func (callable[[datatime]]): a func that returns the current
-         time
-
-    Returns:
-       time_func (callable[[timestamp]): a func that returns the timestamp
-         from the epoch
-    """
-    if datetime_func is None:
-        datetime_func = datetime.now
-
-    def _timer():
-        """Return the timestamp since the epoch."""
-        return (datetime_func() - datetime(1970, 1, 1)).total_seconds()
-
-    return _timer
 
 
 def create(options, timer=None):
@@ -128,7 +107,7 @@ def create(options, timer=None):
             DequeOutTTLCache(
                 options.num_entries,
                 ttl=ttl.total_seconds(),
-                timer=_to_cache_timer(timer)
+                timer=to_cache_timer(timer)
             ))
 
     return LockedObject(DequeOutLRUCache(options.num_entries))

@@ -32,7 +32,7 @@
 from __future__ import absolute_import
 
 import collections
-import datetime
+from datetime import datetime, timedelta
 import google.apigen.servicecontrol_v1_messages as messages
 
 __version__ = '0.1.0'
@@ -61,15 +61,14 @@ class ReportAggregationOptions(
     """
     # pylint: disable=too-few-public-methods
     DEFAULT_NUM_ENTRIES = 200
-    DEFAULT_FLUSH_INTERVAL = datetime.timedelta(seconds=1)
+    DEFAULT_FLUSH_INTERVAL = timedelta(seconds=1)
 
     def __new__(cls,
                 num_entries=DEFAULT_NUM_ENTRIES,
                 flush_interval=DEFAULT_FLUSH_INTERVAL):
         """Invokes the base constructor with default values."""
         assert isinstance(num_entries, int), 'should be an int'
-        assert isinstance(flush_interval,
-                          datetime.timedelta), 'should be a timedelta'
+        assert isinstance(flush_interval, timedelta), 'should be a timedelta'
 
         return super(cls, ReportAggregationOptions).__new__(
             cls,
@@ -99,8 +98,8 @@ class CheckAggregationOptions(
     """
     # pylint: disable=too-few-public-methods
     DEFAULT_NUM_ENTRIES = 200
-    DEFAULT_FLUSH_INTERVAL = datetime.timedelta(milliseconds=500)
-    DEFAULT_EXPIRATION = datetime.timedelta(seconds=1)
+    DEFAULT_FLUSH_INTERVAL = timedelta(milliseconds=500)
+    DEFAULT_EXPIRATION = timedelta(seconds=1)
 
     def __new__(cls,
                 num_entries=DEFAULT_NUM_ENTRIES,
@@ -108,14 +107,33 @@ class CheckAggregationOptions(
                 expiration=DEFAULT_EXPIRATION):
         """Invokes the base constructor with default values."""
         assert isinstance(num_entries, int), 'should be an int'
-        assert isinstance(flush_interval,
-                          datetime.timedelta), 'should be a timedelta'
-        assert isinstance(expiration,
-                          datetime.timedelta), 'should be a timedelta'
+        assert isinstance(flush_interval, timedelta), 'should be a timedelta'
+        assert isinstance(expiration, timedelta), 'should be a timedelta'
         if expiration <= flush_interval:
-            expiration = flush_interval + datetime.timedelta(milliseconds=1)
+            expiration = flush_interval + timedelta(milliseconds=1)
         return super(cls, CheckAggregationOptions).__new__(
             cls,
             num_entries,
             flush_interval,
             expiration)
+
+
+def to_cache_timer(datetime_func):
+    """Converts a datetime_func to a timestamp_func.
+
+    Args:
+       datetime_func (callable[[datatime]]): a func that returns the current
+         time
+
+    Returns:
+       time_func (callable[[timestamp]): a func that returns the timestamp
+         from the epoch
+    """
+    if datetime_func is None:
+        datetime_func = datetime.now
+
+    def _timer():
+        """Return the timestamp since the epoch."""
+        return (datetime_func() - datetime(1970, 1, 1)).total_seconds()
+
+    return _timer

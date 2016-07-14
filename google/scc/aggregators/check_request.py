@@ -44,6 +44,7 @@ from __future__ import absolute_import
 
 import collections
 import hashlib
+import httplib
 import logging
 from datetime import datetime
 
@@ -54,6 +55,118 @@ from .. import caches, label_descriptor, signing
 from . import metric_value, operation
 
 logger = logging.getLogger(__name__)
+
+# alias for brevity
+_CheckErrors = messages.CheckError.CodeValueValuesEnum
+_IS_OK = (httplib.OK, '', True)
+_IS_UNKNOWN = (
+    httplib.INTERNAL_SERVER_ERROR,
+    'Request blocked due to unsupported block reason {detail}',
+    False)
+_CHECK_ERROR_CONVERSION = {
+    _CheckErrors.NOT_FOUND: (
+        httplib.BAD_REQUEST,
+        'Client project not found. Please pass a valid project',
+        False,
+    ),
+    _CheckErrors.API_KEY_NOT_FOUND: (
+        httplib.BAD_REQUEST,
+        'API key not found. Please pass a valid API key',
+        True,
+    ),
+    _CheckErrors.API_KEY_EXPIRED: (
+        httplib.BAD_REQUEST,
+        'API key expired. Please renew the API key',
+        True,
+    ),
+    _CheckErrors.API_KEY_INVALID: (
+        httplib.BAD_REQUEST,
+        'API not valid. Please pass a valid API key',
+        True,
+    ),
+    _CheckErrors.SERVICE_NOT_ACTIVATED: (
+        httplib.FORBIDDEN,
+        '{detail} Please enable the project for {project_id}',
+        False,
+    ),
+    _CheckErrors.PERMISSION_DENIED: (
+        httplib.FORBIDDEN,
+        'Permission denied: {detail}',
+        False,
+    ),
+    _CheckErrors.IP_ADDRESS_BLOCKED: (
+        httplib.FORBIDDEN,
+        '{detail}',
+        False,
+    ),
+    _CheckErrors.REFERER_BLOCKED: (
+        httplib.FORBIDDEN,
+        '{detail}',
+        False,
+    ),
+    _CheckErrors.CLIENT_APP_BLOCKED: (
+        httplib.FORBIDDEN,
+        '{detail}',
+        False,
+    ),
+    _CheckErrors.PROJECT_DELETED: (
+        httplib.FORBIDDEN,
+        'Project {project_id} has been deleted',
+        False,
+    ),
+    _CheckErrors.PROJECT_INVALID: (
+        httplib.BAD_REQUEST,
+        'Client Project is not valid.  Please pass a valid project',
+        False,
+    ),
+    _CheckErrors.VISIBILITY_DENIED: (
+        httplib.FORBIDDEN,
+        'Project {project_id} has no visibility access to the service',
+        False,
+    ),
+    _CheckErrors.BILLING_DISABLED: (
+        httplib.FORBIDDEN,
+        'Project {project_id} has billing disabled. Please enable it',
+        False,
+    ),
+
+    # Fail open for internal server errors
+    _CheckErrors.NAMESPACE_LOOKUP_UNAVAILABLE: _IS_OK,
+    _CheckErrors.SERVICE_STATUS_UNAVAILABLE: _IS_OK,
+    _CheckErrors.BILLING_STATUS_UNAVAILABLE: _IS_OK,
+    _CheckErrors.QUOTA_CHECK_UNAVAILABLE: _IS_OK,
+}
+
+
+def convert_response(check_response, project_id):
+    """Computes a http status code and message `CheckResponse`
+
+    The return value a tuple (code, message, api_key_is_bad) where
+
+    code: is the http status code
+    message: is the message to return
+    api_key_is_bad: indicates that a given api_key is bad
+
+    Args:
+       check_response (:class:`google.apigen.servicecontrol_v1_messages.CheckResponse`):
+         the response from calling an api
+
+    Returns:
+       tuple(code, message, bool)
+    """
+    if not check_response or not check_response.checkErrors:
+        return _IS_OK
+
+    # only check the first error for now, as per ESP
+    theError = check_response.checkErrors[0]
+    error_tuple = _CHECK_ERROR_CONVERSION.get(theError.code, _IS_UNKNOWN)
+    if error_tuple[1].find('{') == -1:  # no replacements needed:
+        return error_tuple
+
+    updated_msg = error_tuple[1].replace('{project_id}', project_id)
+    updated_msg = updated_msg.replace('{detail}', theError.detail or '')
+    error_tuple = (error_tuple[0], updated_msg, error_tuple[2])
+    return error_tuple
 
 
 def sign(check_request):
@@ -83,14 +196,15 @@ def sign(check_request):
         md5.update(value_set.metricName)
         for mv in value_set.metricValues:
             metric_value.update_hash(md5, mv)
+
     md5.update('\x00')
     if op.quotaProperties:
         # N.B: this differs form cxx implementation, which serializes the
         # protobuf. This should be OK as the exact hash used does not need to
         # match across implementations.
         md5.update(repr(op.quotaProperties))
-    md5.update('\x00')
 
+    md5.update('\x00')
     return md5.digest()
 
 
@@ -136,8 +250,10 @@ class Info(collections.namedtuple('Info',
         }
         if self.client_ip:
             labels[_KNOWN_LABELS.SCC_CALLER_IP.label_name] = self.client_ip
+
         if self.referer:
             labels[_KNOWN_LABELS.SCC_REFERER.label_name] = self.referer
+
         op.labels = encoding.PyValueToMessage(
             messages.Operation.LabelsValue, labels)
         check_request = messages.CheckRequest(operation=op)
@@ -370,6 +486,7 @@ class Aggregator(object):
 
                 if (item.is_flushing):
                     logger.warn('last refresh request did not complete')
+
                 item.is_flushing = True
                 item.last_check_time = self._timer()
                 return None  # signal caller to send req
