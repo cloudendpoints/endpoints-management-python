@@ -46,7 +46,6 @@ with open('google/scc/__init__.py', 'r') as f:
     else:
         raise RuntimeError("No version number found!")
 
-
 install_requires = [
     'cachetools>=1.0.0,<2',
     'enum34>=1.1.6,<2',
@@ -54,20 +53,28 @@ install_requires = [
     'oauth2client>=1.5.2,<2',
     'ply>=3.8,<4.0',
     'protorpc>=0.11.1,<0.12',
-    'strict-rfc3339>=0.7,<0.8'
+    'urllib3>=1.16,<2.0',
+    'strict-rfc3339>=0.7,<0.8',
+]
+
+tests_require = [
+    "httmock>=1.25",
+    "mock>=2.0",
+    "pytest",
+    "pytest-cov"
 ]
 
 setup(
-    name='google-scc',
+    name='google-esp-library',
     version=version,
-    description='Service Control Client for Python',
+    description='Endpoints library for Python',
     long_description=open('README.rst').read(),
     author='Google Inc',
     author_email='googleapis-packages@google.com',
     url='',
     packages=find_packages(),
-    package_dir={'google-scc': 'google'},
-    license='MIT License',
+    package_dir={'google-esp-library': 'google', 'endpoints': 'endpoints'},
+    license='Apache License',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
@@ -77,6 +84,8 @@ setup(
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: Implementation :: CPython',
     ],
-    tests_require=['pytest'],
     install_requires=install_requires,
+    setup_requires=["pytest_runner"],
+    tests_require=tests_require,
+    test_suite="tests"
 )
