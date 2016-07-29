@@ -39,6 +39,7 @@ import google.apigen.servicecontrol_v1_messages as messages
 
 from . import label_descriptor, metric_descriptor
 from . import path_template
+from google.api.config import service_config
 
 
 logger = logging.getLogger(__name__)
@@ -86,11 +87,10 @@ def _load_simple():
 
 class Loaders(Enum):
     """Enumerates the functions used to load service configs."""
-    # pylint: disable=too-few-public-methods, fixme
-    #
-    # TODO: add an implementation that loads from a configuration service
+    # pylint: disable=too-few-public-methods
     ENVIRONMENT = (_load_from_well_known_env,)
     SIMPLE = (_load_simple,)
+    FROM_SERVICE_MANAGEMENT = (service_config.fetch_service_config,)
 
     def __init__(self, load_func):
         """Constructor.

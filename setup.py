@@ -63,7 +63,8 @@ setup(
     author_email='googleapis-packages@google.com',
     url='',
     packages=find_packages(),
-    package_dir={'google-esp-library': 'google', 'endpoints': 'endpoints'},
+    package_dir={'google-esp-library': 'google'},
+    namespace_packages=['google', 'google.api'],
     license='Apache License',
     classifiers=[
         'Development Status :: 4 - Beta',
