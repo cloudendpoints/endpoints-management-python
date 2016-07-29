@@ -1,8 +1,8 @@
-Google Service Control Client
-=============================
+Google Endpoints Service Library
+================================
 
-Google Service Control client server aggregates a number service for managing an
-API such as authentication, billing/quota control and monitoring report.
+Google Endpoints Service is used manage the control plane of an API by providing
+support for authentication, billing/quota control and monitoring reports.
 
 
 Installation
@@ -12,14 +12,14 @@ Installation
 Install using pip
 
   ::
-     [sudo] pip install google-scc
+     [sudo] pip install google-esp-library
 
 
 
 Python Versions
 ---------------
 
-google-scc is currently tested with Python 2.7.
+google-esp-library is currently tested with Python 2.7.
 
 
 Contributing
@@ -43,7 +43,7 @@ stable.
 Details
 -------
 
-For detailed documentation of the modules in google-scc, please watch `DOCUMENTATION`_.
+For detailed documentation of the modules in google-esp-library, please watch `DOCUMENTATION`_.
 
 
 License
@@ -51,8 +51,8 @@ License
 
 BSD - See `LICENSE`_ for more information.
 
-.. _`CONTRIBUTING`: https://github.com/googleapis/google-scc/blob/master/CONTRIBUTING.rst
-.. _`LICENSE`: https://github.com/googleapis/google-scc/blob/master/LICENSE
+.. _`CONTRIBUTING`: https://github.com/googleapis/google-esp-library/blob/master/CONTRIBUTING.rst
+.. _`LICENSE`: https://github.com/googleapis/google-esp-library/blob/master/LICENSE
 .. _`GRPC`: http://grpc.io
 .. _`Install virtualenv`: http://docs.python-guide.org/en/latest/dev/virtualenvs/
 .. _`pip`: https://pip.pypa.io
@@ -65,4 +65,4 @@ BSD - See `LICENSE`_ for more information.
 .. _`hyper`: https://github.com/lukasa/hyper
 .. _`Google APIs`: https://github.com/google/googleapis/
 .. _`Semantic Versioning`: http://semver.org/
-.. _`DOCUMENTATION`: https://google-scc.readthedocs.org/
+.. _`DOCUMENTATION`: https://google-esp-library.readthedocs.org/

@@ -7,7 +7,7 @@ Contributing
 1.  Make sure that your commit messages clearly describe the changes.
 1.  [Send][12] a pull request.
 
-Here are some guidelines for hacking on `google-scc`.
+Here are some guidelines for hacking on `google-esp-library`.
 
 Before writing code, file an issue
 ----------------------------------
@@ -17,8 +17,8 @@ is already working on your idea, your approach is not quite right, or that the
 functionality exists already. The ticket you file in the issue tracker will be
 used to hash that all out.
 
-Fork `google-scc`
--------------------
+Fork `google-esp-library`
+-------------------------
 
 We will use GitHub's mechanism for [forking][8] repositories and making pull
 requests. Fork the repository, and make your changes in the forked repository.
@@ -34,7 +34,7 @@ Make the pull request
 ---------------------
 
 Once you have made all your changes, tests, and updated the documentation,
-make a pull request to move everything back into the main `google-scc`
+make a pull request to move everything back into the main `google-esp-library`
 repository. Be sure to reference the original issue in the pull request.
 Expect some back-and-forth with regards to style and compliance of these
 rules.
@@ -43,23 +43,23 @@ Using a Development Checkout
 ----------------------------
 
 You’ll have to create a development environment to hack on
-`google-scc`, using a Git checkout:
+`google-esp-library`, using a Git checkout:
 
--   While logged into your GitHub account, navigate to the `google-scc`
+-   While logged into your GitHub account, navigate to the `google-esp-library`
     [repo][1] on GitHub.
--   Fork and clone the `google-scc` repository to your GitHub account
+-   Fork and clone the `google-esp-library` repository to your GitHub account
     by clicking the "Fork" button.
--   Clone your fork of `google-scc` from your GitHub account to your
+-   Clone your fork of `google-esp-library` from your GitHub account to your
     local computer, substituting your account username and specifying
-    the destination as `hack-on-google-scc`. For example:
+    the destination as `hack-on-google-esp-library`. For example:
 
     ```bash
     $ cd ${HOME}
-    $ git clone git@github.com:USERNAME/google-scc.git hack-on-google-scc
-    $ cd hack-on-google-scc
-    $ # Configure remotes such that you can pull changes from the google-scc
+    $ git clone git@github.com:USERNAME/google-esp-library.git hack-on-google-esp-library
+    $ cd hack-on-google-esp-library
+    $ # Configure remotes such that you can pull changes from the google-esp-library
     $ # repository into your local repository.
-    $ git remote add upstream https://github.com:google/google-scc
+    $ git remote add upstream https://github.com:google/google-esp-library
     $ # fetch and merge changes from upstream into master
     $ git fetch upstream
     $ git merge upstream/master
@@ -68,10 +68,10 @@ You’ll have to create a development environment to hack on
 Now your local repo is set up such that you will push changes to your
 GitHub repo, from which you can submit a pull request.
 
--   Create a virtualenv in which to install `google-scc`:
+-   Create a virtualenv in which to install `google-esp-library`:
 
     ```bash
-    $ cd ~/hack-on-google-scc
+    $ cd ~/hack-on-google-esp-library
     $ virtualenv -ppython2.7 env
     ```
 
@@ -84,32 +84,32 @@ GitHub repo, from which you can submit a pull request.
     chooses the Python 2.7 interpreter to be installed.
 
     From here on in within these instructions, the
-    `~/hack-on-google-scc/env` virtual environment you created above will be
+    `~/hack-on-google-esp-library/env` virtual environment you created above will be
     referred to as `$VENV`. To use the instructions in the steps that
-    follow literally, use the `export VENV=~/hack-on-google-scc/env`
+    follow literally, use the `export VENV=~/hack-on-google-esp-library/env`
     command.
 
--   Install `google-scc` from the checkout into the virtualenv using
+-   Install `google-esp-library` from the checkout into the virtualenv using
     `setup.py develop`. Running `setup.py develop` **must** be done while
-    the current working directory is the `google-scc` checkout
+    the current working directory is the `google-esp-library` checkout
     directory:
 
     ```bash
-    $ cd ~/hack-on-google-scc
+    $ cd ~/hack-on-google-esp-library
     $ $VENV/bin/python setup.py develop
     ```
 
 Running Tests
 --------------
 
--   To run all tests for `google-scc` on a single Python version, run
+-   To run all tests for `google-esp-library` on a single Python version, run
     `tox` from your development virtualenv (See
     **Using a Development Checkout** above).
 
--   To run the full set of `google-scc` tests on all platforms, install
+-   To run the full set of `google-esp-library` tests on all platforms, install
     [`tox`][2] into a system Python.  The `tox` console script will be
     installed into the scripts location for that Python.  While in the
-    `google-scc` checkout root directory (it contains `tox.ini`),
+    `google-esp-library` checkout root directory (it contains `tox.ini`),
     invoke the `tox` console script.  This will read the `tox.ini` file and
     execute the tests on multiple Python versions and platforms; while it runs,
     it creates a virtualenv for each version/platform combination.  For
@@ -117,7 +117,7 @@ Running Tests
 
     ```bash
     $ sudo pip install tox
-    $ cd ~/hack-on-google-scc
+    $ cd ~/hack-on-google-esp-library
     $ tox
 
 
@@ -143,6 +143,6 @@ we'll be able to accept your pull requests.
 [6]: #contributor-license-agreements
 [8]: https://help.github.com/articles/fork-a-repo/
 [9]: #before-writing-code-file-an-issue
-[10]: #fork-google-scc
+[10]: #fork-google-esp-library
 [11]: #include-tests
 [12]: #make-the-pull-request
