@@ -271,8 +271,8 @@ class Info(
         """Makes a `LogEntry` from this instance for the given log_name.
 
         Args:
-          rules (:class:`ReportingRules`): determines what labels, metrics and logs
-            to include in the report request.
+          rules (:class:`ReportingRules`): determines what labels, metrics and
+            logs to include in the report request.
           now (:class:`datetime.DateTime`): the current time
 
         Return:
@@ -318,12 +318,12 @@ class Info(
             severity=severity,
             structPayload=_struct_payload_from(d))
 
-    def as_report_request(self, rules, timer=datetime.now):
+    def as_report_request(self, rules, timer=datetime.utcnow):
         """Makes a `ServicecontrolServicesReportRequest` from this instance
 
         Args:
-          rules (:class:`ReportingRules`): determines what labels, metrics and logs
-            to include in the report request.
+          rules (:class:`ReportingRules`): determines what labels, metrics and
+            logs to include in the report request.
           timer: a function that determines the current time
 
         Return:
@@ -375,7 +375,8 @@ class Aggregator(object):
     MAX_OPERATION_COUNT = 1000
     """The maximum number of operations to send in a report request."""
 
-    def __init__(self, service_name, options, kinds=None, timer=datetime.now):
+    def __init__(self, service_name, options, kinds=None,
+                 timer=datetime.utcnow):
         """
         Constructor
 

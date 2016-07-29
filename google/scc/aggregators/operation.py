@@ -90,15 +90,18 @@ class Info(
             referer,
             service_name)
 
-    def as_operation(self, timer=datetime.now):
+    def as_operation(self, timer=datetime.utcnow):
         """Makes an ``Operation`` from this instance.
 
         Returns:
           an ``Operation``
 
         """
-        now = timestamp.to_rfc3339(timer())
-        op = messages.Operation(endTime=now, startTime=now)
+        now = timer()
+        op = messages.Operation(
+            endTime=timestamp.to_rfc3339(now),
+            startTime=timestamp.to_rfc3339(now),
+            importance=messages.Operation.ImportanceValueValuesEnum.LOW)
         if self.operation_id:
             op.operationId = self.operation_id
         if self.operation_name:

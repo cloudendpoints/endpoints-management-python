@@ -20,12 +20,19 @@ import collections
 from datetime import datetime, timedelta
 import google.apigen.servicecontrol_v1_messages as messages
 
-__version__ = '0.1.0'
+# 0.1.0 was the integration test start point
+# 0.1.1 fixed a dependency issue
+# 0.1.2 was an attempt to fix thread instantion
+# 0.1.3 fixed app_info.url handling and various typos
+__version__ = '0.1.3'
 
 # Alias the generated MetricKind and ValueType enums to simplify their usage
 # elsewhere
 MetricKind = messages.MetricDescriptor.MetricKindValueValuesEnum
 ValueType = messages.MetricDescriptor.ValueTypeValueValuesEnum
+
+USER_AGENT = 'ESP'
+SERVICE_AGENT = USER_AGENT + '/' + __version__
 
 
 class ReportAggregationOptions(
@@ -115,7 +122,7 @@ def to_cache_timer(datetime_func):
          from the epoch
     """
     if datetime_func is None:
-        datetime_func = datetime.now
+        datetime_func = datetime.utcnow
 
     def _timer():
         """Return the timestamp since the epoch."""

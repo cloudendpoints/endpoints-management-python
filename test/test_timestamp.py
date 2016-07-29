@@ -108,8 +108,8 @@ class TestCompare(unittest2.TestCase):
 
     def test_should_fail_if_inputs_do_not_have_the_same_type(self):
         testf = lambda: timestamp.compare(self.TESTS[0][0],
-                                          datetime.datetime.now())
+                                          datetime.datetime.utcnow())
         expect(testf).to(raise_error(ValueError))
         testf = lambda: timestamp.compare(self.TESTS[0],
-                                          datetime.datetime.now())
+                                          datetime.datetime.utcnow())
         expect(testf).to(raise_error(ValueError))

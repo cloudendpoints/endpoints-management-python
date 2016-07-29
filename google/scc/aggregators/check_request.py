@@ -212,7 +212,7 @@ class Info(collections.namedtuple('Info',
         op_info = operation.Info(**kw)
         return super(Info, cls).__new__(cls, client_ip, **op_info._asdict())
 
-    def as_check_request(self, timer=datetime.now):
+    def as_check_request(self, timer=datetime.utcnow):
         """Makes a `ServicecontrolServicesCheckRequest` from this instance
 
         Returns:
@@ -300,7 +300,8 @@ class Aggregator(object):
 
     """
 
-    def __init__(self, service_name, options, kinds=None, timer=datetime.now):
+    def __init__(self, service_name, options, kinds=None,
+                 timer=datetime.utcnow):
         """Constructor.
 
         Args:

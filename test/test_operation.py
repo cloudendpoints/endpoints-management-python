@@ -309,6 +309,7 @@ _INFO_TESTS = [
         referer='a_referer',
         service_name='a_service_name'),
      messages.Operation(
+         importance=messages.Operation.ImportanceValueValuesEnum.LOW,
          startTime=_REALLY_EARLY,
          endTime=_REALLY_EARLY)),
     (operation.Info(
@@ -316,6 +317,7 @@ _INFO_TESTS = [
         referer='a_referer',
         service_name='a_service_name'),
      messages.Operation(
+         importance=messages.Operation.ImportanceValueValuesEnum.LOW,
          operationId='an_op_id',
          startTime=_REALLY_EARLY,
          endTime=_REALLY_EARLY)),
@@ -325,6 +327,7 @@ _INFO_TESTS = [
         referer='a_referer',
         service_name='a_service_name'),
      messages.Operation(
+         importance=messages.Operation.ImportanceValueValuesEnum.LOW,
          operationId='an_op_id',
          operationName='an_op_name',
          startTime=_REALLY_EARLY,
@@ -337,6 +340,7 @@ _INFO_TESTS = [
         referer='a_referer',
         service_name='a_service_name'),
      messages.Operation(
+         importance=messages.Operation.ImportanceValueValuesEnum.LOW,
          consumerId='api_key:an_api_key',
          operationId='an_op_id',
          operationName='an_op_name',
@@ -351,6 +355,7 @@ _INFO_TESTS = [
         referer='a_referer',
         service_name='a_service_name'),
      messages.Operation(
+         importance=messages.Operation.ImportanceValueValuesEnum.LOW,
          consumerId='project:project_id',
          operationId='an_op_id',
          operationName='an_op_name',
@@ -372,7 +377,7 @@ class TestInfo(unittest2.TestCase):
 class _DateTimeTimer(object):
     def __init__(self, auto=False):
         self.auto = auto
-        self.time = datetime.datetime(1970, 1, 1)
+        self.time = datetime.datetime.utcfromtimestamp(0)
 
     def __call__(self):
         if self.auto:

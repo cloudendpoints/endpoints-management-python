@@ -28,13 +28,10 @@ from __future__ import absolute_import
 
 import base64
 from enum import Enum
-from . import __version__
+from . import USER_AGENT, SERVICE_AGENT
 import google.apigen.servicecontrol_v1_messages as messages
 
 ValueType = messages.LabelDescriptor.ValueTypeValueValuesEnum
-
-USER_AGENT = 'service-control-client/python'
-SERVICE_AGENT = USER_AGENT + '/' + __version__
 
 
 class Kind(Enum):

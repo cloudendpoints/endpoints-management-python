@@ -38,7 +38,6 @@ install_requires = [
     'google-apitools>=0.4.15,<0.5',
     'oauth2client>=1.5.2,<2',
     'ply>=3.8,<4.0',
-    'protorpc>=0.11.1,<0.12',
     "pylru>=1.0.9,<2.0",
     "pyjwkest>=1.0.0,<=1.0.9",
     "requests>=2.10.0,<3.0",

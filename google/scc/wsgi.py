@@ -175,7 +175,7 @@ class Middleware(object):
                  project_id,
                  scc_client,
                  next_operation_id=_next_operation_uuid,
-                 timer=datetime.now):
+                 timer=datetime.utcnow):
         """Initializes a new Middleware instance.
 
         Args:
@@ -223,6 +223,7 @@ class Middleware(object):
         # (e.g) buffering and counting the wsgi input stream is more appropriate here
         app_info.request_size = environ.get('CONTENT_LENGTH', 0)
         app_info.http_method = http_method
+        app_info.url = parsed_uri
 
         # run the application request in an inner handler that sets the status
         # and response code on app_info
@@ -239,7 +240,8 @@ class Middleware(object):
         # perform reporting
         latency_timer.end()
         if not app_info.response_size:
-            app_info.response_size = len(b''.join(result))
+            result = b''.join(result)
+            app_info.response_size = len(result)
         rules = environ.get(ServiceLoaderMiddleware.REPORTING_RULES)
         report_req = self._create_report_request(method_info,
                                                  check_info,
@@ -274,7 +276,7 @@ class Middleware(object):
             response_size=app_info.response_size,
             referer=check_info.referer,
             service_name=check_info.service_name,
-            url=check_info.url
+            url=app_info.url
         )
         return report_info.as_report_request(reporting_rules, timer=self._timer)
 
@@ -319,6 +321,7 @@ class _AppInfo(object):
         self.response_size = 0
         self.request_size = 0
         self.http_method = None
+        self.url = None
 
 
 class _LatencyTimer(object):
@@ -344,7 +347,7 @@ class _LatencyTimer(object):
             return None
         if not self._end:
             return None
-        return self._end - self.start
+        return self._end - self._start
 
     @property
     def overhead_time(self):
@@ -352,11 +355,11 @@ class _LatencyTimer(object):
             return None
         if not self._app_start:
             return None
-        return self._app_start - self.start
+        return self._app_start - self._start
 
 
 def _find_api_key_param(info, parsed_uri):
-    params = info.api_key_url_query_params()
+    params = info.api_key_url_query_params
     if not params:
         return None
 
@@ -373,7 +376,7 @@ def _find_api_key_param(info, parsed_uri):
 
 
 def _find_api_key_header(info, environ):
-    headers = info.api_key_http_headers()
+    headers = info.api_key_http_header
     if not headers:
         return None
 

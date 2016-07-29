@@ -51,6 +51,7 @@ import time
 from . import CheckAggregationOptions, ReportAggregationOptions, to_cache_timer
 import google.apigen.servicecontrol_v1_client as http_client
 from .aggregators import check_request, report_request
+from . import USER_AGENT
 
 
 logger = logging.getLogger(__name__)
@@ -129,7 +130,7 @@ class Client(object):
 
       >>> # create an scc client by loading configuration from the
       >>> # a JSON file configured by an environment variable
-      >>> json_conf_client = client.Loaders.ENVIRONMENT(service_name)
+      >>> json_conf_client = client.Loaders.ENVIRONMENT.load(service_name)
 
     Client is thread-compatible
 
@@ -140,7 +141,7 @@ class Client(object):
                  service_name,
                  check_options,
                  report_options,
-                 timer=datetime.now):
+                 timer=datetime.utcnow):
         """
 
         Args:
@@ -162,7 +163,11 @@ class Client(object):
         self._stopped = False
         self._timer = timer
         self._thread = None
-        self._transport = http_client.ServicecontrolV1()
+        additional_http_headers = {"user-agent": USER_AGENT}
+        self._transport = http_client.ServicecontrolV1(
+            additional_http_headers=additional_http_headers,
+            log_request=True,
+            log_response=True)
         self._lock = threading.RLock()
 
     def start(self):
@@ -183,7 +188,9 @@ class Client(object):
                 logger.info('%s is already started', self)
             self._stopped = False
             self._running = True
-            self._thread = _THREAD_CLASS(self._schedule_flushes)
+            logger.info('starting a cache update thread of type %s',
+                        _THREAD_CLASS)
+            self._thread = _THREAD_CLASS(target=self._schedule_flushes)
             self._thread.start()
 
     def stop(self):
@@ -197,6 +204,7 @@ class Client(object):
         self._assert_is_running()
         with self._lock:
             self._stopped = True
+            self._flush_reports()
             if self._scheduler and self._scheduler.empty():
                 # if there are events scheduled, then _running will subsequently
                 # be set False by the scheduler thread.  This handles the
@@ -232,8 +240,9 @@ class Client(object):
         # return None to indicate that no response was obtained
         try:
             return self._transport.services.check(check_req)
-        except Exception:  # pylint: disable=broad-except
-            logger.error('direct send of check request failed %s', check_request)
+        except Exception as e:  # pylint: disable=broad-except
+            logger.error('direct send of check request failed %s: %s',
+                         check_request, e)
             return None
 
     def report(self, report_req):
@@ -247,8 +256,8 @@ class Client(object):
             logger.info('need to send for a report request directly')
             try:
                 self._transport.services.report(report_req)
-            except Exception:  # pylint: disable=broad-except
-                logger.error('direct send for report request failed')
+            except Exception as e:  # pylint: disable=broad-except
+                logger.error('direct send for report request failed: %e', e)
 
     def add_check_response(self, req, resp):
         """Adds the response from sending to `req` to this instance's cache.
@@ -267,21 +276,21 @@ class Client(object):
         self._scheduler = sched.scheduler(to_cache_timer(self._timer), time.sleep)
         self._flush_schedule_check_aggregator()
         self._flush_schedule_report_aggregator()
-        self._scheduler.run()  # this should blocks until self._stopped is set,
+        # this should should block until self._stopped is set
+        self._scheduler.run()
         logger.info('scheduler.run completed, %s will exit', threading.current_thread())
 
-    def _check_if_stopped(self):
-        with self._lock:
-            if not self._stopped:
-                return False
+    def _cleanup_if_stopped(self):
+        if not self._stopped:
+            return False
 
-            self._check_aggregator.clear()
-            self._report_aggregator.clear()
-            self._running = False
-            return True
+        self._check_aggregator.clear()
+        self._report_aggregator.clear()
+        self._running = False
+        return True
 
     def _flush_schedule_check_aggregator(self):
-        if self._check_if_stopped:
+        if self._cleanup_if_stopped():
             return
 
         flush_period = self._check_aggregator.flush_interval.total_seconds()
@@ -292,8 +301,8 @@ class Client(object):
         for req in self._check_aggregator.flush():
             try:
                 resp = self._transport.services.check(req)
-            except Exception:  # pylint: disable=broad-except
-                logger.error('failed to flush check_req %s', req)
+            except Exception as e:  # pylint: disable=broad-except
+                logger.error('failed to flush check_req %s: %s', req)
             self.add_check_response(req, resp)
 
         # schedule a repeat of this method
@@ -305,27 +314,29 @@ class Client(object):
         )
 
     def _flush_schedule_report_aggregator(self):
-        if self._check_if_stopped:
+        if self._cleanup_if_stopped():
             return
 
         flush_period = self._report_aggregator.flush_interval.total_seconds()
         if flush_period < 0:  # caching is disabled
             return
 
-        logger.debug('flushing the report aggregator')
-        for req in self._report_aggregator.flush():
-            try:
-                self._transport.services.report(req)
-            except Exception:  # pylint: disable=broad-except
-                logger.error('failed to flush report_req %s', req)
-
-        # schedule a repeat of this method
+        # flush reports and schedule a repeat of this method
+        self._flush_reports()
         self._scheduler.enter(
             flush_period,
             1,  # a lower priority than check flushes
             self._flush_schedule_report_aggregator,
             ()
         )
+
+    def _flush_reports(self):
+        logger.debug('flushing the report aggregator')
+        for req in self._report_aggregator.flush():
+            try:
+                self._transport.services.report(req)
+            except Exception as e:  # pylint: disable=broad-except
+                logger.error('failed to flush report_req %s: %s', req, e)
 
 
 def use_default_thread():

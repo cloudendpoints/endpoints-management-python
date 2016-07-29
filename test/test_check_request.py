@@ -168,7 +168,7 @@ class TestAggregatorThatCannotCache(unittest2.TestCase):
 class _DateTimeTimer(object):
     def __init__(self, auto=False):
         self.auto = auto
-        self.time = datetime.datetime(1970, 1, 1)
+        self.time = datetime.datetime.utcfromtimestamp(0)
 
     def __call__(self):
         if self.auto:
@@ -366,6 +366,7 @@ _INFO_TESTS = [
         referer='a_referer',
         service_name=_TEST_SERVICE_NAME),
      messages.Operation(
+         importance=messages.Operation.ImportanceValueValuesEnum.LOW,
          labels = encoding.PyValueToMessage(
              messages.Operation.LabelsValue, {
                  'servicecontrol.googleapis.com/user_agent': _WANTED_USER_AGENT,
@@ -383,6 +384,7 @@ _INFO_TESTS = [
         referer='a_referer',
         service_name=_TEST_SERVICE_NAME),
      messages.Operation(
+         importance=messages.Operation.ImportanceValueValuesEnum.LOW,
          consumerId='api_key:an_api_key',
          labels = encoding.PyValueToMessage(
              messages.Operation.LabelsValue, {
@@ -403,6 +405,7 @@ _INFO_TESTS = [
         referer='a_referer',
         service_name=_TEST_SERVICE_NAME),
      messages.Operation(
+         importance=messages.Operation.ImportanceValueValuesEnum.LOW,
          consumerId='project:project_id',
          labels = encoding.PyValueToMessage(
              messages.Operation.LabelsValue, {

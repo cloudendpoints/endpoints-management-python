@@ -15,6 +15,7 @@
 from __future__ import absolute_import
 
 import datetime
+import time
 import unittest2
 from expects import be_none, equal, expect, raise_error
 
@@ -73,38 +74,41 @@ _TEST_CONSUMER_ID = 'testConsumerID'
 _TEST_OP1_NAME = 'testOp1'
 _TEST_OP2_NAME = 'testOp2'
 _WANTED_USER_AGENT = label_descriptor.USER_AGENT
-_START_OF_EPOCH = timestamp.to_rfc3339(datetime.datetime(1970, 1, 1, 0, 0, 0))
+_START_OF_EPOCH = datetime.datetime.utcfromtimestamp(0)
+_START_OF_EPOCH_TIMESTAMP = timestamp.to_rfc3339(_START_OF_EPOCH)
 _TEST_SERVICE_NAME = 'a_service_name'
 _TEST_SIZE=1
 _TEST_LATENCY=datetime.timedelta(seconds=7)
 _EXPECTED_OK_LOG_ENTRY = messages.LogEntry(
     name = 'endpoints-log',
     severity = messages.LogEntry.SeverityValueValuesEnum.INFO,
-    structPayload=encoding.PyValueToMessage(messages.LogEntry.StructPayloadValue, {
-        'http_response_code': 200,
-        'http_method': 'GET',
-        'request_latency_in_ms': 7000.0,
-        'timestamp': -32400.0,
-        'response_size': 1,
-        'request_size': 1,
-        'referer': 'a_referer',
-    }),
-    timestamp=_START_OF_EPOCH
+    structPayload=encoding.PyValueToMessage(
+        messages.LogEntry.StructPayloadValue, {
+            'http_response_code': 200,
+            'http_method': 'GET',
+            'request_latency_in_ms': 7000.0,
+            'timestamp': time.mktime(_START_OF_EPOCH.timetuple()),
+            'response_size': 1,
+            'request_size': 1,
+            'referer': 'a_referer',
+        }),
+    timestamp=_START_OF_EPOCH_TIMESTAMP
 )
 _EXPECTED_NOK_LOG_ENTRY = messages.LogEntry(
     name = 'endpoints-log',
     severity = messages.LogEntry.SeverityValueValuesEnum.ERROR,
-    structPayload=encoding.PyValueToMessage(messages.LogEntry.StructPayloadValue, {
-        'http_response_code': 404,
-        'http_method': 'GET',
-        'request_latency_in_ms': 7000.0,
-        'timestamp': -32400.0,
-        'response_size': 1,
-        'request_size': 1,
-        'referer': 'a_referer',
-        'error_cause': 'internal',
-    }),
-    timestamp=_START_OF_EPOCH
+    structPayload=encoding.PyValueToMessage(
+        messages.LogEntry.StructPayloadValue, {
+            'http_response_code': 404,
+            'http_method': 'GET',
+            'request_latency_in_ms': 7000.0,
+            'timestamp': time.mktime(_START_OF_EPOCH.timetuple()),
+            'response_size': 1,
+            'request_size': 1,
+            'referer': 'a_referer',
+            'error_cause': 'internal',
+        }),
+    timestamp=_START_OF_EPOCH_TIMESTAMP
 )
 
 _EXPECTED_OK_METRIC = metric_descriptor.KnownMetrics.CONSUMER_REQUEST_COUNT
@@ -122,11 +126,12 @@ _ADD_LOG_TESTS = [
         response_size=_TEST_SIZE,
         service_name=_TEST_SERVICE_NAME),
      messages.Operation(
+         importance=messages.Operation.ImportanceValueValuesEnum.LOW,
          logEntries=[_EXPECTED_OK_LOG_ENTRY],
          operationId='an_op_id',
          operationName='an_op_name',
-         startTime=_START_OF_EPOCH,
-         endTime=_START_OF_EPOCH)
+         startTime=_START_OF_EPOCH_TIMESTAMP,
+         endTime=_START_OF_EPOCH_TIMESTAMP)
     ),
     (report_request.Info(
         response_code=404,
@@ -141,11 +146,12 @@ _ADD_LOG_TESTS = [
         response_size=_TEST_SIZE,
         service_name=_TEST_SERVICE_NAME),
      messages.Operation(
+         importance=messages.Operation.ImportanceValueValuesEnum.LOW,
          logEntries=[_EXPECTED_NOK_LOG_ENTRY],
          operationId='an_op_id',
          operationName='an_op_name',
-         startTime=_START_OF_EPOCH,
-         endTime=_START_OF_EPOCH)
+         startTime=_START_OF_EPOCH_TIMESTAMP,
+         endTime=_START_OF_EPOCH_TIMESTAMP)
     )
 ]
 
@@ -162,6 +168,7 @@ _ADD_METRICS_TESTS = [
         response_size=_TEST_SIZE,
         service_name=_TEST_SERVICE_NAME),
      messages.Operation(
+         importance=messages.Operation.ImportanceValueValuesEnum.LOW,
          logEntries=[],
          metricValueSets = [
              messages.MetricValueSet(
@@ -173,8 +180,8 @@ _ADD_METRICS_TESTS = [
          ],
          operationId='an_op_id',
          operationName='an_op_name',
-         startTime=_START_OF_EPOCH,
-         endTime=_START_OF_EPOCH)
+         startTime=_START_OF_EPOCH_TIMESTAMP,
+         endTime=_START_OF_EPOCH_TIMESTAMP)
     ),
     (report_request.Info(
         response_code=404,
@@ -189,6 +196,7 @@ _ADD_METRICS_TESTS = [
         response_size=_TEST_SIZE,
         service_name=_TEST_SERVICE_NAME),
      messages.Operation(
+         importance=messages.Operation.ImportanceValueValuesEnum.LOW,
          logEntries=[],
          metricValueSets = [
              messages.MetricValueSet(
@@ -206,8 +214,8 @@ _ADD_METRICS_TESTS = [
          ],
          operationId='an_op_id',
          operationName='an_op_name',
-         startTime=_START_OF_EPOCH,
-         endTime=_START_OF_EPOCH)
+         startTime=_START_OF_EPOCH_TIMESTAMP,
+         endTime=_START_OF_EPOCH_TIMESTAMP)
     ),
 ]
 
@@ -220,6 +228,7 @@ _ADD_LABELS_TESTS = [
         referer='a_referer',
         service_name=_TEST_SERVICE_NAME),
      messages.Operation(
+         importance=messages.Operation.ImportanceValueValuesEnum.LOW,
          labels=encoding.PyValueToMessage(
              messages.Operation.LabelsValue, {
                  _EXPECTED_OK_LABEL.label_name: 'a_referer'
@@ -227,11 +236,10 @@ _ADD_LABELS_TESTS = [
          logEntries=[],
          operationId='an_op_id',
          operationName='an_op_name',
-         startTime=_START_OF_EPOCH,
-         endTime=_START_OF_EPOCH)
+         startTime=_START_OF_EPOCH_TIMESTAMP,
+         endTime=_START_OF_EPOCH_TIMESTAMP)
     ),
 ]
-
 
 
 class TestInfo(unittest2.TestCase):
@@ -289,17 +297,20 @@ class TestInfo(unittest2.TestCase):
         for info, want in _ADD_LOG_TESTS:
             got = info.as_report_request(rules, timer=timer)
             expect(got.serviceName).to(equal(_TEST_SERVICE_NAME))
-            # compare the log entry in detail to avoid instability when comparing
-            # the operations directly
+            # compare the log entry in detail to avoid instability when
+            # comparing the operations directly
             wantLogEntry = want.logEntries[0]
             gotLogEntry = got.reportRequest.operations[0].logEntries[0]
             expect(gotLogEntry.name).to(equal(wantLogEntry.name))
             expect(gotLogEntry.timestamp).to(equal(wantLogEntry.timestamp))
+            print 'got timestamp', gotLogEntry.timestamp
+            print 'want timestamp', wantLogEntry.timestamp
             expect(gotLogEntry.severity).to(equal(wantLogEntry.severity))
             gotStruct = encoding.MessageToPyValue(gotLogEntry.structPayload)
+            print 'got struct', gotStruct
             wantStruct = encoding.MessageToPyValue(wantLogEntry.structPayload)
+            print 'want struct', wantStruct
             expect(gotStruct).to(equal(wantStruct))
-
 
     def test_should_add_expected_metric_as_report_request(self):
         timer = _DateTimeTimer()
@@ -320,8 +331,6 @@ class TestInfo(unittest2.TestCase):
             got = info.as_report_request(rules, timer=timer)
             expect(got.serviceName).to(equal(_TEST_SERVICE_NAME))
             expect(got.reportRequest.operations[0]).to(equal(want))
-
-
 
 
 class TestAggregatorReport(unittest2.TestCase):
@@ -450,7 +459,7 @@ class TestCachingAggregator(unittest2.TestCase):
 class _DateTimeTimer(object):
     def __init__(self, auto=False):
         self.auto = auto
-        self.time = datetime.datetime(1970, 1, 1)
+        self.time = datetime.datetime.utcfromtimestamp(0)
 
     def __call__(self):
         if self.auto:
