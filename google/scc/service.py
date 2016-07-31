@@ -70,10 +70,10 @@ _SIMPLE_CONFIG = """
     "http": {
         "rules": [{
             "selector": "allow-all.GET",
-            "get": "*"
+            "get": "**"
         }, {
             "selector": "allow-all.POST",
-            "post": "*"
+            "post": "**"
         }]
     }
 }

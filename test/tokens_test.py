@@ -22,7 +22,7 @@ from Crypto import PublicKey
 from jwkest import ecc
 from jwkest import jwk
 from jwkest import jws
-from tests import token_utils
+from test import token_utils
 
 from google.auth import suppliers
 from google.auth import tokens

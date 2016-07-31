@@ -48,10 +48,10 @@ import sched
 import threading
 import time
 
-from . import CheckAggregationOptions, ReportAggregationOptions, to_cache_timer
+from google.scc import (USER_AGENT, CheckAggregationOptions,
+                        ReportAggregationOptions, to_cache_timer)
+from google.scc.aggregators import check_request, report_request
 import google.apigen.servicecontrol_v1_client as http_client
-from .aggregators import check_request, report_request
-from . import USER_AGENT
 
 
 logger = logging.getLogger(__name__)
@@ -63,11 +63,11 @@ CONFIG_VAR = 'ENDPOINTS_SERVER_CONFIG_FILE'
 def _load_from_well_known_env():
     if CONFIG_VAR not in os.environ:
         logger.info('did not load server config; no environ var %s', CONFIG_VAR)
-        return None
+        return _load_default()
     json_file = os.environ[CONFIG_VAR]
-    if not os.path.exists(os.environ[CONFIG_VAR]):
+    if not os.path.exists(json_file):
         logger.warn('did not load service; missing config file %s', json_file)
-        return None
+        return _load_default()
     try:
         with open(json_file) as f:
             json_dict = json.load(f)
@@ -75,7 +75,8 @@ def _load_from_well_known_env():
             report_json = json_dict['reportAggregatorConfig']
             check_options = CheckAggregationOptions(
                 num_entries=check_json['cacheEntries'],
-                expiration=check_json['responseExpirationMs'],
+                expiration=timedelta(
+                    milliseconds=check_json['responseExpirationMs']),
                 flush_interval=timedelta(
                     milliseconds=check_json['flushIntervalMs']))
             report_options = ReportAggregationOptions(
@@ -84,12 +85,19 @@ def _load_from_well_known_env():
                     milliseconds=report_json['flushIntervalMs']))
             return check_options, report_options
     except (KeyError, ValueError):
-        logger.warn('did not load service; bad json config file %s', json_file)
-        return None
+        logger.warn('did not load service; bad json config file %s',
+                    json_file,
+                    exc_info=True)
+        return _load_default()
 
 
 def _load_default():
     return CheckAggregationOptions(), ReportAggregationOptions()
+
+
+def _load_no_cache():
+    return (CheckAggregationOptions(num_entries=-1),
+            ReportAggregationOptions(num_entries=-1))
 
 
 class Loaders(Enum):
@@ -97,6 +105,7 @@ class Loaders(Enum):
     # pylint: disable=too-few-public-methods
     ENVIRONMENT = (_load_from_well_known_env,)
     DEFAULT = (_load_default,)
+    NO_CACHE = (_load_no_cache,)
 
     def __init__(self, load_func):
         """Constructor.
@@ -106,11 +115,19 @@ class Loaders(Enum):
         self._load_func = load_func
 
     def load(self, service_name, **kw):
-        check_opts, report_opts = self._load_func(**kw)
+        check_opts, report_opts = self._load_func()
         return Client(service_name, check_opts, report_opts, **kw)
 
 
 _THREAD_CLASS = threading.Thread
+
+
+def _create_http_transport():
+    additional_http_headers = {"user-agent": USER_AGENT}
+    return http_client.ServicecontrolV1(
+        additional_http_headers=additional_http_headers,
+        log_request=True,
+        log_response=True)
 
 
 class Client(object):
@@ -141,7 +158,8 @@ class Client(object):
                  service_name,
                  check_options,
                  report_options,
-                 timer=datetime.utcnow):
+                 timer=datetime.utcnow,
+                 create_transport=_create_http_transport):
         """
 
         Args:
@@ -163,11 +181,7 @@ class Client(object):
         self._stopped = False
         self._timer = timer
         self._thread = None
-        additional_http_headers = {"user-agent": USER_AGENT}
-        self._transport = http_client.ServicecontrolV1(
-            additional_http_headers=additional_http_headers,
-            log_request=True,
-            log_response=True)
+        self._create_transport = create_transport
         self._lock = threading.RLock()
 
     def start(self):
@@ -186,6 +200,8 @@ class Client(object):
         with self._lock:
             if self._running:
                 logger.info('%s is already started', self)
+                return
+
             self._stopped = False
             self._running = True
             logger.info('starting a cache update thread of type %s',
@@ -196,15 +212,17 @@ class Client(object):
     def stop(self):
         """Halts processing
 
-        This will lead to the caches being cleared and a stop to the current
-        processing thread.
+        This will lead to the reports being flushed, the caches being cleared
+        and a stop to the current processing thread.
 
         """
-
-        self._assert_is_running()
         with self._lock:
+            if self._stopped:
+                logger.info('%s is already stopped', self)
+                return
+
             self._stopped = True
-            self._flush_reports()
+            self._flush_all_reports()
             if self._scheduler and self._scheduler.empty():
                 # if there are events scheduled, then _running will subsequently
                 # be set False by the scheduler thread.  This handles the
@@ -239,10 +257,13 @@ class Client(object):
         # complete, They should fail open, so here simply log the error and
         # return None to indicate that no response was obtained
         try:
-            return self._transport.services.check(check_req)
-        except Exception as e:  # pylint: disable=broad-except
-            logger.error('direct send of check request failed %s: %s',
-                         check_request, e)
+            transport = self._create_transport()
+            resp = transport.services.check(check_req)
+            self._check_aggregator.add_response(check_req, resp)
+            return resp
+        except Exception:  # pylint: disable=broad-except
+            logger.error('direct send of check request failed %s',
+                         check_request, exc_info=True)
             return None
 
     def report(self, report_req):
@@ -253,21 +274,13 @@ class Client(object):
         """
         self._assert_is_running()
         if not self._report_aggregator.report(report_req):
-            logger.info('need to send for a report request directly')
+            logger.info('need to send a report request directly')
             try:
-                self._transport.services.report(report_req)
-            except Exception as e:  # pylint: disable=broad-except
-                logger.error('direct send for report request failed: %e', e)
-
-    def add_check_response(self, req, resp):
-        """Adds the response from sending to `req` to this instance's cache.
-
-        Args:
-          req (`ServicecontrolServicesCheckRequest`): the request
-          resp (CheckResponse): the response from sending the request
-        """
-        self._assert_is_running()
-        self._check_aggregator.add_response(req, resp)
+                transport = self._create_transport()
+                transport.services.report(report_req)
+            except Exception:  # pylint: disable=broad-except
+                logger.error('direct send for report request failed',
+                             exc_info=True)
 
     def _assert_is_running(self):
         assert self._running, '%s needs to be running' % (self,)
@@ -298,11 +311,12 @@ class Client(object):
             return
 
         logger.debug('flushing the check aggregator')
+        transport = self._create_transport()
         for req in self._check_aggregator.flush():
             try:
-                resp = self._transport.services.check(req)
-            except Exception as e:  # pylint: disable=broad-except
-                logger.error('failed to flush check_req %s: %s', req)
+                resp = transport.services.check(req)
+            except Exception:  # pylint: disable=broad-except
+                logger.error('failed to flush check_req %s', req, exc_info=True)
             self.add_check_response(req, resp)
 
         # schedule a repeat of this method
@@ -322,7 +336,12 @@ class Client(object):
             return
 
         # flush reports and schedule a repeat of this method
-        self._flush_reports()
+        transport = self._create_transport()
+        for req in self._report_aggregator.flush():
+            try:
+                transport.services.report(req)
+            except Exception:  # pylint: disable=broad-except
+                logger.error('failed to flush report_req %s', req, exc_info=True)
         self._scheduler.enter(
             flush_period,
             1,  # a lower priority than check flushes
@@ -330,13 +349,15 @@ class Client(object):
             ()
         )
 
-    def _flush_reports(self):
-        logger.debug('flushing the report aggregator')
-        for req in self._report_aggregator.flush():
+    def _flush_all_reports(self):
+        all_requests = self._report_aggregator.clear()
+        logger.info('flushing all reports (count=%d)', len(all_requests))
+        transport = self._create_transport()
+        for req in all_requests:
             try:
-                self._transport.services.report(req)
-            except Exception as e:  # pylint: disable=broad-except
-                logger.error('failed to flush report_req %s: %s', req, e)
+                transport.services.report(req)
+            except Exception:  # pylint: disable=broad-except
+                logger.error('failed to flush report_req %s', req, exc_info=True)
 
 
 def use_default_thread():

@@ -37,11 +37,11 @@ from . import operation
 
 logger = logging.getLogger(__name__)
 
-_UNSET_SIZE = -1
+SIZE_NOT_SET = -1
 
 
 def _validate_int_arg(name, value):
-    if value == _UNSET_SIZE or (isinstance(value, int) and value > 0):
+    if value == SIZE_NOT_SET or (isinstance(value, int) and value > 0):
         return
     raise ValueError('%s should be a positive int/long' % (name,))
 
@@ -225,9 +225,9 @@ class Info(
                 platform=ReportedPlatforms.UNKNOWN,
                 producer_project_id='',
                 protocol=ReportedProtocols.UNKNOWN,
-                request_size=_UNSET_SIZE,
+                request_size=SIZE_NOT_SET,
                 request_time=None,
-                response_size=_UNSET_SIZE,
+                response_size=SIZE_NOT_SET,
                 response_code=200,
                 url='',
                 **kw):
@@ -361,6 +361,9 @@ class Info(
             reportRequest=messages.ReportRequest(operations=[op]))
 
 
+_NO_RESULTS = tuple()
+
+
 class Aggregator(object):
     """Aggregates Service Control Report requests.
 
@@ -423,7 +426,7 @@ class Aggregator(object):
 
         """
         if self._cache is None:
-            return []
+            return _NO_RESULTS
         with self._cache as c:
             flushed_ops = [x.as_operation() for x in list(c.out_deque)]
             c.out_deque.clear()
@@ -441,10 +444,14 @@ class Aggregator(object):
 
     def clear(self):
         """Clears the cache."""
+        if self._cache is None:
+            return _NO_RESULTS
         if self._cache is not None:
             with self._cache as k:
+                res = [x.as_operation() for x in k.values()]
                 k.clear()
                 k.out_deque.clear()
+                return res
 
     def report(self, req):
         """Adds a report request to the cache.

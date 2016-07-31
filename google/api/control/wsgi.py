@@ -30,8 +30,8 @@ import uuid
 import urlparse
 import wsgiref.util
 
-from . import service
-from .aggregators import check_request, report_request
+from google.scc import service
+from google.scc.aggregators import check_request, report_request
 
 
 logger = logging.getLogger(__name__)
@@ -40,15 +40,15 @@ logger = logging.getLogger(__name__)
 _CONTENT_LENGTH = 'content-length'
 
 
-def add_all(app, project_id, scc_client,
+def add_all(application, project_id, control_client,
             loader=service.Loaders.FROM_SERVICE_MANAGEMENT):
     """Adds all endpoints middleware to a wsgi application.
 
-    Sets up app to use all default endpoints middleware.
+    Sets up application to use all default endpoints middleware.
 
     Example:
 
-      >>> app = MyWsgiApp()  # an existing WSGI application
+      >>> application = MyWsgiApp()  # an existing WSGI application
       >>>
       >>> # the name of the controlled service
       >>> service_name = 'my-service-name'
@@ -58,20 +58,20 @@ def add_all(app, project_id, scc_client,
       >>>
       >>> # wrap the app for service control
       >>> from google.scc import wsgi
-      >>> scc_client = client.Loaders.DEFAULT.load(service_name)
-      >>> scc_client.start()
-      >>> wrapped_app = add_all(app, project_id, scc_client)
+      >>> control_client = client.Loaders.DEFAULT.load(service_name)
+      >>> control_client.start()
+      >>> wrapped_app = add_all(application, project_id, control_client)
       >>>
       >>> # now use wrapped_app in place of app
 
     Args:
        application: the wrapped wsgi application
        project_id: the project_id thats providing service control support
-       scc_client: the service control client instance
+       control_client: the service control client instance
        loader (:class:`google.scc.service.Loader`): loads the service
           instance that configures this instance's behaviour
     """
-    with_control = Middleware(app, scc_client, project_id)
+    with_control = Middleware(application, project_id, control_client)
     # TODO add the auth filter here
     return ServiceLoaderMiddleware(with_control, loader=loader)
 
@@ -160,9 +160,9 @@ class Middleware(object):
       >>>
       >>> # wrap the app for service control
       >>> from google.scc import client, wsgi, service
-      >>> scc_client = client.Loaders.DEFAULT.load(service_name)
-      >>> scc_client.start()
-      >>> wrapped_app = wsgi.Middleware(app, scc_client, project_id)
+      >>> control_client = client.Loaders.DEFAULT.load(service_name)
+      >>> control_client.start()
+      >>> wrapped_app = wsgi.Middleware(app, control_client, project_id)
       >>> serviced_app = wsgi.ServiceLoaderMiddleware(wrapped,app)
       >>>
       >>> # now use serviced_app in place of app
@@ -173,7 +173,7 @@ class Middleware(object):
     def __init__(self,
                  application,
                  project_id,
-                 scc_client,
+                 control_client,
                  next_operation_id=_next_operation_uuid,
                  timer=datetime.utcnow):
         """Initializes a new Middleware instance.
@@ -181,14 +181,14 @@ class Middleware(object):
         Args:
            application: the wrapped wsgi application
            project_id: the project_id thats providing service control support
-           scc_client: the service control client instance
+           control_client: the service control client instance
            next_operation_id (func): produces the next operation
            timer (func[[datetime.datetime]]): a func that obtains the current time
            """
         self._application = application
         self._project_id = project_id
         self._next_operation_id = next_operation_id
-        self._scc_client = scc_client
+        self._control_client = control_client
         self._timer = timer
 
     def __call__(self, environ, start_response):
@@ -208,20 +208,19 @@ class Middleware(object):
         check_info = self._create_check_info(method_info, parsed_uri, environ)
         check_req = check_info.as_check_request()
         logger.debug('checking %s with %s', method_info, check_request)
-        check_resp = self._scc_client.check(check_req)
+        check_resp = self._control_client.check(check_req)
         error_msg = self._handle_check_response(check_req, check_resp, start_response)
         if error_msg:
             return error_msg
 
         # update the client with the response
-        logger.debug('adding a check response %s', check_resp)
-        self._scc_client.add_check_response(check_req, check_resp)
         latency_timer.app_start()
 
         app_info = _AppInfo()
         # TODO: determine if any of the more complex ways of getting the request size
         # (e.g) buffering and counting the wsgi input stream is more appropriate here
-        app_info.request_size = environ.get('CONTENT_LENGTH', 0)
+        app_info.request_size = environ.get('CONTENT_LENGTH',
+                                            report_request.SIZE_NOT_SET)
         app_info.http_method = http_method
         app_info.url = parsed_uri
 
@@ -239,7 +238,7 @@ class Middleware(object):
 
         # perform reporting
         latency_timer.end()
-        if not app_info.response_size:
+        if app_info.response_size == report_request.SIZE_NOT_SET:
             result = b''.join(result)
             app_info.response_size = len(result)
         rules = environ.get(ServiceLoaderMiddleware.REPORTING_RULES)
@@ -249,7 +248,7 @@ class Middleware(object):
                                                  latency_timer,
                                                  rules)
         logger.debug('sending report_request %s', report_req)
-        self._scc_client.report(report_req)
+        self._control_client.report(report_req)
         return result
 
     def _create_report_request(self,
@@ -283,12 +282,16 @@ class Middleware(object):
     def _create_check_info(self, method_info, parsed_uri, environ):
         service_name = environ.get(ServiceLoaderMiddleware.SERVICE_NAME)
         operation_id = self._next_operation_id()
+        api_key_valid = False
         api_key = _find_api_key_param(method_info, parsed_uri)
         if not api_key:
             api_key = _find_api_key_header(method_info, environ)
+        if api_key:
+            api_key_valid = True
 
         check_info = check_request.Info(
             api_key=api_key,
+            api_key_valid=api_key_valid,
             client_ip=environ.get('REMOTE_ADDR', ''),
             consumer_project_id=self._project_id,  # TODO: switch this to producer_project_id
             operation_id=operation_id,
@@ -306,7 +309,6 @@ class Middleware(object):
             return None  # the check was OK
 
         # there was problem; the request cannot proceed
-        self._scc_client.add_check_response(check_req, check_resp)
         logger.warn('Check failed %d, %s', code, detail)
         error_msg = '%d %s' % (code, detail)
         start_response(error_msg, [])
@@ -318,8 +320,8 @@ class _AppInfo(object):
 
     def __init__(self):
         self.response_code = httplib.INTERNAL_SERVER_ERROR
-        self.response_size = 0
-        self.request_size = 0
+        self.response_size = report_request.SIZE_NOT_SET
+        self.request_size = report_request.SIZE_NOT_SET
         self.http_method = None
         self.url = None
 
@@ -343,19 +345,15 @@ class _LatencyTimer(object):
 
     @property
     def request_time(self):
-        if not self._start:
-            return None
-        if not self._end:
-            return None
-        return self._end - self._start
+        if self._start and self._end:
+            return self._end - self._start
+        return None
 
     @property
     def overhead_time(self):
-        if not self._start:
-            return None
-        if not self._app_start:
-            return None
-        return self._app_start - self._start
+        if self._start and self._app_start:
+            return self._app_start - self._start
+        return None
 
 
 def _find_api_key_param(info, parsed_uri):
@@ -370,7 +368,9 @@ def _find_api_key_param(info, parsed_uri):
     for q in params:
         value = param_dict.get(q)
         if value:
-            return value
+            # param's values are lists, assume the first value
+            # is what's needed
+            return value[0]
 
     return None
 
@@ -383,6 +383,6 @@ def _find_api_key_header(info, environ):
     for h in headers:
         value = environ.get('HTTP_' + h.upper())
         if value:
-            return value
+            return value  # headers have single values
 
     return None

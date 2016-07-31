@@ -24,7 +24,7 @@ import unittest
 from Crypto import PublicKey
 from jwkest import ecc
 from jwkest import jwk
-from tests import token_utils
+from test import token_utils
 
 from google import auth
 from google.auth import suppliers
