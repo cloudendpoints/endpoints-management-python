@@ -128,6 +128,8 @@ class MethodRegistry(object):
         self._service = service  # the service that provides the methods
         self._extracted_methods = {}  # tracks all extracted_methods by selector
 
+        self._auth_infos = self._extract_auth_config()
+
         # tracks urls templates
         self._templates_method_infos = collections.defaultdict(list)
         self._extract_methods()
@@ -159,6 +161,25 @@ class MethodRegistry(object):
                 continue
 
         return None
+
+    def _extract_auth_config(self):
+        """Obtains the authentication configurations."""
+
+        service = self._service
+        if not service.authentication:
+            return {}
+
+        auth_infos = {}
+        for auth_rule in service.authentication.rules:
+            selector = auth_rule.selector
+            issuer_to_audiences = {}
+            for requirement in auth_rule.requirements:
+                issuer = requirement.providerId
+                audiences = requirement.audiences.split(",")
+                issuer_to_audiences[issuer] = audiences
+            auth_infos[selector] = AuthInfo(issuer_to_audiences)
+
+        return auth_infos
 
     def _extract_methods(self):
         """Obtains the methods used in the service."""
@@ -214,14 +235,17 @@ class MethodRegistry(object):
             else:
                 logger.error('bad usage selector: No HTTP rule for %s', selector)
 
-    def _get_or_create_method_info(self, url):
+    def _get_or_create_method_info(self, selector):
         extracted_methods = self._extracted_methods
-        info = self._extracted_methods.get(url)
+        info = self._extracted_methods.get(selector)
         if info:
             return info
 
-        info = MethodInfo(url)
-        extracted_methods[url] = info
+        auth_infos = self._auth_infos
+        auth_info = auth_infos[selector] if selector in auth_infos else None
+
+        info = MethodInfo(selector, auth_info)
+        extracted_methods[selector] = info
         return info
 
     def _add_cors_options_selectors(self, urls):
@@ -267,13 +291,27 @@ class MethodRegistry(object):
                     method.add_url_query_param(name, parameter.urlQueryParameter)
 
 
+class AuthInfo(object):
+    """Consolidates auth information about methods defined in a ``Service``."""
+
+    def __init__(self, issuer_to_audiences):
+        self._issuer_to_audiences = issuer_to_audiences
+
+    def is_issuer_allowed(self, issuer):
+        return issuer in self._issuer_to_audiences
+
+    def get_allowed_audiences(self, issuer):
+        if not self.is_issuer_allowed(issuer):
+            return []
+        return self._issuer_to_audiences[issuer]
+
 class MethodInfo(object):
     """Consolidates information about methods defined in a ``Service``."""
     API_KEY_NAME = 'api_key'
 
-    def __init__(self, selector):
+    def __init__(self, selector, auth_info):
         self.selector = selector
-        self.auth = False
+        self.auth_info = auth_info
         self.allow_unregistered_calls = False
         self.backend_address = ''
         self.body_field_path = ''

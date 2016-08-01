@@ -644,3 +644,58 @@ class TestEnvironmentLoader(unittest2.TestCase):
         registry = service.MethodRegistry(loaded)
         info = registry.lookup('GET', '/shelves')
         expect(info).not_to(be_none)
+
+
+_AUTHENTICATION_CONFIG_TEST = """
+{
+    "name": "authentication-config",
+    "authentication": {
+        "rules": [{
+            "selector": "Bookstore.ListShelves",
+            "requirements": [{
+                "providerId": "shelves-provider",
+                "audiences": "aud1,aud2"
+            }]
+        }]
+    },
+    "http": {
+        "rules": [{
+            "selector": "Bookstore.ListShelves",
+            "get": "/shelves"
+        }, {
+            "selector": "Bookstore.CorsShelves",
+            "custom": {
+               "kind": "OPTIONS",
+               "path": "shelves"
+            }
+        }, {
+            "selector": "Bookstore.ListBooks",
+            "get": "/shelves/{shelf=*}/books"
+        },{
+            "selector": "Bookstore.CreateBook",
+            "post": "/shelves/{shelf=*}/books",
+            "body": "book"
+        }]
+    }
+}
+"""
+
+class TestAuthenticationConfig(_JsonServiceBase, unittest2.TestCase):
+    _INPUT = _AUTHENTICATION_CONFIG_TEST
+
+    def test_lookup_method_with_authentication(self):
+      registry = self._get_registry()
+      info = registry.lookup('GET', '/shelves')
+      auth_info = info.auth_info
+      self.assertIsNotNone(auth_info)
+      self.assertTrue(auth_info.is_issuer_allowed("shelves-provider"))
+      self.assertFalse(auth_info.is_issuer_allowed("random-provider"))
+      self.assertEqual(["aud1", "aud2"],
+                       auth_info.get_allowed_audiences("shelves-provider"))
+      self.assertEqual([], auth_info.get_allowed_audiences("random-provider"))
+
+    def test_lookup_method_without_authentication(self):
+      registry = self._get_registry()
+      info = registry.lookup('OPTIONS', '/shelves')
+      self.assertIsNotNone(info)
+      self.assertIsNone(info.auth_info)
