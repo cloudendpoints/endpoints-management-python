@@ -48,7 +48,7 @@ install_requires = [
 
 tests_require = [
     "flask>=0.11.1",
-    "httmock>=1.25",
+    "httmock>=1.2",
     "mock>=2.0",
     "pytest",
     "pytest-cov"
