@@ -58,10 +58,10 @@ class IntegrationTest(unittest.TestCase):
   _mock_timer = mock.MagicMock()
 
   _jwks = jwk.KEYS()
-  _jwks.append(_ec_jwk)
-  _jwks.append(_rsa_key)
+  _jwks._keys.append(_ec_jwk)
+  _jwks._keys.append(_rsa_key)
 
-  _AUTH_TOKEN = token_utils.generate_auth_token(_JWT_CLAIMS, _jwks.keys(),
+  _AUTH_TOKEN = token_utils.generate_auth_token(_JWT_CLAIMS, _jwks._keys,
                                                 alg="RS256", kid=_rsa_key.kid)
 
 
@@ -100,9 +100,9 @@ class IntegrationTest(unittest.TestCase):
     kid = IntegrationTest._rsa_key.kid
     new_rsa_key.kid = kid
     new_jwks = jwk.KEYS()
-    new_jwks.append(new_rsa_key)
+    new_jwks._keys.append(new_rsa_key)
     auth_token = token_utils.generate_auth_token(IntegrationTest._JWT_CLAIMS,
-                                                 new_jwks.keys(), alg="RS256",
+                                                 new_jwks._keys, alg="RS256",
                                                  kid=kid)
     url = get_url(IntegrationTest._JWKS_PATH)
     self._configs[IntegrationTest._ISSUER] = suppliers.IssuerUriConfig(False,
@@ -198,7 +198,7 @@ class IntegrationTest(unittest.TestCase):
     jwt_claims = copy.deepcopy(IntegrationTest._JWT_CLAIMS)
     jwt_claims["exp"] = time.time() + 10
     auth_token = token_utils.generate_auth_token(jwt_claims,
-                                                 IntegrationTest._jwks.keys(),
+                                                 IntegrationTest._jwks._keys,
                                                  alg="RS256",
                                                  kid=IntegrationTest._rsa_key.kid)
 
@@ -221,7 +221,7 @@ class IntegrationTest(unittest.TestCase):
     jwt_claims = copy.deepcopy(IntegrationTest._JWT_CLAIMS)
     jwt_claims["iss"] = issuer
     auth_token = token_utils.generate_auth_token(jwt_claims,
-                                                 IntegrationTest._jwks.keys(),
+                                                 IntegrationTest._jwks._keys,
                                                  alg="RS256",
                                                  kid=IntegrationTest._rsa_key.kid)
     message = "Cannot discover the jwks uri"
