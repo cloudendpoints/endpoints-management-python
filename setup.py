@@ -40,7 +40,7 @@ install_requires = [
     'ply>=3.8,<4.0',
     'protorpc>=0.11.1,<0.12',
     "pylru>=1.0.9,<2.0",
-    "pyjwkest>=1.1.0,<2.0",
+    "pyjwkest>=1.0.0,<=1.0.9",
     "requests>=2.10.0,<3.0",
     'strict-rfc3339>=0.7,<0.8',
     'urllib3>=1.16,<2.0',

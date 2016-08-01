@@ -116,7 +116,9 @@ class JwksSupplier(object):  # pylint: disable=too-few-public-methods
 
       if "keys" in json_response:
         # De-serialize the JSON as a JWKS object.
-        return jwk.load_jwks(response.text)
+        jwks_keys = jwk.KEYS()
+        jwks_keys.load_jwks(response.text)
+        return jwks_keys._keys
       else:
         # The JSON is a dictionary mapping from key id to X.509 certificates.
         # Thus we extract the public key from the X.509 certificates and
