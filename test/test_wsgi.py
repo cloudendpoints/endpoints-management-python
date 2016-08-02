@@ -14,6 +14,7 @@
 
 from __future__ import absolute_import
 
+from apitools.base.py import encoding
 import mock
 import os
 import tempfile
@@ -22,8 +23,8 @@ from expects import be_false, be_none, be_true, expect, equal, raise_error
 
 import google.apigen.servicecontrol_v1_messages as messages
 from google.api.control import client, wsgi
+from google.auth import tokens
 from google.scc import service
-
 
 
 def _dummy_start_response(content, dummy_response_headers):
@@ -39,12 +40,13 @@ class _DummyWsgiApp(object):
         return _DUMMY_RESPONSE
 
 
-class TestServiceLoaderMiddleware(unittest2.TestCase):
+class TestEnvironmentMiddleware(unittest2.TestCase):
 
     def test_should_add_service_et_al_to_environment(self):
-        cls = wsgi.ServiceLoaderMiddleware
+        cls = wsgi.EnvironmentMiddleware
         wrappee = _DummyWsgiApp()
-        wrapped = cls(wrappee, loader=service.Loaders.SIMPLE)
+        wanted_service = service.Loaders.SIMPLE.load()
+        wrapped = cls(wrappee, wanted_service)
 
         given = {
             'wsgi.url_scheme': 'http',
@@ -52,7 +54,6 @@ class TestServiceLoaderMiddleware(unittest2.TestCase):
             'REQUEST_METHOD': 'GET'
         }
         wrapped(given, _dummy_start_response)
-        wanted_service = service.Loaders.SIMPLE.load()
         expect(given.get(cls.SERVICE)).to(equal(wanted_service))
         expect(given.get(cls.SERVICE_NAME)).to(equal(wanted_service.name))
         expect(given.get(cls.METHOD_REGISTRY)).not_to(be_none)
@@ -81,29 +82,6 @@ class TestMiddleware(unittest2.TestCase):
         expect(control_client.check.called).to(be_false)
         expect(control_client.report.called).to(be_false)
 
-    def test_should_not_send_requests_is_service_loading_failed(self):
-        wrappee = _DummyWsgiApp()
-        control_client = mock.MagicMock(spec=client.Client)
-
-        given = {
-            'wsgi.url_scheme': 'http',
-            'PATH_INFO': '/any/method',
-            'REMOTE_ADDR': '192.168.0.3',
-            'HTTP_HOST': 'localhost',
-            'HTTP_REFERER': 'example.myreferer.com',
-            'REQUEST_METHOD': 'GET'
-        }
-        mock_loader = mock.MagicMock(load=lambda: None)
-        dummy_response = messages.CheckResponse(operationId='fake_operation_id')
-        with_control = wsgi.Middleware(wrappee, self.PROJECT_ID, control_client)
-        wrapped = wsgi.ServiceLoaderMiddleware(
-            with_control,
-            loader=mock_loader)
-        control_client.check.return_value = dummy_response
-        wrapped(given, _dummy_start_response)
-        expect(control_client.check.called).to(be_false)
-        expect(control_client.report.called).to(be_false)
-
     def test_should_send_requests_using_the_client(self):
         wrappee = _DummyWsgiApp()
         control_client = mock.MagicMock(spec=client.Client)
@@ -118,9 +96,8 @@ class TestMiddleware(unittest2.TestCase):
         }
         dummy_response = messages.CheckResponse(operationId='fake_operation_id')
         with_control = wsgi.Middleware(wrappee, self.PROJECT_ID, control_client)
-        wrapped = wsgi.ServiceLoaderMiddleware(
-            with_control,
-            loader=service.Loaders.SIMPLE)
+        wrapped = wsgi.EnvironmentMiddleware(with_control,
+                                             service.Loaders.SIMPLE.load())
         control_client.check.return_value = dummy_response
         wrapped(given, _dummy_start_response)
         expect(control_client.check.called).to(be_true)
@@ -152,6 +129,14 @@ class TestMiddleware(unittest2.TestCase):
         wrapped(given, _dummy_start_response)
         expect(control_client.check.called).to(be_true)
         expect(control_client.report.called).to(be_false)
+
+    def test_load_service_failed(self):
+        loader = mock.MagicMock(load=lambda: None)
+        with self.assertRaisesRegex(ValueError, "Failed to load service config"):
+            wsgi.add_all(_DummyWsgiApp(),
+                         self.PROJECT_ID,
+                         mock.MagicMock(spec=client.Client),
+                         loader=loader)
 
 
 _SYSTEM_PARAMETER_CONFIG_TEST = """
@@ -285,3 +270,113 @@ class TestMiddlewareWithParams(unittest2.TestCase):
         expect(req.checkRequest.operation.consumerId).to(
             equal('api_key:my-header-value'))
         expect(control_client.report.called).to(be_true)
+
+
+AuthMiddleware = wsgi.AuthenticationMiddleware
+
+
+class TestAuthenticationMiddleware(unittest2.TestCase):
+
+  def setUp(self):
+      self._mock_application = _DummyWsgiApp()
+      self._mock_authenticator = mock.MagicMock(spec=tokens.Authenticator)
+      self._middleware = AuthMiddleware(self._mock_application,
+                                        self._mock_authenticator)
+
+  def test_no_authentication(self):
+      with self.assertRaisesRegex(ValueError, "Invalid authenticator"):
+          AuthMiddleware(self._mock_application, None)
+
+  def test_no_method_info(self):
+      environ = {}
+      self.assertEqual(_DUMMY_RESPONSE,
+                       self._middleware(environ, _dummy_start_response))
+
+  def test_no_auth_token(self):
+      method_info = mock.MagicMock()
+      method_info.auth_info = mock.MagicMock()
+      environ = {
+          wsgi.EnvironmentMiddleware.METHOD_INFO: method_info
+      }
+      self.assertEqual(["No auth token is attached to the request"],
+                       self._middleware(environ, _dummy_start_response))
+
+  def test_malformed_authorization_header(self):
+      auth_token = "bad-prefix test-bearer-token"
+      auth_info = mock.MagicMock()
+      service_name = "test-service-name"
+      method_info = mock.MagicMock()
+      method_info.auth_info = auth_info
+      environ = {
+          "HTTP_AUTHORIZATION": auth_token,
+          wsgi.EnvironmentMiddleware.METHOD_INFO: method_info,
+          wsgi.EnvironmentMiddleware.SERVICE_NAME: service_name
+      }
+      self.assertEqual(["No auth token is attached to the request"],
+                       self._middleware(environ, _dummy_start_response))
+
+
+  def test_successful_authentication(self):
+      auth_token = "Bearer test-bearer-token"
+      auth_info = mock.MagicMock()
+      service_name = "test-service-name"
+      method_info = mock.MagicMock()
+      method_info.auth_info = auth_info
+      environ = {
+          "HTTP_AUTHORIZATION": auth_token,
+          wsgi.EnvironmentMiddleware.METHOD_INFO: method_info,
+          wsgi.EnvironmentMiddleware.SERVICE_NAME: service_name
+      }
+
+      user_info = mock.MagicMock()
+      self._mock_authenticator.authenticate.return_value = user_info
+      self._middleware(environ, _dummy_start_response)
+      self.assertEqual(user_info, environ.get(AuthMiddleware.USER_INFO))
+      authenticate_mock = self._mock_authenticator.authenticate
+      authenticate_mock.assert_called_once_with("test-bearer-token", auth_info,
+                                                service_name)
+
+  def test_auth_token_in_query(self):
+      auth_token = "test-bearer-token"
+      auth_info = mock.MagicMock()
+      service_name = "test-service-name"
+      method_info = mock.MagicMock()
+      method_info.auth_info = auth_info
+      environ = {
+          "QUERY_STRING": "access_token=" + auth_token,
+          wsgi.EnvironmentMiddleware.METHOD_INFO: method_info,
+          wsgi.EnvironmentMiddleware.SERVICE_NAME: service_name
+      }
+
+      user_info = mock.MagicMock()
+      self._mock_authenticator.authenticate.return_value = user_info
+      self._middleware(environ, _dummy_start_response)
+      self.assertEqual(user_info, environ.get(AuthMiddleware.USER_INFO))
+      authenticate_mock = self._mock_authenticator.authenticate
+      authenticate_mock.assert_called_once_with("test-bearer-token", auth_info,
+                                                service_name)
+
+
+class TestCreateAuthenticator(unittest2.TestCase):
+    def test_create_without_service(self):
+        with self.assertRaises(ValueError):
+            wsgi._create_authenticator(None)
+
+    def test_load_service_without_auth(self):
+        service = _read_service_from_json("{}")
+        self.assertIsNone(wsgi._create_authenticator(service))
+
+    def test_load_service(self):
+        json = """{
+            "authentication": {
+                "providers": [{
+                    "issuer": "auth-issuer"
+                }]
+            }
+        }"""
+        service = _read_service_from_json(json)
+        self.assertIsNotNone(wsgi._create_authenticator(service))
+
+
+def _read_service_from_json(json):
+    return encoding.JsonToMessage(messages.Service, json)

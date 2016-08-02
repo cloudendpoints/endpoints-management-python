@@ -30,6 +30,8 @@ import uuid
 import urlparse
 import wsgiref.util
 
+from google.auth import suppliers, tokens
+import  google.apigen.servicecontrol_v1_messages as messages
 from google.scc import service
 from google.scc.aggregators import check_request, report_request
 
@@ -71,20 +73,25 @@ def add_all(application, project_id, control_client,
        loader (:class:`google.scc.service.Loader`): loads the service
           instance that configures this instance's behaviour
     """
-    with_control = Middleware(application, project_id, control_client)
-    # TODO add the auth filter here
-    return ServiceLoaderMiddleware(with_control, loader=loader)
+    service = loader.load()
+    if not service:
+        raise ValueError("Failed to load service config")
+    authenticator = _create_authenticator(service)
+
+    wrapped_app = Middleware(application, project_id, control_client)
+    if authenticator:
+        wrapped_app = AuthenticationMiddleware(wrapped_app, authenticator)
+    return EnvironmentMiddleware(wrapped_app, service)
 
 
 def _next_operation_uuid():
     return uuid.uuid4().hex
 
 
-class ServiceLoaderMiddleware(object):
-    """A WSGI middleware implementation that loads a service and ensures
-    it and related variables are in the environment
+class EnvironmentMiddleware(object):
+    """A WSGI middleware that sets related variables in the environment.
 
-    If is service it attempts to add the following vars:
+    It attempts to add the following vars:
 
     - google.api.config.service
     - google.api.config.service_name
@@ -99,48 +106,44 @@ class ServiceLoaderMiddleware(object):
     METHOD_INFO = 'google.api.config.method_info'
     REPORTING_RULES = 'google.api.config.reporting_rules'
 
-    def __init__(self, application,
-                 loader=service.Loaders.FROM_SERVICE_MANAGEMENT):
+    def __init__(self, application, service):
         """Initializes a new Middleware instance.
 
         Args:
-           application: the wrapped wsgi application
-           loader (:class:`google.scc.service.Loader`): loads the service
-              instance that configures this instance's behaviour
-           """
+          application: the wrapped wsgi application
+          service (:class:`google.apigen.servicecontrol_v1_messages.Service`):
+            a service instance
+        """
+        if not isinstance(service, messages.Service):
+            raise ValueError("service is None or not an instance of Service")
+
         self._application = application
-        s, method_registry, reporting_rules = self._configure(loader)
-        self._service = s
+        self._service = service
+
+        method_registry, reporting_rules = self._configure()
         self._method_registry = method_registry
         self._reporting_rules = reporting_rules
 
-    def _configure(self, loader):
-        s = loader.load()
-        if not s:
-            logger.error('did not obtain a service instance, '
-                         'dependent middleware will be disabled')
-            return None, None, None
-
-        registry = service.MethodRegistry(s)
-        logs, metric_names, label_names = service.extract_report_spec(s)
+    def _configure(self):
+        registry = service.MethodRegistry(self._service)
+        logs, metric_names, label_names = service.extract_report_spec(self._service)
         reporting_rules = report_request.ReportingRules.from_known_inputs(
             logs=logs,
             metric_names=metric_names,
             label_names=label_names)
 
-        return s, registry, reporting_rules
+        return registry, reporting_rules
 
     def __call__(self, environ, start_response):
-        if self._service:  # service-related vars to the environment
-            environ[self.SERVICE] = self._service
-            environ[self.SERVICE_NAME] = self._service.name
-            environ[self.METHOD_REGISTRY] = self._method_registry
-            environ[self.REPORTING_RULES] = self._reporting_rules
-            parsed_uri = urlparse.urlparse(wsgiref.util.request_uri(environ))
-            http_method = environ.get('REQUEST_METHOD')
-            method_info = self._method_registry.lookup(http_method, parsed_uri.path)
-            if method_info:
-                environ[self.METHOD_INFO] = method_info
+        environ[self.SERVICE] = self._service
+        environ[self.SERVICE_NAME] = self._service.name
+        environ[self.METHOD_REGISTRY] = self._method_registry
+        environ[self.REPORTING_RULES] = self._reporting_rules
+        parsed_uri = urlparse.urlparse(wsgiref.util.request_uri(environ))
+        http_method = environ.get('REQUEST_METHOD')
+        method_info = self._method_registry.lookup(http_method, parsed_uri.path)
+        if method_info:
+            environ[self.METHOD_INFO] = method_info
 
         return self._application(environ, start_response)
 
@@ -163,9 +166,9 @@ class Middleware(object):
       >>> control_client = client.Loaders.DEFAULT.load(service_name)
       >>> control_client.start()
       >>> wrapped_app = wsgi.Middleware(app, control_client, project_id)
-      >>> serviced_app = wsgi.ServiceLoaderMiddleware(wrapped,app)
+      >>> env_app = wsgi.EnvironmentMiddleware(wrapped,app)
       >>>
-      >>> # now use serviced_app in place of app
+      >>> # now use env_app in place of app
 
     """
     # pylint: disable=too-few-public-methods, fixme
@@ -192,7 +195,7 @@ class Middleware(object):
         self._timer = timer
 
     def __call__(self, environ, start_response):
-        method_info = environ.get(ServiceLoaderMiddleware.METHOD_INFO)
+        method_info = environ.get(EnvironmentMiddleware.METHOD_INFO)
         if not method_info:
             # just allow the wrapped application to handle the request
             logger.debug('method_info not present in the wsgi environment'
@@ -241,7 +244,7 @@ class Middleware(object):
         if app_info.response_size == report_request.SIZE_NOT_SET:
             result = b''.join(result)
             app_info.response_size = len(result)
-        rules = environ.get(ServiceLoaderMiddleware.REPORTING_RULES)
+        rules = environ.get(EnvironmentMiddleware.REPORTING_RULES)
         report_req = self._create_report_request(method_info,
                                                  check_info,
                                                  app_info,
@@ -280,7 +283,7 @@ class Middleware(object):
         return report_info.as_report_request(reporting_rules, timer=self._timer)
 
     def _create_check_info(self, method_info, parsed_uri, environ):
-        service_name = environ.get(ServiceLoaderMiddleware.SERVICE_NAME)
+        service_name = environ.get(EnvironmentMiddleware.SERVICE_NAME)
         operation_id = self._next_operation_id()
         api_key_valid = False
         api_key = _find_api_key_param(method_info, parsed_uri)
@@ -386,3 +389,102 @@ def _find_api_key_header(info, environ):
             return value  # headers have single values
 
     return None
+
+def _create_authenticator(service):
+    """Create an instance of :class:`google.auth.tokens.Authenticator`.
+
+    Args:
+      service (:class:`google.apigen.servicecontrol_v1_messages.Service`): a
+        service instance
+    """
+    if not isinstance(service, messages.Service):
+        raise ValueError("service is None or not an instance of Service")
+
+    authentication = service.authentication
+    if not authentication:
+        logger.info("authentication is not configured in service, "
+                    "authentication checks will be disabled")
+        return
+
+    issuer_uri_configs = {}
+    for provider in authentication.providers:
+        issuer = provider.issuer
+        jwks_uri = provider.jwksUri
+
+        # Enable openID discovery if jwks_uri is unset
+        open_id = jwks_uri is None
+        issuer_uri_configs[issuer] = suppliers.IssuerUriConfig(open_id, jwks_uri)
+
+    key_uri_supplier = suppliers.KeyUriSupplier(issuer_uri_configs)
+    jwks_supplier = suppliers.JwksSupplier(key_uri_supplier)
+    authenticator = tokens.Authenticator(jwks_supplier)
+    return authenticator
+
+
+class AuthenticationMiddleware(object):
+    """A WSGI middleware that does authentication checks for incoming
+    requests."""
+
+    USER_INFO = "google.api.auth.user_info"
+
+    def __init__(self, application, authenticator):
+        """Initializes an authentication middleware instance.
+
+        Args:
+          application: a WSGI application to be wrapped
+          authenticator (:class:`google.auth.tokens.Authenticator`): an
+            authenticator that authenticates incoming requests
+        """
+        if not isinstance(authenticator, tokens.Authenticator):
+            raise ValueError("Invalid authenticator")
+
+        self._application = application
+        self._authenticator = authenticator
+
+    def __call__(self, environ, start_response):
+        method_info = environ.get(EnvironmentMiddleware.METHOD_INFO)
+        if not method_info or not method_info.auth_info:
+            # No authentication configuration for this method
+            logger.debug("authentication is not configured")
+            return self._application(environ, start_response)
+
+        service_name = environ.get(EnvironmentMiddleware.SERVICE_NAME)
+        try:
+            auth_token = _extract_auth_token(environ)
+            if not auth_token:
+                message = "No auth token is attached to the request"
+                raise suppliers.UnauthenticatedException(message)
+
+            user_info = self._authenticator.authenticate(auth_token,
+                                                         method_info.auth_info,
+                                                         service_name)
+            environ[self.USER_INFO] = user_info
+        except suppliers.UnauthenticatedException as exception:
+            body = str(exception)
+            headers = [
+                ('content-type', 'text/plain'),
+                ('content-length', str(len(body)))]
+            start_response("401 Unauthorized", headers)
+            return [body]
+
+        return self._application(environ, start_response)
+
+
+_ACCESS_TOKEN_PARAM_NAME = "access_token"
+_BEARER_TOKEN_PREFIX = "Bearer "
+_BEARER_TOKEN_PREFIX_LEN = len(_BEARER_TOKEN_PREFIX)
+
+
+def _extract_auth_token(environ):
+    # First try to extract auth token from HTTP authorization header.
+    auth_header = environ.get("HTTP_AUTHORIZATION")
+    if auth_header:
+        if auth_header.startswith(_BEARER_TOKEN_PREFIX):
+            return auth_header[_BEARER_TOKEN_PREFIX_LEN:]
+        return
+
+    # Then try to read auth token from query.
+    parameters = urlparse.parse_qs(environ.get("QUERY_STRING", ""))
+    if _ACCESS_TOKEN_PARAM_NAME in parameters:
+        auth_token, = parameters[_ACCESS_TOKEN_PARAM_NAME]
+        return auth_token
