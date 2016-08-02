@@ -21,6 +21,8 @@ import json
 import os
 import urllib3
 
+from apitools.base.py import encoding
+import google.apigen.servicecontrol_v1_messages as messages
 from oauth2client import client
 from urllib3.contrib import appengine
 
@@ -32,8 +34,8 @@ _GOOGLE_API_SCOPE = "https://www.googleapis.com/auth/cloud-platform"
 _SERVICE_MGMT_URL_TEMPLATE = ("https://servicemanagement.googleapis.com"
                               "/v1/services/{}/config?configId={}")
 
-_SERVICE_NAME_ENV_KEY = "SERVICE_NAME"
-_SERVICE_VERSION_ENV_KEY = "SERVICE_VERSION"
+_SERVICE_NAME_ENV_KEY = "ENDPOINTS_SERVICE_NAME"
+_SERVICE_VERSION_ENV_KEY = "ENDPOINTS_SERVICE_VERSION"
 
 
 def fetch_service_config(service_name=None, service_version=None):
@@ -75,9 +77,9 @@ def fetch_service_config(service_name=None, service_version=None):
     message_template = "Fetching service config failed (status code {})"
     _log_and_raise(Exception, message_template.format(status_code))
 
-  service_config = json.loads(response.data)
-  _validate_service_config(service_config, service_name, service_version)
-  return service_config
+  service = encoding.JsonToMessage(messages.Service, response.data)
+  _validate_service_config(service, service_name, service_version)
+  return service
 
 
 def _get_access_token():
@@ -101,16 +103,16 @@ def _get_env_var_or_raise(env_variable_name):
   return os.environ[env_variable_name]
 
 
-def _validate_service_config(service_config, expected_service_name,
+def _validate_service_config(service, expected_service_name,
                              expected_service_version):
-  service_name = service_config.get("name", None)
+  service_name = service.name
   if not service_name:
     _log_and_raise(ValueError, "No service name in the service config")
   if service_name != expected_service_name:
     message_template = "Unexpected service name in service config: {}"
     _log_and_raise(ValueError, message_template.format(service_name))
 
-  service_version = service_config.get("id", None)
+  service_version = service.id
   if not service_version:
     _log_and_raise(ValueError, "No service version in the service config")
   if service_version != expected_service_version:

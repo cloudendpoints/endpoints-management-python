@@ -20,7 +20,9 @@ import os
 import sys
 import unittest
 
+from apitools.base.py import encoding
 from google.api.config import service_config
+import google.apigen.servicecontrol_v1_messages as messages
 from oauth2client import client
 
 class ServiceConfigFetchTest(unittest.TestCase):
@@ -29,7 +31,7 @@ class ServiceConfigFetchTest(unittest.TestCase):
 
   _SERVICE_NAME = "test_service_name"
   _SERVICE_VERSION = "test_service_version"
-  _SERVICE_CONFIG = {
+  _SERVICE_CONFIG_JSON = {
       "name": _SERVICE_NAME,
       "id": _SERVICE_VERSION
   }
@@ -38,20 +40,20 @@ class ServiceConfigFetchTest(unittest.TestCase):
   _get_http_client = mock.MagicMock()
 
   def setUp(self):
-    os.environ["SERVICE_NAME"] = ServiceConfigFetchTest._SERVICE_NAME
-    os.environ["SERVICE_VERSION"] = ServiceConfigFetchTest._SERVICE_VERSION
+    os.environ["ENDPOINTS_SERVICE_NAME"] = ServiceConfigFetchTest._SERVICE_NAME
+    os.environ["ENDPOINTS_SERVICE_VERSION"] = ServiceConfigFetchTest._SERVICE_VERSION
 
     self._set_up_default_credential()
 
   def test_no_service_name(self):
-    del os.environ["SERVICE_NAME"]
-    message = 'The "SERVICE_NAME" environment variable is not set'
+    del os.environ["ENDPOINTS_SERVICE_NAME"]
+    message = 'The "ENDPOINTS_SERVICE_NAME" environment variable is not set'
     with self.assertRaisesRegexp(ValueError, message):
       service_config.fetch_service_config()
 
   def test_no_service_version(self):
-    del os.environ["SERVICE_VERSION"]
-    message = 'The "SERVICE_VERSION" environment variable is not set'
+    del os.environ["ENDPOINTS_SERVICE_VERSION"]
+    message = 'The "ENDPOINTS_SERVICE_VERSION" environment variable is not set'
     with self.assertRaisesRegexp(ValueError, message):
       service_config.fetch_service_config()
 
@@ -61,13 +63,14 @@ class ServiceConfigFetchTest(unittest.TestCase):
   def test_fetch_service_config(self):
     mock_response = mock.MagicMock()
     mock_response.status = 200
-    mock_response.data = json.dumps(ServiceConfigFetchTest._SERVICE_CONFIG)
+    mock_response.data = json.dumps(ServiceConfigFetchTest._SERVICE_CONFIG_JSON)
     mock_http_client = mock.MagicMock()
     mock_http_client.request.return_value = mock_response
     ServiceConfigFetchTest._get_http_client.return_value = mock_http_client
 
-    self.assertEqual(ServiceConfigFetchTest._SERVICE_CONFIG,
-                     service_config.fetch_service_config())
+    service = encoding.JsonToMessage(messages.Service,
+                                     json.dumps(self._SERVICE_CONFIG_JSON))
+    self.assertEqual(service, service_config.fetch_service_config())
 
     template = service_config._SERVICE_MGMT_URL_TEMPLATE
     url = template.format(ServiceConfigFetchTest._SERVICE_NAME,
@@ -94,7 +97,7 @@ class ServiceConfigFetchTest(unittest.TestCase):
   def test_fetch_service_config_with_wrong_service_name(self):
     mock_response = mock.MagicMock()
     mock_response.status = 200
-    config = copy.deepcopy(ServiceConfigFetchTest._SERVICE_CONFIG)
+    config = copy.deepcopy(ServiceConfigFetchTest._SERVICE_CONFIG_JSON)
     config["name"] = "incorrect_service_name"
     mock_response.data = json.dumps(config)
     mock_http_client = mock.MagicMock()
@@ -112,7 +115,7 @@ class ServiceConfigFetchTest(unittest.TestCase):
   def test_fetch_service_config_with_wrong_service_version(self):
     mock_response = mock.MagicMock()
     mock_response.status = 200
-    config = copy.deepcopy(ServiceConfigFetchTest._SERVICE_CONFIG)
+    config = copy.deepcopy(ServiceConfigFetchTest._SERVICE_CONFIG_JSON)
     config["id"] = "incorrect_service_version"
     mock_response.data = json.dumps(config)
     mock_http_client = mock.MagicMock()
