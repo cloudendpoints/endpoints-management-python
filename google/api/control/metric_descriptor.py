@@ -27,11 +27,9 @@ attributes including
 
 from __future__ import absolute_import
 
-import google.apigen.servicecontrol_v1_messages as messages
 
 from enum import Enum
-from . import distribution, MetricKind, ValueType
-from .aggregators import metric_value
+from . import distribution, metric_value, messages, MetricKind, ValueType
 
 
 def _add_metric_value(name, value, an_op):
@@ -251,7 +249,7 @@ class KnownMetrics(Enum):
         """Determines if a given metric descriptor matches this enum instance
 
         Args:
-           desc (:class:`google.apigen.servicecontrol_v1_messages.MetricDescriptor`): the
+           desc (:class:`google.api.gen.servicecontrol_v1_messages.MetricDescriptor`): the
               instance to test
 
         Return:
@@ -266,10 +264,10 @@ class KnownMetrics(Enum):
         """Updates an operation using the assigned update_op_func
 
         Args:
-           info: (:class:`google.scc.aggregator.report_request.Info`): the
+           info: (:class:`google.api.control.report_request.Info`): the
               info instance to update
-           an_op: (:class:`google.scc.aggregator.report_request.Info`): the
-              info instance to update
+           an_op: (:class:`google.api.control.report_request.Info`):
+              the info instance to update
 
         Return:
            `True` if desc is supported, otherwise `False`
@@ -282,7 +280,7 @@ class KnownMetrics(Enum):
         """Determines if the given metric descriptor is supported.
 
         Args:
-           desc (:class:`google.apigen.servicecontrol_v1_messages.MetricDescriptor`): the
+           desc (:class:`google.api.gen.servicecontrol_v1_messages.MetricDescriptor`): the
              metric descriptor to test
 
         Return:

@@ -19,10 +19,7 @@ import datetime
 import unittest2
 from expects import be_none, be_true, expect, equal, raise_error
 
-import google.apigen.servicecontrol_v1_messages as messages
-from google.scc import label_descriptor
-from google.scc.aggregators import report_request
-
+from google.api.control import label_descriptor, messages, report_request
 
 _KNOWN = label_descriptor.KnownLabels
 ValueType = label_descriptor.ValueType

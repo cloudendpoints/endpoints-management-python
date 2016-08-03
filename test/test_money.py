@@ -18,21 +18,20 @@ import sys
 import unittest2
 from expects import expect, equal, raise_error
 
-from google.scc import money
-from google.apigen.servicecontrol_v1_messages import Money
+from google.api.control import money, messages
 
 
 class TestCheckValid(unittest2.TestCase):
-    _BAD_CURRENCY = Money(currencyCode='this-is-bad')
+    _BAD_CURRENCY = messages.Money(currencyCode='this-is-bad')
     _MISMATCHED_UNITS = (
-        Money(currencyCode='JPY', units=-1, nanos=1),
-        Money(currencyCode='JPY', units=1, nanos=-1),
+        messages.Money(currencyCode='JPY', units=-1, nanos=1),
+        messages.Money(currencyCode='JPY', units=1, nanos=-1),
     )
-    _NANOS_OOB = Money(currencyCode='EUR', units=0, nanos=9999999999)
+    _NANOS_OOB = messages.Money(currencyCode='EUR', units=0, nanos=9999999999)
     _OK = (
-        Money(currencyCode='JPY', units=1, nanos=1),
-        Money(currencyCode='JPY', units=-1, nanos=-1),
-        Money(currencyCode='EUR', units=0, nanos=money.MAX_NANOS),
+        messages.Money(currencyCode='JPY', units=1, nanos=1),
+        messages.Money(currencyCode='JPY', units=-1, nanos=-1),
+        messages.Money(currencyCode='EUR', units=0, nanos=money.MAX_NANOS),
     )
 
     def test_should_fail_if_not_really_money(self):
@@ -40,7 +39,8 @@ class TestCheckValid(unittest2.TestCase):
         expect(lambda: money.check_valid(None)).to(raise_error(ValueError))
 
     def test_should_fail_when_no_currency_is_set(self):
-        expect(lambda: money.check_valid(Money())).to(raise_error(ValueError))
+        expect(lambda: money.check_valid(messages.Money())).to(
+            raise_error(ValueError))
 
     def test_should_fail_when_the_currency_is_bad(self):
         expect(lambda: money.check_valid(self._BAD_CURRENCY)).to(
@@ -60,14 +60,14 @@ class TestCheckValid(unittest2.TestCase):
 
 
 class TestAdd(unittest2.TestCase):
-    _SOME_YEN = Money(currencyCode='JPY', units=3, nanos=0)
-    _SOME_YEN_DEBT = Money(currencyCode='JPY', units=-2, nanos=-1)
-    _SOME_MORE_YEN = Money(currencyCode='JPY', units=1, nanos=3)
-    _SOME_USD = Money(currencyCode='USD', units=1, nanos=0)
+    _SOME_YEN = messages.Money(currencyCode='JPY', units=3, nanos=0)
+    _SOME_YEN_DEBT = messages.Money(currencyCode='JPY', units=-2, nanos=-1)
+    _SOME_MORE_YEN = messages.Money(currencyCode='JPY', units=1, nanos=3)
+    _SOME_USD = messages.Money(currencyCode='USD', units=1, nanos=0)
     _INT64_MAX = sys.maxint
     _INT64_MIN = -sys.maxint - 1
-    _LARGE_YEN = Money(currencyCode='JPY', units=_INT64_MAX -1, nanos=0)
-    _LARGE_YEN_DEBT = Money(currencyCode='JPY', units=-_INT64_MAX + 1, nanos=0)
+    _LARGE_YEN = messages.Money(currencyCode='JPY', units=_INT64_MAX -1, nanos=0)
+    _LARGE_YEN_DEBT = messages.Money(currencyCode='JPY', units=-_INT64_MAX + 1, nanos=0)
 
     def test_should_fail_if_non_money_is_used(self):
         testfs = [

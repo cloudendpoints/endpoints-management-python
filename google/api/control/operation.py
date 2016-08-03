@@ -14,10 +14,10 @@
 
 """operation provides support for working with `Operation` instances.
 
-:class:`~google.apigen.servicecontrol_v1_message.Operation` represents
+:class:`~google.api.gen.servicecontrol_v1_message.Operation` represents
 information regarding an operation, and is a key constituent of
-:class:`~google.apigen.servicecontrol_v1_message.CheckRequest` and
-:class:`~google.apigen.servicecontrol_v1_message.ReportRequests.
+:class:`~google.api.gen.servicecontrol_v1_message.CheckRequest` and
+:class:`~google.api.gen.servicecontrol_v1_message.ReportRequests.
 
 The :class:`.Aggregator` support this.
 
@@ -31,9 +31,7 @@ from datetime import datetime
 
 from apitools.base.py import encoding
 
-import google.apigen.servicecontrol_v1_messages as messages
-from .. import timestamp, MetricKind
-from . import metric_value
+from . import messages, metric_value, timestamp, MetricKind
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +127,7 @@ class Aggregator(object):
 
         Args:
            initial_op (
-             :class:`google.apigen.servicecontrol_v1_messages.Operation`): the
+             :class:`google.api.gen.servicecontrol_v1_messages.Operation`): the
                initial version of the operation
            kinds (dict[string,[string]]): specifies the metric kind for
               each metric name
@@ -149,7 +147,7 @@ class Aggregator(object):
         """Obtains a single `Operation` representing this instances contents.
 
         Returns:
-           :class:`google.apigen.servicecontrol_v1_messages.Operation`
+           :class:`google.api.gen.servicecontrol_v1_messages.Operation`
         """
         result = encoding.CopyProtoMessage(self._op)
         names = sorted(self._metric_values_by_name_then_sign.keys())
@@ -169,7 +167,7 @@ class Aggregator(object):
 
         Args:
            other_op (
-             class:`google.apigen.servicecontrol_v1_messages.Operation`):
+             class:`google.api.gen.servicecontrol_v1_messages.Operation`):
              an operation merge into this one
 
         """

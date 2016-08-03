@@ -21,21 +21,18 @@ import tempfile
 import unittest2
 from expects import be_false, be_none, be_true, expect, equal, raise_error
 
-import google.apigen.servicecontrol_v1_messages as messages
-from google.api.control import client
-from google.scc import CheckAggregationOptions, ReportAggregationOptions
-from google.scc.aggregators import check_request, report_request
+from google.api.control import caches, check_request, client, messages, report_request
 
 
 class TestSimpleLoader(unittest2.TestCase):
     SERVICE_NAME = 'simpler-loader'
 
-    @mock.patch("google.api.control.client.ReportAggregationOptions", spec=True)
-    @mock.patch("google.api.control.client.CheckAggregationOptions", spec=True)
+    @mock.patch("google.api.control.client.ReportOptions", autospec=True)
+    @mock.patch("google.api.control.client.CheckOptions", autospec=True)
     def test_should_create_client_ok(self, check_opts, report_opts):
         # the mocks return fake instances else code using them fails
-        check_opts.return_value = CheckAggregationOptions()
-        report_opts.return_value = ReportAggregationOptions()
+        check_opts.return_value = caches.CheckOptions()
+        report_opts.return_value = caches.ReportOptions()
 
         # ensure the client is constructed using no args instances of the opts
         expect(client.Loaders.DEFAULT.load(self.SERVICE_NAME)).not_to(be_none)
@@ -55,6 +52,7 @@ _TEST_CONFIG = """{
 }
 """
 
+
 class TestEnvironmentLoader(unittest2.TestCase):
     SERVICE_NAME = 'environment-loader'
 
@@ -69,12 +67,11 @@ class TestEnvironmentLoader(unittest2.TestCase):
         if os.path.exists(self._config_file):
             os.remove(self._config_file)
 
-    @mock.patch("google.api.control.client.ReportAggregationOptions", spec=True)
-    @mock.patch("google.api.control.client.CheckAggregationOptions", spec=True)
+    @mock.patch("google.api.control.client.ReportOptions", autospec=True)
+    @mock.patch("google.api.control.client.CheckOptions", autospec=True)
     def test_should_create_client_from_environment_ok(self, check_opts, report_opts):
-        # the mocks return fake instances else code using them fails
-        check_opts.return_value = CheckAggregationOptions()
-        report_opts.return_value = ReportAggregationOptions()
+        check_opts.return_value = caches.CheckOptions()
+        report_opts.return_value = caches.ReportOptions()
 
         # ensure the client is constructed using options values from the test JSON
         expect(client.Loaders.ENVIRONMENT.load(self.SERVICE_NAME)).not_to(be_none)
@@ -84,20 +81,20 @@ class TestEnvironmentLoader(unittest2.TestCase):
         report_opts.assert_called_once_with(flush_interval=datetime.timedelta(0, 1),
                                             num_entries=10)
 
-    @mock.patch("google.api.control.client.ReportAggregationOptions", spec=True)
-    @mock.patch("google.api.control.client.CheckAggregationOptions", spec=True)
+    @mock.patch("google.api.control.client.ReportOptions", autospec=True)
+    @mock.patch("google.api.control.client.CheckOptions", autospec=True)
     def test_should_use_defaults_if_file_is_missing(self, check_opts, report_opts):
         os.remove(self._config_file)
         self._assert_called_with_no_args_options(check_opts, report_opts)
 
-    @mock.patch("google.api.control.client.ReportAggregationOptions", spec=True)
-    @mock.patch("google.api.control.client.CheckAggregationOptions", spec=True)
+    @mock.patch("google.api.control.client.ReportOptions", autospec=True)
+    @mock.patch("google.api.control.client.CheckOptions", autospec=True)
     def test_should_use_defaults_if_file_is_missing(self, check_opts, report_opts):
         del os.environ[client.CONFIG_VAR]
         self._assert_called_with_no_args_options(check_opts, report_opts)
 
-    @mock.patch("google.api.control.client.ReportAggregationOptions", spec=True)
-    @mock.patch("google.api.control.client.CheckAggregationOptions", spec=True)
+    @mock.patch("google.api.control.client.ReportOptions")
+    @mock.patch("google.api.control.client.CheckOptions")
     def test_should_use_defaults_if_json_is_bad(self, check_opts, report_opts):
         with open(self._config_file, 'w') as f:
             f.write(_TEST_CONFIG + '\n{ this will not parse as json}')
@@ -105,8 +102,8 @@ class TestEnvironmentLoader(unittest2.TestCase):
 
     def _assert_called_with_no_args_options(self, check_opts, report_opts):
         # the mocks return fake instances else code using them fails
-        check_opts.return_value = CheckAggregationOptions()
-        report_opts.return_value = ReportAggregationOptions()
+        check_opts.return_value = caches.CheckOptions()
+        report_opts.return_value = caches.ReportOptions()
 
         # ensure the client is constructed using no args instances of the opts
         expect(client.Loaders.ENVIRONMENT.load(self.SERVICE_NAME)).not_to(be_none)

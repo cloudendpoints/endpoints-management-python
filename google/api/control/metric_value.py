@@ -27,8 +27,8 @@ import logging
 
 from apitools.base.py import encoding
 
-from .. import distribution, money, signing, timestamp, MetricKind
-from google.apigen.servicecontrol_v1_messages import MetricValue
+from . import distribution, money, signing, timestamp, MetricKind
+from google.api.gen.servicecontrol_v1_messages import MetricValue
 
 
 logger = logging.getLogger(__name__)
@@ -102,7 +102,7 @@ def sign(mv):
     """Obtains a signature for a `MetricValue`
 
     Args:
-       mv (:class:`google.apigen.servicecontrol_v1_messages.MetricValue`): a
+       mv (:class:`google.api.gen.servicecontrol_v1_messages.MetricValue`): a
          MetricValue that's part of an operation
 
     Returns:

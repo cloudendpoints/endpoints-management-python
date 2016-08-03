@@ -24,8 +24,8 @@ from jwkest import jwk
 from jwkest import jws
 from test import token_utils
 
-from google.auth import suppliers
-from google.auth import tokens
+from google.api.auth import suppliers
+from google.api.auth import tokens
 
 
 class AuthenticatorTest(unittest.TestCase):

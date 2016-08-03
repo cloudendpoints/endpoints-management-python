@@ -15,10 +15,10 @@
 """check_request supports aggregation of CheckRequests.
 
 :func:`sign` generated a signature from CheckRequests
-:class:`~google.apigen.servicecontrol_v1_message.Operation` represents
+:class:`~google.api.gen.servicecontrol_v1_message.Operation` represents
 information regarding an operation, and is a key constituent of
-:class:`~google.apigen.servicecontrol_v1_message.CheckRequest` and
-:class:`~google.apigen.servicecontrol_v1_message.ReportRequests.
+:class:`~google.api.gen.servicecontrol_v1_message.CheckRequest` and
+:class:`~google.api.gen.servicecontrol_v1_message.ReportRequests.
 
 The :class:`.Aggregator` implements the strategy for aggregating CheckRequests
 and caching their responses.
@@ -35,9 +35,8 @@ from datetime import datetime
 
 from apitools.base.py import encoding
 
-import google.apigen.servicecontrol_v1_messages as messages
-from .. import caches, label_descriptor, signing
-from . import metric_value, operation
+from . import caches, label_descriptor, messages
+from . import metric_value, operation, signing
 
 logger = logging.getLogger(__name__)
 
@@ -133,7 +132,7 @@ def convert_response(check_response, project_id):
     api_key_is_bad: indicates that a given api_key is bad
 
     Args:
-       check_response (:class:`google.apigen.servicecontrol_v1_messages.CheckResponse`):
+       check_response (:class:`google.api.gen.servicecontrol_v1_messages.CheckResponse`):
          the response from calling an api
 
     Returns:
@@ -158,7 +157,7 @@ def sign(check_request):
     """Obtains a signature for an operation in a `CheckRequest`
 
     Args:
-       op (:class:`google.apigen.servicecontrol_v1_messages.Operation`): an
+       op (:class:`google.api.gen.servicecontrol_v1_messages.Operation`): an
          operation used in a `CheckRequest`
 
     Returns:
@@ -257,7 +256,7 @@ class Aggregator(object):
     Creating a new cache entry and use cached response
 
     Example:
-      >>> options = CheckAggregationOptions()
+      >>> options = caches.CheckOptions()
       >>> agg = Aggregator('my_service', options)
       >>> req = ServicecontrolServicesCheckRequest(...)
       >>> # check returns None as the request is not cached
@@ -307,9 +306,9 @@ class Aggregator(object):
         Args:
           service_name (string): names the service that all requests aggregated
             by this instance will be sent
-          options (:class:`~google.scc.CheckAggregationOptions`): configures the
+          options (:class:`~google.api.caches.CheckOptions`): configures the
             caching and flushing behavior of this instance
-          kinds (dict[string,[google.scc.MetricKind]]): specifies the kind
+          kinds (dict[string,[google.api.control.MetricKind]]): specifies the
             kind of metric for each each metric name.
           timer (function([[datetime]]): a function that returns the current
             as a time as a datetime instance

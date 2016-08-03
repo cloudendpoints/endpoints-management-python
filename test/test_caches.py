@@ -20,8 +20,7 @@ import unittest2
 
 from expects import be, be_a, be_none, equal, expect, raise_error
 
-from google.scc import (caches, CheckAggregationOptions,
-                        ReportAggregationOptions)
+from google.api.control import caches, report_request
 
 
 _TEST_NUM_ENTRIES = 3  # arbitrary
@@ -165,10 +164,10 @@ class TestCreate(unittest2.TestCase):
 
     def test_should_return_num_if_cache_size_not_positive(self):
         should_be_none = [
-            lambda: caches.create(CheckAggregationOptions(num_entries=0)),
-            lambda: caches.create(CheckAggregationOptions(num_entries=-1)),
-            lambda: caches.create(ReportAggregationOptions(num_entries=0)),
-            lambda: caches.create(ReportAggregationOptions(num_entries=-1)),
+            lambda: caches.create(caches.CheckOptions(num_entries=0)),
+            lambda: caches.create(caches.CheckOptions(num_entries=-1)),
+            lambda: caches.create(caches.ReportOptions(num_entries=0)),
+            lambda: caches.create(caches.ReportOptions(num_entries=-1)),
         ]
         for testf in should_be_none:
             expect(testf()).to(be_none)
@@ -177,11 +176,11 @@ class TestCreate(unittest2.TestCase):
         delta = datetime.timedelta(seconds=1)
         should_be_ttl = [
             lambda timer: caches.create(
-                CheckAggregationOptions(num_entries=1, flush_interval=delta),
+                caches.CheckOptions(num_entries=1, flush_interval=delta),
                 timer=timer
             ),
             lambda timer: caches.create(
-                ReportAggregationOptions(num_entries=1, flush_interval=delta),
+                caches.ReportOptions(num_entries=1, flush_interval=delta),
                 timer=timer
             ),
         ]
@@ -210,13 +209,46 @@ class TestCreate(unittest2.TestCase):
         delta = datetime.timedelta(seconds=-1)
         should_be_ttl = [
             lambda: caches.create(
-                CheckAggregationOptions(num_entries=1, flush_interval=delta),
+                caches.CheckOptions(num_entries=1, flush_interval=delta),
             ),
             lambda: caches.create(
-                ReportAggregationOptions(num_entries=1, flush_interval=delta)),
+                caches.ReportOptions(num_entries=1, flush_interval=delta)),
         ]
         for testf in should_be_ttl:
             sync_cache = testf()
             expect(sync_cache).to(be_a(caches.LockedObject))
             with sync_cache as cache:
                 expect(cache).to(be_a(caches.DequeOutLRUCache))
+
+
+class TestReportOptions(unittest2.TestCase):
+
+    def test_should_create_with_defaults(self):
+        options = caches.ReportOptions()
+        expect(options.num_entries).to(equal(
+            caches.ReportOptions.DEFAULT_NUM_ENTRIES))
+        expect(options.flush_interval).to(equal(
+            caches.ReportOptions.DEFAULT_FLUSH_INTERVAL))
+
+
+class TestCheckOptions(unittest2.TestCase):
+    AN_INTERVAL = datetime.timedelta(milliseconds=2)
+    A_LOWER_INTERVAL = datetime.timedelta(milliseconds=1)
+
+    def test_should_create_with_defaults(self):
+        options = caches.CheckOptions()
+        expect(options.num_entries).to(equal(
+            caches.CheckOptions.DEFAULT_NUM_ENTRIES))
+        expect(options.flush_interval).to(equal(
+            caches.CheckOptions.DEFAULT_FLUSH_INTERVAL))
+        expect(options.expiration).to(equal(
+            caches.CheckOptions.DEFAULT_EXPIRATION))
+
+    def test_should_ignores_lower_expiration(self):
+        wanted_expiration = (
+            self.AN_INTERVAL + datetime.timedelta(milliseconds=1))
+        options = caches.CheckOptions(flush_interval=self.AN_INTERVAL,
+                                      expiration=self.A_LOWER_INTERVAL)
+        expect(options.flush_interval).to(equal(self.AN_INTERVAL))
+        expect(options.expiration).to(equal(wanted_expiration))
+        expect(options.expiration).not_to(equal(self.A_LOWER_INTERVAL))

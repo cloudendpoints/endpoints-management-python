@@ -33,7 +33,7 @@ import bisect
 import logging
 import math
 
-import google.apigen.servicecontrol_v1_messages as messages
+from . import messages
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ def create_exponential(num_finite_buckets, growth_factor, scale):
        scale (float): initializes the scale
 
     Return:
-       :class:`google.apigen.servicecontrol_v1_messages.Distribution`
+       :class:`google.api.gen.servicecontrol_v1_messages.Distribution`
 
     Raises:
        ValueError: if the args are invalid for creating an instance
@@ -79,7 +79,7 @@ def create_linear(num_finite_buckets, width, offset):
        offset (float): initializes the offset
 
     Return:
-       :class:`google.apigen.servicecontrol_v1_messages.Distribution`
+       :class:`google.api.gen.servicecontrol_v1_messages.Distribution`
 
     Raises:
        ValueError: if the args are invalid for creating an instance
@@ -105,7 +105,7 @@ def create_explicit(bounds):
        bounds (iterable[float]): initializes the bounds
 
     Return:
-       :class:`google.apigen.servicecontrol_v1_messages.Distribution`
+       :class:`google.api.gen.servicecontrol_v1_messages.Distribution`
 
     Raises:
        ValueError: if the args are invalid for creating an instance
@@ -123,7 +123,7 @@ def add_sample(a_float, dist):
 
     Args:
       a_float (float): a new value
-      dist (:class:`google.apigen.servicecontrol_v1_messages.Distribution`):
+      dist (:class:`google.api.gen.servicecontrol_v1_messages.Distribution`):
         the Distribution being updated
 
     Raises:
@@ -152,9 +152,9 @@ def merge(prior, latest):
     updated to correctly include the original values from both instances.
 
     Args:
-      prior (:class:`google.apigen.servicecontrol_v1_messages.Distribution`):
+      prior (:class:`google.api.gen.servicecontrol_v1_messages.Distribution`):
         an instance
-      latest (:class:`google.apigen.servicecontrol_v1_messages.Distribution`):
+      latest (:class:`google.api.gen.servicecontrol_v1_messages.Distribution`):
         an instance to be updated
 
     Raises:
@@ -269,7 +269,7 @@ def _update_general_statistics(a_float, dist):
 
     Args:
       a_float (float): a new value
-      dist (:class:`google.apigen.servicecontrol_v1_messages.Distribution`):
+      dist (:class:`google.api.gen.servicecontrol_v1_messages.Distribution`):
         the Distribution being updated
 
     """
@@ -300,7 +300,7 @@ def _update_exponential_bucket_count(a_float, dist):
 
     Args:
       a_float (float): a new value
-      dist (:class:`google.apigen.servicecontrol_v1_messages.Distribution`):
+      dist (:class:`google.api.gen.servicecontrol_v1_messages.Distribution`):
         the Distribution being updated
 
     Raises:
@@ -331,7 +331,7 @@ def _update_linear_bucket_count(a_float, dist):
 
     Args:
       a_float (float): a new value
-      dist (:class:`google.apigen.servicecontrol_v1_messages.Distribution`):
+      dist (:class:`google.api.gen.servicecontrol_v1_messages.Distribution`):
         the Distribution being updated
 
     Raises:
@@ -364,7 +364,7 @@ def _update_explicit_bucket_count(a_float, dist):
 
     Args:
       a_float (float): a new value
-      dist (:class:`google.apigen.servicecontrol_v1_messages.Distribution`):
+      dist (:class:`google.api.gen.servicecontrol_v1_messages.Distribution`):
         the Distribution being updated
 
     Raises:

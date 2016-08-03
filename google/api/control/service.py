@@ -35,10 +35,8 @@ import os
 
 from apitools.base.py import encoding
 from enum import Enum
-import google.apigen.servicecontrol_v1_messages as messages
 
-from . import label_descriptor, metric_descriptor
-from . import path_template
+from . import label_descriptor, metric_descriptor, messages, path_template
 from google.api.config import service_config
 
 
@@ -117,7 +115,7 @@ class MethodRegistry(object):
         """Constructor.
 
         Args:
-          service (:class:`google.apigen.servicecontrol_v1_messages.Service`):
+          service (:class:`google.api.gen.servicecontrol_v1_messages.Service`):
             a service instance
         """
         if not isinstance(service, messages.Service):
@@ -350,7 +348,7 @@ def extract_report_spec(
     are supported.
 
     Args:
-       service (:class:`google.apigen.servicecontrol_v1_messages.Service`):
+       service (:class:`google.api.gen.servicecontrol_v1_messages.Service`):
           a service instance
        label_is_supported (:func): determines if a given label is supported
        metric_is_supported (:func): determines if a given metric is supported

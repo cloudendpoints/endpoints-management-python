@@ -22,7 +22,7 @@ from dogpile import cache
 from jwkest import jws
 from jwkest import jwt
 
-from google.auth import suppliers
+from google.api.auth import suppliers
 
 
 class Authenticator(object):  # pylint: disable=too-few-public-methods

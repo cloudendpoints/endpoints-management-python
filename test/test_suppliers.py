@@ -20,7 +20,7 @@ import mock
 from Crypto import PublicKey
 from jwkest import jwk
 
-from google.auth import suppliers
+from google.api.auth import suppliers
 
 
 class KeyUriSupplierTest(unittest.TestCase):

@@ -12,4 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Contains modules that enable aggregation."""
+from dogpile import cache
+
+from google.api.auth import suppliers
+from google.api.auth import tokens
+
+
+cache.register_backend("lru_cache", "google.api.auth.caches", "LruBackend")
+
+
+def create_authenticator(issuer_uri_configs):
+  key_uri_supplier = suppliers.KeyUriSupplier(issuer_uri_configs)
+  jwks_supplier = suppliers.JwksSupplier(key_uri_supplier)
+  return tokens.Authenticator(jwks_supplier)

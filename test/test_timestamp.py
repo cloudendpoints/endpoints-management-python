@@ -19,7 +19,7 @@ import datetime
 import unittest2
 from expects import be_below_or_equal, expect, equal, raise_error
 
-from google.scc import timestamp
+from google.api.control import timestamp
 
 
 class TestToRfc3339(unittest2.TestCase):

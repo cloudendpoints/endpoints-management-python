@@ -18,9 +18,8 @@ import datetime
 import unittest2
 from expects import be_none, expect, equal, raise_error
 
-import google.apigen.servicecontrol_v1_messages as messages
-from google.scc import timestamp, MetricKind
-from google.scc.aggregators import metric_value, operation
+from google.api.control import messages, metric_value, operation, timestamp
+from google.api.control import MetricKind
 
 _A_FLOAT_VALUE = 1.1
 _REALLY_EARLY = timestamp.to_rfc3339(datetime.datetime(1970, 1, 1, 0, 0, 0))

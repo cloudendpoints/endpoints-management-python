@@ -21,10 +21,8 @@ from expects import be_none, equal, expect, raise_error
 
 from apitools.base.py import encoding
 
-import google.apigen.servicecontrol_v1_messages as messages
-from google.scc import (label_descriptor, metric_descriptor, timestamp,
-                        ReportAggregationOptions)
-from google.scc.aggregators import report_request, metric_value
+from google.api.control import caches, label_descriptor, messages, metric_value
+from google.api.control import metric_descriptor, report_request, timestamp
 
 
 class TestReportingRules(unittest2.TestCase):
@@ -339,7 +337,7 @@ class TestAggregatorReport(unittest2.TestCase):
     def setUp(self):
         self.timer = _DateTimeTimer()
         self.agg = report_request.Aggregator(
-            self.SERVICE_NAME, ReportAggregationOptions())
+            self.SERVICE_NAME, caches.ReportOptions())
 
     def test_should_fail_if_req_is_bad(self):
         testf = lambda: self.agg.report(object())
@@ -366,7 +364,7 @@ class TestAggregatorTheCannotCache(unittest2.TestCase):
         # -ve num_entries means no cache is present
         self.agg = report_request.Aggregator(
             self.SERVICE_NAME,
-            ReportAggregationOptions(num_entries=-1))
+            caches.ReportOptions(num_entries=-1))
 
     def test_should_not_cache_responses(self):
         req = _make_test_request(self.SERVICE_NAME)
@@ -385,7 +383,7 @@ class TestCachingAggregator(unittest2.TestCase):
     def setUp(self):
         self.timer = _DateTimeTimer()
         self.flush_interval = datetime.timedelta(seconds=1)
-        options = ReportAggregationOptions(flush_interval=self.flush_interval)
+        options = caches.ReportOptions(flush_interval=self.flush_interval)
         self.agg = report_request.Aggregator(
             self.SERVICE_NAME, options, timer=self.timer)
 

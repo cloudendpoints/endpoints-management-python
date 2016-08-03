@@ -18,10 +18,10 @@ import datetime
 import unittest2
 from expects import be_none, be_true, expect, equal, raise_error
 
-import google.apigen.servicecontrol_v1_messages as messages
-from google.scc import (distribution, metric_descriptor, timestamp, MetricKind,
+import google.api.gen.servicecontrol_v1_messages as messages
+from google.api.control import (distribution, metric_descriptor, timestamp, MetricKind,
                         ValueType)
-from google.scc.aggregators import metric_value, operation, report_request
+from google.api.control import metric_value, operation, report_request
 
 
 _KNOWN = metric_descriptor.KnownMetrics

@@ -19,8 +19,7 @@ import hashlib
 import unittest2
 from expects import equal, expect
 
-
-from google.scc import signing
+from google.api.control import signing
 
 
 class TestAddDictToHash(unittest2.TestCase):

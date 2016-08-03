@@ -18,8 +18,7 @@ import sys
 import unittest2
 from expects import expect, equal, raise_error
 
-import google.apigen.servicecontrol_v1_messages as messages
-from google.scc import distribution
+from google.api.control import distribution, messages
 
 
 class TestCreateExponential(unittest2.TestCase):

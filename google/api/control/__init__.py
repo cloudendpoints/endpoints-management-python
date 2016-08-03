@@ -12,4 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Service control client and filter."""
+"""Google Service Control Client"""
+
+from __future__ import absolute_import
+
+import google.api.gen.servicecontrol_v1_messages as messages
+import google.api.gen.servicecontrol_v1_client as api_client
+
+__version__ = '0.2.1'
+
+# Alias the generated MetricKind and ValueType enums to simplify their usage
+# elsewhere
+MetricKind = messages.MetricDescriptor.MetricKindValueValuesEnum
+ValueType = messages.MetricDescriptor.ValueTypeValueValuesEnum
+
+USER_AGENT = 'ESP'
+SERVICE_AGENT = USER_AGENT + '/' + __version__

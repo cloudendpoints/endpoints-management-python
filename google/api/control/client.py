@@ -28,7 +28,7 @@ class used by new instances of `Client`.
 
 Example:
 
-  >>> from google.scc import client
+  >>> from google.api.control import client
   >>>
   >>> # use on appengine with package-default settings
   >>> service_name = 'my-appengine-service-name'
@@ -48,10 +48,9 @@ import sched
 import threading
 import time
 
-from google.scc import (USER_AGENT, CheckAggregationOptions,
-                        ReportAggregationOptions, to_cache_timer)
-from google.scc.aggregators import check_request, report_request
-import google.apigen.servicecontrol_v1_client as http_client
+from . import api_client, check_request, report_request
+from . import USER_AGENT
+from google.api.control.caches import CheckOptions, ReportOptions, to_cache_timer
 
 
 logger = logging.getLogger(__name__)
@@ -73,13 +72,13 @@ def _load_from_well_known_env():
             json_dict = json.load(f)
             check_json = json_dict['checkAggregatorConfig']
             report_json = json_dict['reportAggregatorConfig']
-            check_options = CheckAggregationOptions(
+            check_options = CheckOptions(
                 num_entries=check_json['cacheEntries'],
                 expiration=timedelta(
                     milliseconds=check_json['responseExpirationMs']),
                 flush_interval=timedelta(
                     milliseconds=check_json['flushIntervalMs']))
-            report_options = ReportAggregationOptions(
+            report_options = ReportOptions(
                 num_entries=report_json['cacheEntries'],
                 flush_interval=timedelta(
                     milliseconds=report_json['flushIntervalMs']))
@@ -92,12 +91,12 @@ def _load_from_well_known_env():
 
 
 def _load_default():
-    return CheckAggregationOptions(), ReportAggregationOptions()
+    return CheckOptions(), ReportOptions()
 
 
 def _load_no_cache():
-    return (CheckAggregationOptions(num_entries=-1),
-            ReportAggregationOptions(num_entries=-1))
+    return (CheckOptions(num_entries=-1),
+            ReportOptions(num_entries=-1))
 
 
 class Loaders(Enum):
@@ -124,7 +123,7 @@ _THREAD_CLASS = threading.Thread
 
 def _create_http_transport():
     additional_http_headers = {"user-agent": USER_AGENT}
-    return http_client.ServicecontrolV1(
+    return api_client.ServicecontrolV1(
         additional_http_headers=additional_http_headers,
         log_request=True,
         log_response=True)
@@ -139,7 +138,7 @@ class Client(object):
 
     Example:
 
-      >>> from google.scc import client
+      >>> from google.api.control import client
       >>> service_name = 'my-service-name'
       >>>
       >>> # create an scc client using the package default values
@@ -164,10 +163,10 @@ class Client(object):
 
         Args:
             service_name (str): the name of the service to be controlled
-            check_options (:class:google.scc.CheckAggregationOptions): configures
-               checking
-            report_options (:class:google.scc.ReportAggregationOptions): configures
-               reporting
+            check_options (:class:`google.api.control.caches.CheckOptions`):
+              configures checking
+            report_options (:class:`google.api.control.caches.ReportOptions`):
+              configures reporting
             timer (:func[[datetime.datetime]]: used to obtain the current time.
         """
         self._check_aggregator = check_request.Aggregator(service_name,
@@ -317,7 +316,6 @@ class Client(object):
                 resp = transport.services.check(req)
             except Exception:  # pylint: disable=broad-except
                 logger.error('failed to flush check_req %s', req, exc_info=True)
-            self.add_check_response(req, resp)
 
         # schedule a repeat of this method
         self._scheduler.enter(

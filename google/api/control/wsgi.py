@@ -17,7 +17,7 @@ middleware.
 
 It provides the :class:`Middleware`, which is a WSGI middleware implementation
 that wraps another WSGI application to uses a provided
-:class:`google.scc.client.Client` to provide service control.
+:class:`google.api.control.client.Client` to provide service control.
 
 """
 
@@ -30,10 +30,8 @@ import uuid
 import urlparse
 import wsgiref.util
 
-from google.auth import suppliers, tokens
-import  google.apigen.servicecontrol_v1_messages as messages
-from google.scc import service
-from google.scc.aggregators import check_request, report_request
+from google.api.auth import suppliers, tokens
+from . import check_request, messages, report_request, service
 
 
 logger = logging.getLogger(__name__)
@@ -59,7 +57,7 @@ def add_all(application, project_id, control_client,
       >>> project_id = 'my-project-id'
       >>>
       >>> # wrap the app for service control
-      >>> from google.scc import wsgi
+      >>> from google.api.control import wsgi
       >>> control_client = client.Loaders.DEFAULT.load(service_name)
       >>> control_client.start()
       >>> wrapped_app = add_all(application, project_id, control_client)
@@ -70,7 +68,7 @@ def add_all(application, project_id, control_client,
        application: the wrapped wsgi application
        project_id: the project_id thats providing service control support
        control_client: the service control client instance
-       loader (:class:`google.scc.service.Loader`): loads the service
+       loader (:class:`google.api.control.service.Loader`): loads the service
           instance that configures this instance's behaviour
     """
     service = loader.load()
@@ -111,7 +109,7 @@ class EnvironmentMiddleware(object):
 
         Args:
           application: the wrapped wsgi application
-          service (:class:`google.apigen.servicecontrol_v1_messages.Service`):
+          service (:class:`google.api.gen.servicecontrol_v1_messages.Service`):
             a service instance
         """
         if not isinstance(service, messages.Service):
@@ -162,7 +160,7 @@ class Middleware(object):
       >>> project_id = 'my-project-id'
       >>>
       >>> # wrap the app for service control
-      >>> from google.scc import client, wsgi, service
+      >>> from google.api.control import client, wsgi, service
       >>> control_client = client.Loaders.DEFAULT.load(service_name)
       >>> control_client.start()
       >>> wrapped_app = wsgi.Middleware(app, control_client, project_id)
@@ -394,7 +392,7 @@ def _create_authenticator(service):
     """Create an instance of :class:`google.auth.tokens.Authenticator`.
 
     Args:
-      service (:class:`google.apigen.servicecontrol_v1_messages.Service`): a
+      service (:class:`google.api.gen.servicecontrol_v1_messages.Service`): a
         service instance
     """
     if not isinstance(service, messages.Service):

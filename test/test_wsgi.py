@@ -21,10 +21,8 @@ import tempfile
 import unittest2
 from expects import be_false, be_none, be_true, expect, equal, raise_error
 
-import google.apigen.servicecontrol_v1_messages as messages
-from google.api.control import client, wsgi
-from google.auth import tokens
-from google.scc import service
+from google.api.auth import tokens
+from google.api.control import client, messages, service, wsgi
 
 
 def _dummy_start_response(content, dummy_response_headers):

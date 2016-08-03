@@ -21,9 +21,8 @@ from expects import be_none, equal, expect, raise_error
 
 from apitools.base.py import encoding
 
-import google.apigen.servicecontrol_v1_messages as messages
-from google.scc import label_descriptor, timestamp, CheckAggregationOptions
-from google.scc.aggregators import check_request, metric_value
+from google.api.control import caches, label_descriptor, timestamp
+from google.api.control import check_request, messages, metric_value
 
 
 class TestSign(unittest2.TestCase):
@@ -102,7 +101,7 @@ class TestAggregatorCheck(unittest2.TestCase):
     def setUp(self):
         self.timer = _DateTimeTimer()
         self.agg = check_request.Aggregator(
-            self.SERVICE_NAME, CheckAggregationOptions())
+            self.SERVICE_NAME, caches.CheckOptions())
 
     def test_should_fail_if_req_is_bad(self):
         testf = lambda: self.agg.check(object())
@@ -144,7 +143,7 @@ class TestAggregatorThatCannotCache(unittest2.TestCase):
         # -ve num_entries means no cache is present
         self.agg = check_request.Aggregator(
             self.SERVICE_NAME,
-            CheckAggregationOptions(num_entries=-1))
+            caches.CheckOptions(num_entries=-1))
 
     def test_should_not_cache_responses(self):
         req = _make_test_request(self.SERVICE_NAME)
@@ -186,7 +185,7 @@ class TestCachingAggregator(unittest2.TestCase):
     def setUp(self):
         self.timer = _DateTimeTimer()
         self.expiration = datetime.timedelta(seconds=2)
-        options = CheckAggregationOptions(
+        options = caches.CheckOptions(
             flush_interval=datetime.timedelta(seconds=1),
             expiration=self.expiration)
         self.agg = check_request.Aggregator(

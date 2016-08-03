@@ -23,7 +23,7 @@ from setuptools import setup, find_packages
 
 # Get the version
 version_regex = r'__version__ = ["\']([^"\']*)["\']'
-with open('google/scc/__init__.py', 'r') as f:
+with open('google/api/control/__init__.py', 'r') as f:
     text = f.read()
     match = re.search(version_regex, text)
     if match:
@@ -54,15 +54,15 @@ tests_require = [
 ]
 
 setup(
-    name='google-esp-library',
+    name='google-endpoints-api-management',
     version=version,
-    description='Google Endpoints Service library',
+    description='Google Endpoints API management',
     long_description=open('README.rst').read(),
     author='Google Inc',
     author_email='googleapis-packages@google.com',
-    url='',
+    url='https://github.com/cloudendpoints/endpoints-api-management-python',
     packages=find_packages(),
-    package_dir={'google-esp-library': 'google'},
+    package_dir={'google-endpoints-api-management': 'google'},
     namespace_packages=['google', 'google.api'],
     license='Apache License',
     classifiers=[

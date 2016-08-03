@@ -29,11 +29,10 @@ import logging
 import time
 from datetime import datetime, timedelta
 
-import google.apigen.servicecontrol_v1_messages as messages
 from apitools.base.py import encoding
 from enum import Enum
-from .. import caches, label_descriptor, metric_descriptor, signing, timestamp
-from . import operation
+from . import caches, label_descriptor, operation, messages
+from . import metric_descriptor, signing, timestamp
 
 logger = logging.getLogger(__name__)
 
@@ -58,10 +57,10 @@ class ReportingRules(collections.namedtuple('ReportingRules',
 
     Attributes:
       logs (iterable[string]): the name of logs to be included in the `ReportRequest`
-      metrics (iterable[:class:`google.scc.metric_descriptor.KnownMetrics`]): the
-        metrics to be added to a `ReportRequest`
-      labels (iterable[:class:`google.scc.metric_descriptor.KnownLabels`]): the
-        labels to be added to a `ReportRequest`
+      metrics (iterable[:class:`google.api.control.metric_descriptor.KnownMetrics`]):
+        the metrics to be added to a `ReportRequest`
+      labels (iterable[:class:`google.api.control.metric_descriptor.KnownLabels`]):
+        the labels to be added to a `ReportRequest`
     """
     # pylint: disable=too-few-public-methods
 
@@ -79,8 +78,8 @@ class ReportingRules(collections.namedtuple('ReportingRules',
         This differs from the default constructor in that the metrics and labels
         are iterables of names of 'known' metrics and labels respectively. The
         names are used to obtain the metrics and labels from
-        :class:`google.scc.metric_descriptor.KnownMetrics` and
-        :class:`google.scc.label_descriptor.KnownLabels` respectively.
+        :class:`google.api.control.metric_descriptor.KnownMetrics` and
+        :class:`google.api.control.label_descriptor.KnownLabels` respectively.
 
         names that don't correspond to a known metric or label are ignored; as
         are metrics or labels that don't yet have a way of updating the
@@ -385,7 +384,7 @@ class Aggregator(object):
 
         Args:
           service_name (string): name of the service being aggregagated
-          options (:class:`.ReportAggregationOptions`): configures the behavior
+          options (:class:`google.api.caches.ReportOptions`): configures the behavior
             of this aggregator
           kinds (dict[string, [:class:`.MetricKind`]]): describes the
             type of metrics used during aggregation
@@ -524,7 +523,7 @@ def _sign_operation(op):
     """Obtains a signature for an operation in a ReportRequest.
 
     Args:
-       op (:class:`google.apigen.servicecontrol_v1_messages.Operation`): an
+       op (:class:`google.api.gen.servicecontrol_v1_messages.Operation`): an
          operation used in a `ReportRequest`
 
     Returns:

@@ -22,7 +22,7 @@ import os
 import urllib3
 
 from apitools.base.py import encoding
-import google.apigen.servicecontrol_v1_messages as messages
+import google.api.gen.servicecontrol_v1_messages as messages
 from oauth2client import client
 from urllib3.contrib import appengine
 

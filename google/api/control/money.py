@@ -21,10 +21,10 @@
 
 from __future__ import absolute_import
 
-import google.apigen.servicecontrol_v1_messages as messages
-
 import logging
 import sys
+
+from . import messages
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ def check_valid(money):
     """Determine if an instance of `Money` is valid.
 
     Args:
-      money (:class:`google.apigen.servicecontrol_v1_messages.Money`): the
+      money (:class:`google.api.gen.servicecontrol_v1_messages.Money`): the
         instance to test
 
     Raises:
@@ -64,9 +64,9 @@ def add(a, b, allow_overflow=False):
     """Adds two instances of `Money`.
 
     Args:
-      a (:class:`google.apigen.servicecontrol_v1_messages.Money`): one money
+      a (:class:`google.api.gen.servicecontrol_v1_messages.Money`): one money
         value
-      b (:class:`google.apigen.servicecontrol_v1_messages.Money`): another
+      b (:class:`google.api.gen.servicecontrol_v1_messages.Money`): another
         money value
       allow_overflow: determines if the addition is allowed to overflow
 
@@ -134,7 +134,7 @@ def _sign_of(money):
     """Determines the amount sign of a money instance
 
     Args:
-      money (:class:`google.apigen.servicecontrol_v1_messages.Money`): the
+      money (:class:`google.api.gen.servicecontrol_v1_messages.Money`): the
         instance to test
 
     Return:

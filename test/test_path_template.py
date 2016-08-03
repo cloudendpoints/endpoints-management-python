@@ -18,7 +18,7 @@
 from __future__ import absolute_import
 import unittest2
 
-from google.scc.path_template import PathTemplate, ValidationException
+from google.api.control.path_template import PathTemplate, ValidationException
 
 
 class TestPathTemplate(unittest2.TestCase):

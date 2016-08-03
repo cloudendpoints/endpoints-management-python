@@ -28,8 +28,7 @@ from __future__ import absolute_import
 
 import base64
 from enum import Enum
-from . import USER_AGENT, SERVICE_AGENT
-import google.apigen.servicecontrol_v1_messages as messages
+from . import messages, USER_AGENT, SERVICE_AGENT
 
 ValueType = messages.LabelDescriptor.ValueTypeValueValuesEnum
 
@@ -236,7 +235,7 @@ class KnownLabels(Enum):
         """Determines if a given label descriptor matches this enum instance
 
         Args:
-           desc (:class:`google.apigen.servicecontrol_v1_messages.LabelDescriptor`): the
+           desc (:class:`google.api.gen.servicecontrol_v1_messages.LabelDescriptor`): the
               instance to test
 
         Return:
@@ -250,7 +249,7 @@ class KnownLabels(Enum):
         """Updates a dictionary of labels using the assigned update_op_func
 
         Args:
-           info (:class:`google.scc.aggregator.report_request.Info`): the
+           info (:class:`google.api.control.report_request.Info`): the
               info instance to update
            labels (dict[string[string]]): the labels dictionary
 
@@ -266,7 +265,7 @@ class KnownLabels(Enum):
         """Determines if the given label descriptor is supported.
 
         Args:
-           desc (:class:`google.apigen.servicecontrol_v1_messages.LabelDescriptor`): the
+           desc (:class:`google.api.gen.servicecontrol_v1_messages.LabelDescriptor`): the
              label descriptor to test
 
         Return:

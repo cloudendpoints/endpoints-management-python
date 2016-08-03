@@ -21,9 +21,8 @@ import unittest2
 from expects import equal, expect, raise_error
 
 from apitools.base.py import encoding
-from google.scc import distribution, timestamp, MetricKind
-from google.scc.aggregators import metric_value
-from google.apigen.servicecontrol_v1_messages import (MetricValue, Money)
+from google.api.control import distribution, timestamp, metric_value, messages
+from google.api.control import MetricKind
 
 
 class TestUpdateHash(unittest2.TestCase):
@@ -35,7 +34,8 @@ class TestUpdateHash(unittest2.TestCase):
         return md5.digest()
 
     def test_should_add_nothing_without_labels_or_currency(self):
-        expect(self.make_hash(MetricValue())).to(equal(self.NOTHING_ADDED))
+        expect(self.make_hash(messages.MetricValue())).to(
+            equal(self.NOTHING_ADDED))
 
     def test_should_add_matching_hashes_for_matching_labels(self):
         a_dict = {'test': 'dict'}
@@ -49,7 +49,7 @@ class TestUpdateHash(unittest2.TestCase):
         a_dict = {'test': 'dict'}
         mv1 = metric_value.create(labels=a_dict)
         mv2 = metric_value.create(labels=a_dict)
-        mv2.moneyValue = Money(currencyCode='JPY')
+        mv2.moneyValue = messages.Money(currencyCode='JPY')
         want = self.make_hash(mv1)
         got = self.make_hash(mv2)
         expect(got).to_not(equal(want))
@@ -84,7 +84,7 @@ class TestMerge(unittest2.TestCase):
             endTime=self.LATER)
         self.test_value_with_money = metric_value.create(
             labels=self.TEST_LABELS,
-            moneyValue=Money(currencyCode='JPY', units=100, nanos=0))
+            moneyValue=messages.Money(currencyCode='JPY', units=100, nanos=0))
 
     def test_should_fail_for_metric_values_with_different_types(self):
         changed = metric_value.create(labels=self.TEST_LABELS, int64Value=1)

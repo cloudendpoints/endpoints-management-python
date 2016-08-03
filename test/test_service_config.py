@@ -22,7 +22,7 @@ import unittest
 
 from apitools.base.py import encoding
 from google.api.config import service_config
-import google.apigen.servicecontrol_v1_messages as messages
+from google.api.control import messages
 from oauth2client import client
 
 class ServiceConfigFetchTest(unittest.TestCase):

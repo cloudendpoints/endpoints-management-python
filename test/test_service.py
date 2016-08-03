@@ -23,8 +23,7 @@ import unittest2
 from apitools.base.py import encoding
 from expects import be_false, be_none, be_true, expect, equal, raise_error
 
-import google.apigen.servicecontrol_v1_messages as messages
-from google.scc import service
+from google.api.control import messages, service
 
 
 _LOGGING_DESTINATIONS_INPUT = """
