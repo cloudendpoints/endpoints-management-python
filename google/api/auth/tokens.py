@@ -28,14 +28,17 @@ from google.api.auth import suppliers
 class Authenticator(object):  # pylint: disable=too-few-public-methods
   """Decodes and verifies the signature of auth tokens."""
 
-  def __init__(self, jwks_supplier, cache_capacity=200):
+  def __init__(self, issuers_to_provider_ids, jwks_supplier, cache_capacity=200):
     """Construct an instance of AuthTokenDecoder.
 
     Args:
+      issuers_to_provider_ids: a dictionary mapping from issuers to provider
+        IDs defined in the service configuration.
       jwks_supplier: an instance of JwksSupplier that supplies JWKS based on
         issuer.
       cache_capacity: the cache_capacity with default value of 200.
     """
+    self._issuers_to_provider_ids = issuers_to_provider_ids
     self._jwks_supplier = jwks_supplier
 
     arguments = {"capacity": cache_capacity}
@@ -44,12 +47,12 @@ class Authenticator(object):  # pylint: disable=too-few-public-methods
                                                 arguments=arguments,
                                                 expiration_time=expiration_time)
 
-  def authenticate(self, auth_token, method_info, service_name):
+  def authenticate(self, auth_token, auth_info, service_name):
     """Authenticates the current auth token.
 
     Args:
       auth_token: the auth token.
-      method_info: the configurations of the API method being called.
+      auth_info: the auth configurations of the API method being called.
       service_name: the name of this service.
 
     Returns:
@@ -70,8 +73,14 @@ class Authenticator(object):  # pylint: disable=too-few-public-methods
 
     user_info = UserInfo(jwt_claims)
 
-    if not method_info.is_issuer_allowed(user_info.issuer):
-      raise suppliers.UnauthenticatedException("Issuer not allowed")
+    issuer = user_info.issuer
+    if issuer not in self._issuers_to_provider_ids:
+      raise suppliers.UnauthenticatedException("Unknown issuer: " + issuer)
+    provider_id = self._issuers_to_provider_ids[issuer]
+
+    if not auth_info.is_provider_allowed(provider_id):
+      raise suppliers.UnauthenticatedException("The requested method does not "
+                                               "allow provider id: " + provider_id)
 
     # Check the audiences decoded from the auth token. The auth token is
     # allowed when 1) an audience is equal to the service name, or 2) at least
@@ -79,7 +88,7 @@ class Authenticator(object):  # pylint: disable=too-few-public-methods
     audiences = user_info.audiences
     has_service_name = service_name in audiences
 
-    allowed_audiences = method_info.get_allowed_audiences(user_info.issuer)
+    allowed_audiences = auth_info.get_allowed_audiences(provider_id)
     intersected_audiences = set(allowed_audiences).intersection(audiences)
     if not has_service_name and not intersected_audiences:
       raise suppliers.UnauthenticatedException("Audiences not allowed")

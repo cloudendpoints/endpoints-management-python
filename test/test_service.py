@@ -687,8 +687,8 @@ class TestAuthenticationConfig(_JsonServiceBase, unittest2.TestCase):
       info = registry.lookup('GET', '/shelves')
       auth_info = info.auth_info
       self.assertIsNotNone(auth_info)
-      self.assertTrue(auth_info.is_issuer_allowed("shelves-provider"))
-      self.assertFalse(auth_info.is_issuer_allowed("random-provider"))
+      self.assertTrue(auth_info.is_provider_allowed("shelves-provider"))
+      self.assertFalse(auth_info.is_provider_allowed("random-provider"))
       self.assertEqual(["aud1", "aud2"],
                        auth_info.get_allowed_audiences("shelves-provider"))
       self.assertEqual([], auth_info.get_allowed_audiences("random-provider"))

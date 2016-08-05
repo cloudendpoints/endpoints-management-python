@@ -170,13 +170,12 @@ class MethodRegistry(object):
         auth_infos = {}
         for auth_rule in service.authentication.rules:
             selector = auth_rule.selector
-            issuer_to_audiences = {}
+            provider_ids_to_audiences = {}
             for requirement in auth_rule.requirements:
-                issuer = requirement.providerId
+                provider_id = requirement.providerId
                 audiences = requirement.audiences.split(",")
-                issuer_to_audiences[issuer] = audiences
-            auth_infos[selector] = AuthInfo(issuer_to_audiences)
-
+                provider_ids_to_audiences[provider_id] = audiences
+            auth_infos[selector] = AuthInfo(provider_ids_to_audiences)
         return auth_infos
 
     def _extract_methods(self):
@@ -292,16 +291,21 @@ class MethodRegistry(object):
 class AuthInfo(object):
     """Consolidates auth information about methods defined in a ``Service``."""
 
-    def __init__(self, issuer_to_audiences):
-        self._issuer_to_audiences = issuer_to_audiences
+    def __init__(self, provider_ids_to_audiences):
+        """Construct an AuthInfo instance.
 
-    def is_issuer_allowed(self, issuer):
-        return issuer in self._issuer_to_audiences
+        Args:
+          provider_ids_to_audiences: a dictionary that maps from provider ids
+            to allowed audiences.
+        """
+        self._provider_ids_to_audiences = provider_ids_to_audiences
 
-    def get_allowed_audiences(self, issuer):
-        if not self.is_issuer_allowed(issuer):
-            return []
-        return self._issuer_to_audiences[issuer]
+    def is_provider_allowed(self, provider_id):
+        return provider_id in self._provider_ids_to_audiences
+
+    def get_allowed_audiences(self, provider_id):
+        return self._provider_ids_to_audiences.get(provider_id, [])
+
 
 class MethodInfo(object):
     """Consolidates information about methods defined in a ``Service``."""

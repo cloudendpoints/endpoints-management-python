@@ -45,8 +45,10 @@ class AuthenticatorTest(unittest.TestCase):
     jwks._keys.append(ec_jwk)
     jwks._keys.append(rsa_key)
 
+    self._issuers_to_provider_ids = {}
     self._jwks_supplier = mock.MagicMock()
-    self._authenticator = tokens.Authenticator(self._jwks_supplier)
+    self._authenticator = tokens.Authenticator(self._issuers_to_provider_ids,
+                                               self._jwks_supplier)
     self._jwks = jwks
     self._jwks_supplier.supply.return_value = self._jwks
 
@@ -116,7 +118,7 @@ class AuthenticatorTest(unittest.TestCase):
       self._authenticator.get_jwt_claims(auth_token)
 
   def test_auth_token_cache_capacity(self):
-    authenticator = tokens.Authenticator(self._jwks_supplier, cache_capacity=2)
+    authenticator = tokens.Authenticator({}, self._jwks_supplier, cache_capacity=2)
 
     self._jwt_claims["email"] = "1@email.com"
     auth_token1 = token_utils.generate_auth_token(self._jwt_claims,
@@ -171,8 +173,9 @@ class AuthenticatorTest(unittest.TestCase):
   def test_authenticate_successfully(self):
     auth_token = token_utils.generate_auth_token(self._jwt_claims,
                                                  self._jwks._keys,
-                                     kid=self._ec_kid)
+                                                 kid=self._ec_kid)
     self._method_info.get_allowed_audiences.return_value = ["first.com"]
+    self._issuers_to_provider_ids[self._jwt_claims["iss"]] = "provider-id"
     actual_user_info = self._authenticator.authenticate(auth_token,
                                                         self._method_info,
                                                         "service.name.com")
@@ -185,7 +188,8 @@ class AuthenticatorTest(unittest.TestCase):
     self._jwt_claims["aud"] = aud
     auth_token = token_utils.generate_auth_token(self._jwt_claims,
                                                  self._jwks._keys,
-                                     kid=self._ec_kid)
+                                                 kid=self._ec_kid)
+    self._issuers_to_provider_ids[self._jwt_claims["iss"]] = "provider-id"
     actual_user_info = self._authenticator.authenticate(auth_token,
                                                         self._method_info, aud)
     self.assertEqual([aud], actual_user_info.audiences)
@@ -230,6 +234,7 @@ class AuthenticatorTest(unittest.TestCase):
 
   def test_authenticate_with_service_name_as_audience(self):
     self._jwt_claims["aud"].append(self._service_name)
+    self._issuers_to_provider_ids[self._jwt_claims["iss"]] = "provider-id"
     self._method_info.get_allowed_audiences.return_value = []
     auth_token = token_utils.generate_auth_token(self._jwt_claims,
                                                  self._jwks._keys,
@@ -241,21 +246,24 @@ class AuthenticatorTest(unittest.TestCase):
                           self._jwt_claims["email"], self._jwt_claims["sub"],
                           self._jwt_claims["iss"])
 
-  def test_authenticate_with_disallowed_issuer(self):
+  def test_authenticate_with_disallowed_provider_id(self):
     auth_token = token_utils.generate_auth_token(self._jwt_claims,
                                                  self._jwks._keys,
                                      kid=self._ec_kid)
-    self._method_info.is_issuer_allowed.return_value = False
+    self._method_info.is_provider_allowed.return_value = False
+    self._issuers_to_provider_ids[self._jwt_claims["iss"]] = "id"
     with self.assertRaisesRegexp(suppliers.UnauthenticatedException,
-                                 "Issuer not allowed"):
+                                 "The requested method does not allow provider "
+                                 "id: id"):
       self._authenticator.authenticate(auth_token, self._method_info,
                                        self._service_name)
 
   def test_authenticate_with_disallowed_audiences(self):
     auth_token = token_utils.generate_auth_token(self._jwt_claims,
                                                  self._jwks._keys,
-                                     kid=self._ec_kid)
+                                                 kid=self._ec_kid)
     self._method_info.get_allowed_audiences.return_value = []
+    self._issuers_to_provider_ids[self._jwt_claims["iss"]] = "project-id"
     with self.assertRaisesRegexp(suppliers.UnauthenticatedException,
                                  "Audiences not allowed"):
       self._authenticator.authenticate(auth_token, self._method_info,

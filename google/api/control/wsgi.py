@@ -404,6 +404,7 @@ def _create_authenticator(service):
                     "authentication checks will be disabled")
         return
 
+    issuers_to_provider_ids = {}
     issuer_uri_configs = {}
     for provider in authentication.providers:
         issuer = provider.issuer
@@ -412,10 +413,11 @@ def _create_authenticator(service):
         # Enable openID discovery if jwks_uri is unset
         open_id = jwks_uri is None
         issuer_uri_configs[issuer] = suppliers.IssuerUriConfig(open_id, jwks_uri)
+        issuers_to_provider_ids[issuer] = provider.id
 
     key_uri_supplier = suppliers.KeyUriSupplier(issuer_uri_configs)
     jwks_supplier = suppliers.JwksSupplier(key_uri_supplier)
-    authenticator = tokens.Authenticator(jwks_supplier)
+    authenticator = tokens.Authenticator(issuers_to_provider_ids, jwks_supplier)
     return authenticator
 
 

@@ -18,6 +18,7 @@ import datetime
 from dogpile import cache
 from jwkest import jwk
 import requests
+import ssl
 
 
 _HTTP_PROTOCOL_PREFIX = "http://"
@@ -132,11 +133,15 @@ def _extract_x509_certificates(x509_certificates):
   keys = []
   for kid, certificate in x509_certificates.iteritems():
     try:
-      x509_certificates = jwk.x509_rsa_load(certificate)
+      if certificate.startswith(jwk.PREFIX):
+        # The certificate is PEM-encoded
+        der = ssl.PEM_cert_to_DER_cert(certificate)
+        key = jwk.der2rsa(der)
+      else:
+        key = jwk.import_rsa_key(certificate)
     except Exception as exception:
       raise UnauthenticatedException("Cannot load X.509 certificate",
                                      exception)
-    _, key = x509_certificates[0]
     rsa_key = jwk.RSAKey().load_key(key)
     rsa_key.kid = kid
     keys.append(rsa_key)

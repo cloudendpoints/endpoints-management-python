@@ -21,7 +21,7 @@ from google.api.auth import tokens
 cache.register_backend("lru_cache", "google.api.auth.caches", "LruBackend")
 
 
-def create_authenticator(issuer_uri_configs):
+def create_authenticator(issuers_to_provider_ids, issuer_uri_configs):
   key_uri_supplier = suppliers.KeyUriSupplier(issuer_uri_configs)
   jwks_supplier = suppliers.JwksSupplier(key_uri_supplier)
-  return tokens.Authenticator(jwks_supplier)
+  return tokens.Authenticator(issuers_to_provider_ids, jwks_supplier)
