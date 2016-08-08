@@ -26,6 +26,7 @@ from __future__ import absolute_import
 from datetime import datetime
 import httplib
 import logging
+import os
 import uuid
 import urlparse
 import wsgiref.util
@@ -459,6 +460,10 @@ class AuthenticationMiddleware(object):
                                                          method_info.auth_info,
                                                          service_name)
             environ[self.USER_INFO] = user_info
+            if not isinstance(os.environ, os._Environ):
+                # Set user info into os.environ only if os.environ is replaced
+                # with a request-local copy
+                os.environ[self.USER_INFO] = user_info
         except suppliers.UnauthenticatedException as exception:
             body = str(exception)
             headers = [
@@ -467,7 +472,13 @@ class AuthenticationMiddleware(object):
             start_response("401 Unauthorized", headers)
             return [body]
 
-        return self._application(environ, start_response)
+        response = self._application(environ, start_response)
+
+        # Erase user info from os.environ for safety and sanity.
+        if self.USER_INFO in os.environ:
+            del os.environ[self.USER_INFO]
+
+        return response
 
 
 _ACCESS_TOKEN_PARAM_NAME = "access_token"

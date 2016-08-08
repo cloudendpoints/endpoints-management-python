@@ -354,6 +354,26 @@ class TestAuthenticationMiddleware(unittest2.TestCase):
       authenticate_mock.assert_called_once_with("test-bearer-token", auth_info,
                                                 service_name)
 
+  patched_environ = {}
+  @mock.patch("os.environ", patched_environ)
+  def test_set_user_info(self):
+
+    class UserInfoWsgiApp(object):
+      def __call__(self, environ, start_response):
+        return os.environ.get(wsgi.AuthenticationMiddleware.USER_INFO)
+
+    environ = {
+        "QUERY_STRING": "access_token=test-token",
+        wsgi.EnvironmentMiddleware.METHOD_INFO: mock.MagicMock(),
+        wsgi.EnvironmentMiddleware.SERVICE_NAME: "test-service-name"
+    }
+    application = UserInfoWsgiApp()
+    auth_middleware = AuthMiddleware(application, self._mock_authenticator)
+    user_info = mock.MagicMock()
+    self._mock_authenticator.authenticate.return_value = user_info
+    self.assertEqual(user_info, auth_middleware(environ,
+                                                _dummy_start_response))
+    self.assertFalse(self.patched_environ)
 
 class TestCreateAuthenticator(unittest2.TestCase):
     def test_create_without_service(self):
