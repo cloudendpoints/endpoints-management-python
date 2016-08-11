@@ -157,8 +157,10 @@ def create(options, timer=None):
         raise ValueError('Invalid options')
 
     if (options.num_entries <= 0):
+        logger.info("did not create cache, options was %s", options)
         return None
 
+    logger.info("creating a cache from %s", options)
     if (options.flush_interval > ZERO_INTERVAL):
         # options always has a flush_interval, but may have an expiration
         # field. If the expiration is present, use that instead of the

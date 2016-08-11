@@ -256,7 +256,6 @@ class MethodRegistry(object):
             n += 1
             options_selector = '%s.%d' % (base_selector, n)
         method_info = self._get_or_create_method_info(options_selector)
-        method_info.auth = False
         method_info.allow_unregistered_calls = True
         for u in urls:
             self._register(self._OPTIONS, u, method_info)
@@ -310,6 +309,7 @@ class AuthInfo(object):
 class MethodInfo(object):
     """Consolidates information about methods defined in a ``Service``."""
     API_KEY_NAME = 'api_key'
+    # pylint: disable=too-many-instance-attributes
 
     def __init__(self, selector, auth_info):
         self.selector = selector

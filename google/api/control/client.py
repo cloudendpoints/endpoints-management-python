@@ -44,13 +44,13 @@ from enum import Enum
 import json
 import logging
 import os
-import sched
 import threading
 import time
 
 from . import api_client, check_request, report_request
 from . import USER_AGENT
 from google.api.control.caches import CheckOptions, ReportOptions, to_cache_timer
+from google.api.control.vendor.py3 import sched
 
 
 logger = logging.getLogger(__name__)
@@ -123,10 +123,25 @@ _THREAD_CLASS = threading.Thread
 
 def _create_http_transport():
     additional_http_headers = {"user-agent": USER_AGENT}
+    do_logging = logger.level <= logging.DEBUG
     return api_client.ServicecontrolV1(
         additional_http_headers=additional_http_headers,
-        log_request=True,
-        log_response=True)
+        log_request=do_logging,
+        log_response=do_logging)
+
+
+def _thread_local_http_transport_func():
+    local = threading.local()
+
+    def create_transport():
+        if not getattr(local, "transport", None):
+            local.transport = _create_http_transport()
+        return local.transport
+
+    return create_transport
+
+
+_CREATE_THREAD_LOCAL_TRANSPORT = _thread_local_http_transport_func()
 
 
 class Client(object):
@@ -151,14 +166,14 @@ class Client(object):
     Client is thread-compatible
 
     """
-    # pylint: disable=too-many-instance-attributes
+    # pylint: disable=too-many-instance-attributes, too-many-arguments
 
     def __init__(self,
                  service_name,
                  check_options,
                  report_options,
                  timer=datetime.utcnow,
-                 create_transport=_create_http_transport):
+                 create_transport=_CREATE_THREAD_LOCAL_TRANSPORT):
         """
 
         Args:
@@ -203,10 +218,17 @@ class Client(object):
 
             self._stopped = False
             self._running = True
-            logger.info('starting a cache update thread of type %s',
+            logger.info('starting thread of type %s to run the scheduler',
                         _THREAD_CLASS)
             self._thread = _THREAD_CLASS(target=self._schedule_flushes)
-            self._thread.start()
+            try:
+                self._thread.start()
+            except Exception:  # pylint: disable=broad-except
+                logger.warn(
+                    'no scheduler thread, scheduler.run() will be invoked by report(...)',
+                    exc_info=True)
+                self._thread = None
+                self._initialize_flushing()
 
     def stop(self):
         """Halts processing
@@ -220,14 +242,18 @@ class Client(object):
                 logger.info('%s is already stopped', self)
                 return
 
-            self._stopped = True
             self._flush_all_reports()
+            self._stopped = True
+            if self._run_scheduler_directly:
+                self._cleanup_if_stopped()
+
             if self._scheduler and self._scheduler.empty():
                 # if there are events scheduled, then _running will subsequently
                 # be set False by the scheduler thread.  This handles the
                 # case where there are no events, e.g because all aggreagation
                 # was disabled
                 self._running = False
+            self._scheduler = None
 
     def check(self, check_req):
         """Process a check_request.
@@ -250,6 +276,8 @@ class Client(object):
         self._assert_is_running()
         res = self._check_aggregator.check(check_req)
         if res:
+            logger.debug('using cached check response for %s: %s',
+                         check_request, res)
             return res
 
         # Application code should not fail because check request's don't
@@ -272,6 +300,12 @@ class Client(object):
         or it will send it immediately if that's appropriate.
         """
         self._assert_is_running()
+
+        # no thread running, run the scheduler to ensure any pending
+        # flush tasks are executed.
+        if self._run_scheduler_directly:
+            self._scheduler.run(blocking=False)
+
         if not self._report_aggregator.report(report_req):
             logger.info('need to send a report request directly')
             try:
@@ -281,15 +315,26 @@ class Client(object):
                 logger.error('direct send for report request failed',
                              exc_info=True)
 
+    @property
+    def _run_scheduler_directly(self):
+        return self._running and self._thread is None
+
     def _assert_is_running(self):
         assert self._running, '%s needs to be running' % (self,)
 
+    def _initialize_flushing(self):
+        with self._lock:
+            logger.info('created a scheduler to control flushing')
+            self._scheduler = sched.scheduler(to_cache_timer(self._timer),
+                                              time.sleep)
+            logger.info('scheduling initial check and flush')
+            self._flush_schedule_check_aggregator()
+            self._flush_schedule_report_aggregator()
+
     def _schedule_flushes(self):
-        self._scheduler = sched.scheduler(to_cache_timer(self._timer), time.sleep)
-        self._flush_schedule_check_aggregator()
-        self._flush_schedule_report_aggregator()
-        # this should should block until self._stopped is set
-        self._scheduler.run()
+        # the method expects to be run in the thread created in start()
+        self._initialize_flushing()
+        self._scheduler.run() # should block until self._stopped is set
         logger.info('scheduler.run completed, %s will exit', threading.current_thread())
 
     def _cleanup_if_stopped(self):
@@ -303,10 +348,16 @@ class Client(object):
 
     def _flush_schedule_check_aggregator(self):
         if self._cleanup_if_stopped():
+            logger.info('did not schedule check flush: client is stopped')
             return
 
-        flush_period = self._check_aggregator.flush_interval.total_seconds()
-        if flush_period < 0:  # caching is disabled
+        flush_interval = self._check_aggregator.flush_interval
+        if not flush_interval or flush_interval.total_seconds() < 0:
+            logger.debug('did not schedule check flush: caching is disabled')
+            return
+
+        if self._run_scheduler_directly:
+            logger.debug('did not schedule check flush: no scheduler thread')
             return
 
         logger.debug('flushing the check aggregator')
@@ -314,12 +365,13 @@ class Client(object):
         for req in self._check_aggregator.flush():
             try:
                 resp = transport.services.check(req)
+                self._check_aggregator.add_response(req, resp)
             except Exception:  # pylint: disable=broad-except
                 logger.error('failed to flush check_req %s', req, exc_info=True)
 
         # schedule a repeat of this method
         self._scheduler.enter(
-            flush_period,
+            flush_interval.total_seconds(),
             2,  # a higher priority than report flushes
             self._flush_schedule_check_aggregator,
             ()
@@ -327,21 +379,26 @@ class Client(object):
 
     def _flush_schedule_report_aggregator(self):
         if self._cleanup_if_stopped():
+            logger.info('did not schedule report flush: client is stopped')
             return
 
-        flush_period = self._report_aggregator.flush_interval.total_seconds()
-        if flush_period < 0:  # caching is disabled
+        flush_interval = self._report_aggregator.flush_interval
+        if not flush_interval or flush_interval.total_seconds() < 0:
+            logger.debug('did not schedule report flush: caching is disabled')
             return
 
         # flush reports and schedule a repeat of this method
         transport = self._create_transport()
-        for req in self._report_aggregator.flush():
+        reqs = self._report_aggregator.flush()
+        logger.debug("will flush %d report requests", len(reqs))
+        for req in reqs:
             try:
                 transport.services.report(req)
             except Exception:  # pylint: disable=broad-except
                 logger.error('failed to flush report_req %s', req, exc_info=True)
+
         self._scheduler.enter(
-            flush_period,
+            flush_interval.total_seconds(),
             1,  # a lower priority than check flushes
             self._flush_schedule_report_aggregator,
             ()

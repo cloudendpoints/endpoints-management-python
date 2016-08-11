@@ -20,6 +20,7 @@ that wraps another WSGI application to uses a provided
 :class:`google.api.control.client.Client` to provide service control.
 
 """
+#pylint: disable=too-many-arguments
 
 from __future__ import absolute_import
 
@@ -73,15 +74,15 @@ def add_all(application, project_id, control_client,
        loader (:class:`google.api.control.service.Loader`): loads the service
           instance that configures this instance's behaviour
     """
-    service = loader.load()
-    if not service:
+    a_service = loader.load()
+    if not a_service:
         raise ValueError("Failed to load service config")
-    authenticator = _create_authenticator(service)
+    authenticator = _create_authenticator(a_service)
 
     wrapped_app = Middleware(application, project_id, control_client)
     if authenticator:
         wrapped_app = AuthenticationMiddleware(wrapped_app, authenticator)
-    return EnvironmentMiddleware(wrapped_app, service)
+    return EnvironmentMiddleware(wrapped_app, a_service)
 
 
 def _next_operation_uuid():
@@ -99,6 +100,7 @@ class EnvironmentMiddleware(object):
     - google.api.config.reporting_rules
     - google.api.config.method_info
     """
+    # pylint: disable=too-few-public-methods
 
     SERVICE = 'google.api.config.service'
     SERVICE_NAME = 'google.api.config.service_name'
@@ -106,19 +108,19 @@ class EnvironmentMiddleware(object):
     METHOD_INFO = 'google.api.config.method_info'
     REPORTING_RULES = 'google.api.config.reporting_rules'
 
-    def __init__(self, application, service):
+    def __init__(self, application, a_service):
         """Initializes a new Middleware instance.
 
         Args:
           application: the wrapped wsgi application
-          service (:class:`google.api.gen.servicecontrol_v1_messages.Service`):
+          a_service (:class:`google.api.gen.servicecontrol_v1_messages.Service`):
             a service instance
         """
-        if not isinstance(service, messages.Service):
+        if not isinstance(a_service, messages.Service):
             raise ValueError("service is None or not an instance of Service")
 
         self._application = application
-        self._service = service
+        self._service = a_service
 
         method_registry, reporting_rules = self._configure()
         self._method_registry = method_registry
@@ -195,6 +197,7 @@ class Middleware(object):
         self._timer = timer
 
     def __call__(self, environ, start_response):
+        # pylint: disable=too-many-locals
         method_info = environ.get(EnvironmentMiddleware.METHOD_INFO)
         if not method_info:
             # just allow the wrapped application to handle the request
@@ -224,7 +227,7 @@ class Middleware(object):
         check_req = check_info.as_check_request()
         logger.debug('checking %s with %s', method_info, check_request)
         check_resp = self._control_client.check(check_req)
-        error_msg = self._handle_check_response(check_req, check_resp, start_response)
+        error_msg = self._handle_check_response(check_resp, start_response)
         if error_msg:
             # send a report request that indicates that the request failed
             rules = environ.get(EnvironmentMiddleware.REPORTING_RULES)
@@ -274,7 +277,7 @@ class Middleware(object):
                                latency_timer,
                                reporting_rules):
         # TODO: determine how to obtain the consumer_project_id, the location
-        # and platform correctly
+        # and the platform correctly
         report_info = report_request.Info(
             api_key=check_info.api_key,
             api_key_valid=check_info.api_key_valid,
@@ -324,7 +327,7 @@ class Middleware(object):
         )
         return check_info
 
-    def _handle_check_response(self, check_info, check_resp, start_response):
+    def _handle_check_response(self, check_resp, start_response):
         # TODO: cache the bad_api_key error
         code, detail, dummy_bad_api_key = check_request.convert_response(
             check_resp, self._project_id)
@@ -434,17 +437,17 @@ def _find_api_key_header(info, environ):
 
     return None
 
-def _create_authenticator(service):
+def _create_authenticator(a_service):
     """Create an instance of :class:`google.auth.tokens.Authenticator`.
 
     Args:
-      service (:class:`google.api.gen.servicecontrol_v1_messages.Service`): a
+      a_service (:class:`google.api.gen.servicecontrol_v1_messages.Service`): a
         service instance
     """
-    if not isinstance(service, messages.Service):
+    if not isinstance(a_service, messages.Service):
         raise ValueError("service is None or not an instance of Service")
 
-    authentication = service.authentication
+    authentication = a_service.authentication
     if not authentication:
         logger.info("authentication is not configured in service, "
                     "authentication checks will be disabled")
@@ -476,6 +479,7 @@ class AuthenticationMiddleware(object):
     added to os.environ so that the wrapped application can make use of the
     authentication result.
     """
+    # pylint: disable=too-few-public-methods
 
     USER_INFO = "google.api.auth.user_info"
 
@@ -510,11 +514,13 @@ class AuthenticationMiddleware(object):
                 user_info = self._authenticator.authenticate(auth_token,
                                                              method_info.auth_info,
                                                              service_name)
-            except Exception as exception:
+            except Exception:  # pylint: disable=broad-except
                 logger.debug("Cannot decode and verify the auth token. The backend "
-                             "will not be able to retrieve user info", exception)
+                             "will not be able to retrieve user info", exc_info=True)
 
         environ[self.USER_INFO] = user_info
+
+        # pylint: disable=protected-access
         if user_info and not isinstance(os.environ, os._Environ):
             # Set user info into os.environ only if os.environ is replaced
             # with a request-local copy

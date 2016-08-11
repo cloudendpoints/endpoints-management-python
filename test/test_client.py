@@ -287,3 +287,145 @@ class TestClientReport(unittest2.TestCase):
                                                    self.SERVICE_NAME)
         self._subject.report(dummy_request)
         expect(self._mock_transport.services.report.called).to(be_true)
+
+
+class TestNoSchedulerThread(unittest2.TestCase):
+    SERVICE_NAME = 'no-scheduler-thread'
+    PROJECT_ID = SERVICE_NAME + '.project'
+
+    def setUp(self):
+        self._timer = _DateTimeTimer()
+        self._mock_transport = mock.MagicMock()
+        self._subject = client.Loaders.DEFAULT.load(
+            self.SERVICE_NAME,
+            create_transport=lambda: self._mock_transport,
+            timer=self._timer)
+        self._no_cache_subject = client.Loaders.NO_CACHE.load(
+            self.SERVICE_NAME,
+            create_transport=lambda: self._mock_transport,
+            timer=self._timer)
+
+    @mock.patch("google.api.control.client._THREAD_CLASS", spec=True)
+    @mock.patch("google.api.control.client.sched", spec=True)
+    def test_should_initialize_scheduler(self, sched, thread_class):
+        thread_class.return_value.start.side_effect = lambda: 1/0
+        for s in (self._subject, self._no_cache_subject):
+            s.start()
+            expect(sched.scheduler.called).to(be_true)
+            sched.reset_mock()
+
+    @mock.patch("google.api.control.client._THREAD_CLASS", spec=True)
+    @mock.patch("google.api.control.client.sched", spec=True)
+    def test_should_not_enter_scheduler_when_there_is_no_cache(self, sched, thread_class):
+        thread_class.return_value.start.side_effect = lambda: 1/0
+        self._no_cache_subject.start()
+        expect(sched.scheduler.called).to(be_true)
+        scheduler = sched.scheduler.return_value
+        expect(scheduler.enter.called).to(be_false)
+
+    @mock.patch("google.api.control.client._THREAD_CLASS", spec=True)
+    @mock.patch("google.api.control.client.sched", spec=True)
+    def test_should_enter_scheduler_when_there_is_a_cache(self, sched, thread_class):
+        thread_class.return_value.start.side_effect = lambda: 1/0
+        self._subject.start()
+        expect(sched.scheduler.called).to(be_true)
+        scheduler = sched.scheduler.return_value
+        expect(scheduler.enter.called).to(be_true)
+
+    @mock.patch("google.api.control.client._THREAD_CLASS", spec=True)
+    @mock.patch("google.api.control.client.sched", spec=True)
+    def test_should_not_enter_scheduler_for_cached_checks(self, sched, thread_class):
+        thread_class.return_value.start.side_effect = lambda: 1/0
+        self._subject.start()
+
+        # confirm scheduler is created and initialized
+        expect(sched.scheduler.called).to(be_true)
+        scheduler = sched.scheduler.return_value
+        expect(scheduler.enter.called).to(be_true)
+        scheduler.reset_mock()
+
+        # call check once, to a cache response
+        dummy_request = _make_dummy_check_request(self.PROJECT_ID,
+                                                  self.SERVICE_NAME)
+        dummy_response = messages.CheckResponse(
+            operationId=dummy_request.checkRequest.operation.operationId)
+        t = self._mock_transport
+        t.services.check.return_value = dummy_response
+        expect(self._subject.check(dummy_request)).to(equal(dummy_response))
+        t.reset_mock()
+
+        # call check again - response is cached...
+        expect(self._subject.check(dummy_request)).to(equal(dummy_response))
+        expect(self._mock_transport.services.check.called).to(be_false)
+
+        # ... the scheduler is not run
+        expect(scheduler.run.called).to(be_false)
+
+    @mock.patch("google.api.control.client._THREAD_CLASS", spec=True)
+    @mock.patch("google.api.control.client.sched", spec=True)
+    def test_should_enter_scheduler_for_aggregated_reports(self, sched, thread_class):
+        thread_class.return_value.start.side_effect = lambda: 1/0
+        self._subject.start()
+
+        # confirm scheduler is created and initialized
+        expect(sched.scheduler.called).to(be_true)
+        scheduler = sched.scheduler.return_value
+        expect(scheduler.enter.called).to(be_true)
+        scheduler.reset_mock()
+
+        # call report once; transport is not called, but the scheduler is run
+        dummy_request = _make_dummy_report_request(self.PROJECT_ID,
+                                                   self.SERVICE_NAME)
+        self._subject.report(dummy_request)
+        expect(self._mock_transport.services.report.called).to(be_false)
+        expect(scheduler.run.called).to(be_true)
+
+    @mock.patch("google.api.control.client._THREAD_CLASS", spec=True)
+    def test_should_flush_report_cache_in_scheduler(self, thread_class):
+        thread_class.return_value.start.side_effect = lambda: 1/0
+        self._subject.start()
+
+        # call report once; transport is not called
+        dummy_request = _make_dummy_report_request(self.PROJECT_ID,
+                                                   self.SERVICE_NAME)
+        self._subject.report(dummy_request)  # cached a report
+        expect(self._mock_transport.services.report.called).to(be_false)
+        # pass time, at least the flush interval, after which the report
+        # cache to flush
+        self._timer.tick()
+        self._timer.tick()
+        self._subject.report(dummy_request)
+        expect(self._mock_transport.services.report.called).to(be_true)
+
+    @mock.patch("google.api.control.client._THREAD_CLASS", spec=True)
+    @mock.patch("google.api.control.client.sched", spec=True)
+    def test_should_not_run_scheduler_when_stopping(self, sched, thread_class):
+        thread_class.return_value.start.side_effect = lambda: 1/0
+        self._subject.start()
+
+        # confirm scheduler is created and initialized
+        expect(sched.scheduler.called).to(be_true)
+        scheduler = sched.scheduler.return_value
+        expect(scheduler.enter.called).to(be_true)
+
+        # stop the subject. transport is called, but the scheduler is not run
+        self._subject.report(
+            _make_dummy_report_request(self.PROJECT_ID, self.SERVICE_NAME))
+        scheduler.reset_mock()
+        self._subject.stop()
+        expect(self._mock_transport.services.report.called).to(be_true)
+        expect(scheduler.run.called).to(be_false)
+
+
+class _DateTimeTimer(object):
+    def __init__(self, auto=False):
+        self.auto = auto
+        self.time = datetime.datetime.utcfromtimestamp(0)
+
+    def __call__(self):
+        if self.auto:
+            self.tick()
+        return self.time
+
+    def tick(self):
+        self.time += datetime.timedelta(seconds=1)
