@@ -86,7 +86,7 @@ def set_credential_id(name, info, labels):
         labels[name] = value
 
 
-_ERROR_TYPES = tuple('%dXX' % (x,) for x in range(10))
+_ERROR_TYPES = tuple('%dxx' % (x,) for x in range(10))
 
 
 def set_error_type(name, info, labels):
@@ -242,8 +242,9 @@ class KnownLabels(Enum):
            `True` if desc is supported, otherwise `False`
 
         """
+        desc_value_type = desc.valueType or ValueType.STRING  # default not parsed
         return (self.label_name == desc.key and
-                self.value_type == desc.valueType)
+                self.value_type == desc_value_type)
 
     def do_labels_update(self, info, labels):
         """Updates a dictionary of labels using the assigned update_op_func

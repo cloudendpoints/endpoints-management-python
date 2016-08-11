@@ -157,12 +157,14 @@ class TestCreate(unittest2.TestCase):
     def test_should_fail_if_bad_options_are_used(self):
         should_fail = [
             lambda: caches.create(object()),
-            lambda: caches.create(None)
         ]
         for testf in should_fail:
             expect(testf).to(raise_error(ValueError))
 
-    def test_should_return_num_if_cache_size_not_positive(self):
+    def test_should_return_none_if_options_is_none(self):
+        expect(caches.create(None)).to(be_none)
+
+    def test_should_return_none_if_cache_size_not_positive(self):
         should_be_none = [
             lambda: caches.create(caches.CheckOptions(num_entries=0)),
             lambda: caches.create(caches.CheckOptions(num_entries=-1)),

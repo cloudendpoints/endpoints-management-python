@@ -34,10 +34,13 @@ class KnownLabelsBase(object):
     )
     WANTED_LABEL_DICT = {}
 
-    def _matching_descriptor(self):
-        return messages.LabelDescriptor(
+    def _matching_descriptor(self, hide_default=False):
+        res = messages.LabelDescriptor(
             key=self.SUBJECT.label_name,
             valueType=self.SUBJECT.value_type)
+        if res.valueType == ValueType.STRING and hide_default:
+            res.valueType = None
+        return res
 
     def _not_matched(self):
         d = self._matching_descriptor()
@@ -46,10 +49,14 @@ class KnownLabelsBase(object):
 
     def test_should_be_supported(self):
         expect(_KNOWN.is_supported(self._matching_descriptor())).to(be_true)
+        expect(_KNOWN.is_supported(
+            self._matching_descriptor(hide_default=True))).to(be_true)
         expect(_KNOWN.is_supported(self._not_matched())).not_to(be_true)
 
     def test_should_be_matched_correctly(self):
         expect(self.SUBJECT.matches(self._matching_descriptor())).to(be_true)
+        expect(self.SUBJECT.matches(
+            self._matching_descriptor(hide_default=True))).to(be_true)
         expect(self.SUBJECT.matches(self._not_matched())).not_to(be_true)
 
     def test_should_update_request_info(self):
@@ -91,7 +98,7 @@ class EndUserCountry(KnownLabelsBase, unittest2.TestCase):
 
 class ErrorType(KnownLabelsBase, unittest2.TestCase):
     SUBJECT = _KNOWN.ERROR_TYPE
-    WANTED_LABEL_DICT = {SUBJECT.label_name: '2XX'}
+    WANTED_LABEL_DICT = {SUBJECT.label_name: '2xx'}
 
 
 class Protocol(KnownLabelsBase, unittest2.TestCase):
@@ -113,7 +120,7 @@ class ResponseCode(KnownLabelsBase, unittest2.TestCase):
 
 class ResponseCodeClass(KnownLabelsBase, unittest2.TestCase):
     SUBJECT = _KNOWN.RESPONSE_CODE_CLASS
-    WANTED_LABEL_DICT = {SUBJECT.label_name: '2XX'}
+    WANTED_LABEL_DICT = {SUBJECT.label_name: '2xx'}
 
 
 class StatusCodeWithOkStatus(KnownLabelsBase, unittest2.TestCase):

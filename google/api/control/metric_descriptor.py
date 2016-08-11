@@ -73,7 +73,7 @@ def _set_distribution_metric_to_response_size(name, info, an_op):
                                        _SIZE_DISTRIBUTION_ARGS)
 
 
-_TIME_DISTRIBUTION_ARGS = (8, 10.0, 1)
+_TIME_DISTRIBUTION_ARGS = (8, 10.0, 1e-6)
 
 
 def _set_distribution_metric_to_request_time(name, info, an_op):

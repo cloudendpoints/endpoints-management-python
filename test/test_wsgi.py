@@ -101,7 +101,7 @@ class TestMiddleware(unittest2.TestCase):
         expect(control_client.check.called).to(be_true)
         expect(control_client.report.called).to(be_true)
 
-    def test_should_not_send_report_request_if_check_fails(self):
+    def test_should_send_report_request_if_check_fails(self):
         wrappee = _DummyWsgiApp()
         control_client = mock.MagicMock(spec=client.Client)
         given = {
@@ -126,7 +126,7 @@ class TestMiddleware(unittest2.TestCase):
         control_client.check.return_value = dummy_response
         wrapped(given, _dummy_start_response)
         expect(control_client.check.called).to(be_true)
-        expect(control_client.report.called).to(be_false)
+        expect(control_client.report.called).to(be_true)
 
     def test_load_service_failed(self):
         loader = mock.MagicMock(load=lambda: None)

@@ -148,6 +148,9 @@ def create(options, timer=None):
        ValueError: if options is not a support type
 
     """
+    if options is None:  # no options, don't create cache
+        return None
+
     if not (isinstance(options, CheckOptions) or
             isinstance(options, ReportOptions)):
         logger.error('make_cache(): bad options %s', options)

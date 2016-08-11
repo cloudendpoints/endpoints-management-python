@@ -39,6 +39,7 @@ logger = logging.getLogger(__name__)
 
 
 _CONTENT_LENGTH = 'content-length'
+_DEFAULT_LOCATION = 'global'
 
 
 def add_all(application, project_id, control_client,
@@ -207,24 +208,37 @@ class Middleware(object):
         # Determine if the request can proceed
         http_method = environ.get('REQUEST_METHOD')
         parsed_uri = urlparse.urlparse(wsgiref.util.request_uri(environ))
+        app_info = _AppInfo()
+        # TODO: determine if any of the more complex ways of getting the request size
+        # (e.g) buffering and counting the wsgi input stream is more appropriate here
+        try:
+            app_info.request_size = int(environ.get('CONTENT_LENGTH',
+                                                    report_request.SIZE_NOT_SET))
+        except ValueError:
+            logger.warn('ignored bad content-length: %s', environ.get('CONTENT_LENGTH'))
+
+        app_info.http_method = http_method
+        app_info.url = parsed_uri
+
         check_info = self._create_check_info(method_info, parsed_uri, environ)
         check_req = check_info.as_check_request()
         logger.debug('checking %s with %s', method_info, check_request)
         check_resp = self._control_client.check(check_req)
         error_msg = self._handle_check_response(check_req, check_resp, start_response)
         if error_msg:
+            # send a report request that indicates that the request failed
+            rules = environ.get(EnvironmentMiddleware.REPORTING_RULES)
+            report_req = self._create_report_request(method_info,
+                                                     check_info,
+                                                     app_info,
+                                                     latency_timer,
+                                                     rules)
+            logger.debug('scheduling report_request %s', report_req)
+            self._control_client.report(report_req)
             return error_msg
 
         # update the client with the response
         latency_timer.app_start()
-
-        app_info = _AppInfo()
-        # TODO: determine if any of the more complex ways of getting the request size
-        # (e.g) buffering and counting the wsgi input stream is more appropriate here
-        app_info.request_size = environ.get('CONTENT_LENGTH',
-                                            report_request.SIZE_NOT_SET)
-        app_info.http_method = http_method
-        app_info.url = parsed_uri
 
         # run the application request in an inner handler that sets the status
         # and response code on app_info
@@ -249,7 +263,7 @@ class Middleware(object):
                                                  app_info,
                                                  latency_timer,
                                                  rules)
-        logger.debug('sending report_request %s', report_req)
+        logger.debug('scheduling report_request %s', report_req)
         self._control_client.report(report_req)
         return result
 
@@ -263,10 +277,11 @@ class Middleware(object):
             api_key=check_info.api_key,
             api_method=method_info.selector,
             consumer_project_id=self._project_id,  # TODO: switch this to producer_project_id
-            location='',  # TODO: work out how to fill in location on all platforms
+            location=_DEFAULT_LOCATION,  # TODO: work out how to determine this correctly
             method=app_info.http_method,
             operation_id=check_info.operation_id,
             operation_name=check_info.operation_name,
+            backend_time=latency_timer.backend_time,
             overhead_time=latency_timer.overhead_time,
             platform=report_request.ReportedPlatforms.GAE,  # TODO: fill this in correctly
             producer_project_id=self._project_id,
@@ -355,6 +370,12 @@ class _LatencyTimer(object):
     def overhead_time(self):
         if self._start and self._app_start:
             return self._app_start - self._start
+        return None
+
+    @property
+    def backend_time(self):
+        if self._end and self._app_start:
+            return self._end - self._app_start
         return None
 
 

@@ -77,6 +77,7 @@ def fetch_service_config(service_name=None, service_version=None):
     message_template = "Fetching service config failed (status code {})"
     _log_and_raise(Exception, message_template.format(status_code))
 
+  logger.debug('obtained service json from the management api:\n%s', response.data)
   service = encoding.JsonToMessage(messages.Service, response.data)
   _validate_service_config(service, service_name, service_version)
   return service
