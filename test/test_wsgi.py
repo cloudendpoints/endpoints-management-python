@@ -219,7 +219,7 @@ class TestMiddlewareWithParams(unittest2.TestCase):
             equal('project:middleware-with-params'))
         expect(control_client.report.called).to(be_true)
 
-    def test_should_send_requests_with_api_key_param(self):
+    def test_should_send_requests_with_configured_query_param_api_key(self):
         wrappee = _DummyWsgiApp()
         control_client = mock.MagicMock(spec=client.Client)
         given = {
@@ -239,12 +239,15 @@ class TestMiddlewareWithParams(unittest2.TestCase):
         control_client.check.return_value = dummy_response
         wrapped(given, _dummy_start_response)
         expect(control_client.check.called).to(be_true)
-        req = control_client.check.call_args[0][0]
-        expect(req.checkRequest.operation.consumerId).to(
+        check_req = control_client.check.call_args[0][0]
+        expect(check_req.checkRequest.operation.consumerId).to(
             equal('api_key:my-query-value'))
         expect(control_client.report.called).to(be_true)
+        report_req = control_client.report.call_args[0][0]
+        expect(report_req.reportRequest.operations[0].consumerId).to(
+            equal('api_key:my-query-value'))
 
-    def test_should_send_requests_with_header_param(self):
+    def test_should_send_requests_with_configured_header_api_key(self):
         wrappee = _DummyWsgiApp()
         control_client = mock.MagicMock(spec=client.Client)
         given = {
@@ -265,10 +268,43 @@ class TestMiddlewareWithParams(unittest2.TestCase):
         wrapped(given, _dummy_start_response)
         expect(control_client.check.called).to(be_true)
         check_request = control_client.check.call_args_list[0].checkRequest
-        req = control_client.check.call_args[0][0]
-        expect(req.checkRequest.operation.consumerId).to(
+        check_req = control_client.check.call_args[0][0]
+        expect(check_req.checkRequest.operation.consumerId).to(
             equal('api_key:my-header-value'))
         expect(control_client.report.called).to(be_true)
+        report_req = control_client.report.call_args[0][0]
+        expect(report_req.reportRequest.operations[0].consumerId).to(
+            equal('api_key:my-header-value'))
+
+    def test_should_send_requests_with_default_query_param_api_key(self):
+        for default_key in ('key', 'api_key'):
+            wrappee = _DummyWsgiApp()
+            control_client = mock.MagicMock(spec=client.Client)
+            given = {
+                'wsgi.url_scheme': 'http',
+                'QUERY_STRING': '%s=my-default-api-key-value' % (default_key,),
+                'PATH_INFO': '/uvw/method1/with_query_param',
+                'REMOTE_ADDR': '192.168.0.3',
+                'HTTP_HOST': 'localhost',
+                'HTTP_REFERER': 'example.myreferer.com',
+                'REQUEST_METHOD': 'GET'
+            }
+            dummy_response = messages.CheckResponse(operationId='fake_operation_id')
+            wrapped = wsgi.add_all(wrappee,
+                                   self.PROJECT_ID,
+                                   control_client,
+                                   loader=service.Loaders.ENVIRONMENT)
+            control_client.check.return_value = dummy_response
+            wrapped(given, _dummy_start_response)
+            expect(control_client.check.called).to(be_true)
+            check_request = control_client.check.call_args_list[0].checkRequest
+            check_req = control_client.check.call_args[0][0]
+            expect(check_req.checkRequest.operation.consumerId).to(
+                equal('api_key:my-default-api-key-value'))
+            expect(control_client.report.called).to(be_true)
+            report_req = control_client.report.call_args[0][0]
+            expect(report_req.reportRequest.operations[0].consumerId).to(
+                equal('api_key:my-default-api-key-value'))
 
 
 AuthMiddleware = wsgi.AuthenticationMiddleware

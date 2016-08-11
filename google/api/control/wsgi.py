@@ -273,17 +273,20 @@ class Middleware(object):
                                app_info,
                                latency_timer,
                                reporting_rules):
+        # TODO: determine how to obtain the consumer_project_id, the location
+        # and platform correctly
         report_info = report_request.Info(
             api_key=check_info.api_key,
+            api_key_valid=check_info.api_key_valid,
             api_method=method_info.selector,
-            consumer_project_id=self._project_id,  # TODO: switch this to producer_project_id
-            location=_DEFAULT_LOCATION,  # TODO: work out how to determine this correctly
+            consumer_project_id=self._project_id,  # TODO: see above
+            location=_DEFAULT_LOCATION,  # TODO: see above
             method=app_info.http_method,
             operation_id=check_info.operation_id,
             operation_name=check_info.operation_name,
             backend_time=latency_timer.backend_time,
             overhead_time=latency_timer.overhead_time,
-            platform=report_request.ReportedPlatforms.GAE,  # TODO: fill this in correctly
+            platform=report_request.ReportedPlatforms.GAE,  # TODO: see above
             producer_project_id=self._project_id,
             protocol=report_request.ReportedProtocols.HTTP,
             request_size=app_info.request_size,
@@ -303,6 +306,9 @@ class Middleware(object):
         api_key = _find_api_key_param(method_info, parsed_uri)
         if not api_key:
             api_key = _find_api_key_header(method_info, environ)
+        if not api_key:
+            api_key = _find_default_api_key_param(parsed_uri)
+
         if api_key:
             api_key_valid = True
 
@@ -318,7 +324,7 @@ class Middleware(object):
         )
         return check_info
 
-    def _handle_check_response(self, check_req, check_resp, start_response):
+    def _handle_check_response(self, check_info, check_resp, start_response):
         # TODO: cache the bad_api_key error
         code, detail, dummy_bad_api_key = check_request.convert_response(
             check_resp, self._project_id)
@@ -389,6 +395,24 @@ def _find_api_key_param(info, parsed_uri):
         return None
 
     for q in params:
+        value = param_dict.get(q)
+        if value:
+            # param's values are lists, assume the first value
+            # is what's needed
+            return value[0]
+
+    return None
+
+
+_DEFAULT_API_KEYS = ('key', 'api_key')
+
+
+def _find_default_api_key_param(parsed_uri):
+    param_dict = urlparse.parse_qs(parsed_uri.query)
+    if not param_dict:
+        return None
+
+    for q in _DEFAULT_API_KEYS:
         value = param_dict.get(q)
         if value:
             # param's values are lists, assume the first value
