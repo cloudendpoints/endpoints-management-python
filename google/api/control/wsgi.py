@@ -501,9 +501,9 @@ class AuthenticationMiddleware(object):
             return self._application(environ, start_response)
 
         auth_token = _extract_auth_token(environ)
+        user_info = None
         if not auth_token:
             logger.debug("No auth token is attached to the request")
-            user_info = None
         else:
             try:
                 service_name = environ.get(EnvironmentMiddleware.SERVICE_NAME)
