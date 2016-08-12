@@ -269,6 +269,12 @@ class AuthenticatorTest(unittest.TestCase):
       self._authenticator.authenticate(auth_token, self._method_info,
                                        self._service_name)
 
+  def test_unicode_decode_error(self):
+    auth_token = "ya29.CjA8A3Hrca1hCCvRg69U3Tg85CG5pRqZj7gOJUsicpRafWAW63zvg6a0ZM6wZ5mJwM0"
+    with self.assertRaisesRegexp(suppliers.UnauthenticatedException,
+                                 "Cannot decode the auth token"):
+      self._authenticator.authenticate(auth_token, None, None)
+
   def assert_user_info(self, actual_user_info, audiences, email, subject_id,
                        issuer):
     self.assertEqual(audiences, actual_user_info.audiences)

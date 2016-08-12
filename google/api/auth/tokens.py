@@ -66,7 +66,7 @@ class Authenticator(object):  # pylint: disable=too-few-public-methods
     """
     try:
       jwt_claims = self.get_jwt_claims(auth_token)
-    except jwkest.BadSyntax as error:
+    except Exception as error:
       raise suppliers.UnauthenticatedException("Cannot decode the auth token",
                                                error)
     _check_jwt_claims(jwt_claims)

@@ -21,6 +21,7 @@ import tempfile
 import unittest2
 from expects import be_false, be_none, be_true, expect, equal, raise_error
 
+from google.api.auth import suppliers
 from google.api.auth import tokens
 from google.api.control import client, messages, service, wsgi
 
@@ -291,28 +292,23 @@ class TestAuthenticationMiddleware(unittest2.TestCase):
                        self._middleware(environ, _dummy_start_response))
 
   def test_no_auth_token(self):
+      auth_app = AuthMiddleware(self.UserInfoWsgiApp(), self._mock_authenticator)
       method_info = mock.MagicMock()
       method_info.auth_info = mock.MagicMock()
       environ = {
           wsgi.EnvironmentMiddleware.METHOD_INFO: method_info
       }
-      self.assertEqual(["No auth token is attached to the request"],
-                       self._middleware(environ, _dummy_start_response))
+      self.assertIsNone(auth_app(environ, _dummy_start_response))
 
   def test_malformed_authorization_header(self):
-      auth_token = "bad-prefix test-bearer-token"
-      auth_info = mock.MagicMock()
-      service_name = "test-service-name"
-      method_info = mock.MagicMock()
-      method_info.auth_info = auth_info
+      auth_app = AuthMiddleware(self.UserInfoWsgiApp(), self._mock_authenticator)
       environ = {
-          "HTTP_AUTHORIZATION": auth_token,
-          wsgi.EnvironmentMiddleware.METHOD_INFO: method_info,
-          wsgi.EnvironmentMiddleware.SERVICE_NAME: service_name
+          "HTTP_AUTHORIZATION": "malformed-auth-token",
+          wsgi.EnvironmentMiddleware.METHOD_INFO: mock.MagicMock(),
+          wsgi.EnvironmentMiddleware.SERVICE_NAME: "service-name"
       }
-      self.assertEqual(["No auth token is attached to the request"],
-                       self._middleware(environ, _dummy_start_response))
-
+      self._mock_authenticator.authenticate.side_effect = suppliers.UnauthenticatedException()
+      self.assertIsNone(auth_app(environ, _dummy_start_response))
 
   def test_successful_authentication(self):
       auth_token = "Bearer test-bearer-token"
@@ -357,23 +353,23 @@ class TestAuthenticationMiddleware(unittest2.TestCase):
   patched_environ = {}
   @mock.patch("os.environ", patched_environ)
   def test_set_user_info(self):
-
-    class UserInfoWsgiApp(object):
-      def __call__(self, environ, start_response):
-        return os.environ.get(wsgi.AuthenticationMiddleware.USER_INFO)
-
     environ = {
         "QUERY_STRING": "access_token=test-token",
         wsgi.EnvironmentMiddleware.METHOD_INFO: mock.MagicMock(),
         wsgi.EnvironmentMiddleware.SERVICE_NAME: "test-service-name"
     }
-    application = UserInfoWsgiApp()
+    application = self.UserInfoWsgiApp()
     auth_middleware = AuthMiddleware(application, self._mock_authenticator)
     user_info = mock.MagicMock()
     self._mock_authenticator.authenticate.return_value = user_info
     self.assertEqual(user_info, auth_middleware(environ,
                                                 _dummy_start_response))
     self.assertFalse(self.patched_environ)
+
+  class UserInfoWsgiApp(object):
+    def __call__(self, environ, start_response):
+      return os.environ.get(wsgi.AuthenticationMiddleware.USER_INFO)
+
 
 class TestCreateAuthenticator(unittest2.TestCase):
     def test_create_without_service(self):

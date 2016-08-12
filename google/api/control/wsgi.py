@@ -445,7 +445,13 @@ def _create_authenticator(service):
 
 class AuthenticationMiddleware(object):
     """A WSGI middleware that does authentication checks for incoming
-    requests."""
+    requests.
+
+    In environments where os.environ is replaced with a request-local and
+    thread-independent copy (e.g. Google Appengine), authentication result is
+    added to os.environ so that the wrapped application can make use of the
+    authentication result.
+    """
 
     USER_INFO = "google.api.auth.user_info"
 
@@ -470,28 +476,25 @@ class AuthenticationMiddleware(object):
             logger.debug("authentication is not configured")
             return self._application(environ, start_response)
 
-        service_name = environ.get(EnvironmentMiddleware.SERVICE_NAME)
-        try:
-            auth_token = _extract_auth_token(environ)
-            if not auth_token:
-                message = "No auth token is attached to the request"
-                raise suppliers.UnauthenticatedException(message)
+        auth_token = _extract_auth_token(environ)
+        if not auth_token:
+            logger.debug("No auth token is attached to the request")
+            user_info = None
+        else:
+            try:
+                service_name = environ.get(EnvironmentMiddleware.SERVICE_NAME)
+                user_info = self._authenticator.authenticate(auth_token,
+                                                             method_info.auth_info,
+                                                             service_name)
+            except Exception as exception:
+                logger.debug("Cannot decode and verify the auth token. The backend "
+                             "will not be able to retrieve user info", exception)
 
-            user_info = self._authenticator.authenticate(auth_token,
-                                                         method_info.auth_info,
-                                                         service_name)
-            environ[self.USER_INFO] = user_info
-            if not isinstance(os.environ, os._Environ):
-                # Set user info into os.environ only if os.environ is replaced
-                # with a request-local copy
-                os.environ[self.USER_INFO] = user_info
-        except suppliers.UnauthenticatedException as exception:
-            body = str(exception)
-            headers = [
-                ('content-type', 'text/plain'),
-                ('content-length', str(len(body)))]
-            start_response("401 Unauthorized", headers)
-            return [body]
+        environ[self.USER_INFO] = user_info
+        if user_info and not isinstance(os.environ, os._Environ):
+            # Set user info into os.environ only if os.environ is replaced
+            # with a request-local copy
+            os.environ[self.USER_INFO] = user_info
 
         response = self._application(environ, start_response)
 
