@@ -174,8 +174,23 @@ _SYSTEM_PARAMETER_CONFIG_TEST = """
             "selector": "Uvw.Method1",
             "get": "/uvw/method1/*"
         }, {
+            "selector": "Uvw.MethodNeedsApiKey",
+            "get": "/uvw/method_needs_api_key/*"
+        }, {
             "selector": "Uvw.DefaultParameters",
             "get": "/uvw/default_parameters"
+        }]
+    },
+    "usage": {
+        "rules": [{
+            "selector" : "Uvw.Method1",
+            "allowUnregisteredCalls" : true
+        },  {
+            "selector": "Uvw.MethodNeedsApiKey",
+            "allowUnregisteredCalls" : false
+        }, {
+            "selector" : "Uvw.DefaultParameters",
+            "allowUnregisteredCalls" : true
         }]
     }
 }
@@ -283,7 +298,7 @@ class TestMiddlewareWithParams(unittest2.TestCase):
             given = {
                 'wsgi.url_scheme': 'http',
                 'QUERY_STRING': '%s=my-default-api-key-value' % (default_key,),
-                'PATH_INFO': '/uvw/method1/with_query_param',
+                'PATH_INFO': '/uvw/method_needs_api_key/with_query_param',
                 'REMOTE_ADDR': '192.168.0.3',
                 'HTTP_HOST': 'localhost',
                 'HTTP_REFERER': 'example.myreferer.com',
@@ -306,6 +321,29 @@ class TestMiddlewareWithParams(unittest2.TestCase):
             expect(report_req.reportRequest.operations[0].consumerId).to(
                 equal('api_key:my-default-api-key-value'))
 
+    def test_should_not_perform_check_if_needed_api_key_is_missing(self):
+        wrappee = _DummyWsgiApp()
+        control_client = mock.MagicMock(spec=client.Client)
+        given = {
+            'wsgi.url_scheme': 'http',
+            'PATH_INFO': '/uvw/method_needs_api_key/more_stuff',
+            'REMOTE_ADDR': '192.168.0.3',
+            'HTTP_HOST': 'localhost',
+            'HTTP_REFERER': 'example.myreferer.com',
+            'REQUEST_METHOD': 'GET'
+        }
+        dummy_response = messages.CheckResponse(operationId='fake_operation_id')
+        wrapped = wsgi.add_all(wrappee,
+                               self.PROJECT_ID,
+                               control_client,
+                               loader=service.Loaders.ENVIRONMENT)
+        control_client.check.return_value = dummy_response
+        wrapped(given, _dummy_start_response)
+        expect(control_client.check.called).to(be_false)
+        expect(control_client.report.called).to(be_true)
+        report_req = control_client.report.call_args[0][0]
+        expect(report_req.reportRequest.operations[0].consumerId).to(
+            equal('project:middleware-with-params'))
 
 AuthMiddleware = wsgi.AuthenticationMiddleware
 

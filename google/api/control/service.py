@@ -73,6 +73,15 @@ _SIMPLE_CONFIG = """
             "selector": "allow-all.POST",
             "post": "**"
         }]
+    },
+    "usage": {
+        "rules": [{
+            "selector" : "allow-all.GET",
+            "allowUnregisteredCalls" : true
+        }, {
+            "selector" : "allow-all.POST",
+            "allowUnregisteredCalls" : true
+        }]
     }
 }
 """

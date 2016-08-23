@@ -174,6 +174,11 @@ class Middleware(object):
 
     """
     # pylint: disable=too-few-public-methods, fixme
+    _NO_API_KEY_MSG = (
+        'Method does not allow callers without established identity.'
+        ' Please use an API key or other form of API consumer identity'
+        ' to call this API.'
+     )
 
     def __init__(self,
                  application,
@@ -224,13 +229,19 @@ class Middleware(object):
         app_info.url = parsed_uri
 
         check_info = self._create_check_info(method_info, parsed_uri, environ)
-        check_req = check_info.as_check_request()
-        logger.debug('checking %s with %s', method_info, check_request)
-        check_resp = self._control_client.check(check_req)
-        error_msg = self._handle_check_response(check_resp, start_response)
+        if not check_info.api_key and not method_info.allow_unregistered_calls:
+            logger.debug("skipping %s, no api key was provided", parsed_uri)
+            error_msg = self._handle_missing_api_key(app_info, start_response)
+        else:
+            check_req = check_info.as_check_request()
+            logger.debug('checking %s with %s', method_info, check_request)
+            check_resp = self._control_client.check(check_req)
+            error_msg = self._handle_check_response(app_info, check_resp, start_response)
+
         if error_msg:
             # send a report request that indicates that the request failed
             rules = environ.get(EnvironmentMiddleware.REPORTING_RULES)
+            latency_timer.end()
             report_req = self._create_report_request(method_info,
                                                      check_info,
                                                      app_info,
@@ -255,7 +266,8 @@ class Middleware(object):
 
         result = self._application(environ, inner_start_response)
 
-        # perform reporting
+        # perform reporting, result must be joined otherwise the latency record
+        # is incorrect
         result = b''.join(result)
         latency_timer.end()
         app_info.response_size = len(result)
@@ -279,7 +291,7 @@ class Middleware(object):
         # and the platform correctly
         report_info = report_request.Info(
             api_key=check_info.api_key,
-            api_key_valid=check_info.api_key_valid,
+            api_key_valid=app_info.api_key_valid,
             api_method=method_info.selector,
             consumer_project_id=self._project_id,  # TODO: see above
             location=_DEFAULT_LOCATION,  # TODO: see above
@@ -326,9 +338,8 @@ class Middleware(object):
         )
         return check_info
 
-    def _handle_check_response(self, check_resp, start_response):
-        # TODO: cache the bad_api_key error
-        code, detail, dummy_bad_api_key = check_request.convert_response(
+    def _handle_check_response(self, app_info, check_resp, start_response):
+        code, detail, api_key_valid = check_request.convert_response(
             check_resp, self._project_id)
         if code == httplib.OK:
             return None  # the check was OK
@@ -337,6 +348,18 @@ class Middleware(object):
         logger.warn('Check failed %d, %s', code, detail)
         error_msg = '%d %s' % (code, detail)
         start_response(error_msg, [])
+        app_info.response_code = code
+        app_info.api_key_valid = api_key_valid
+        return error_msg  # the request cannot continue
+
+    def _handle_missing_api_key(self, app_info, start_response):
+        code = httplib.UNAUTHORIZED
+        detail = self._NO_API_KEY_MSG
+        logger.warn('Check not performed %d, %s', code, detail)
+        error_msg = '%d %s' % (code, detail)
+        start_response(error_msg, [])
+        app_info.response_code = code
+        app_info.api_key_valid = False
         return error_msg  # the request cannot continue
 
 
@@ -344,6 +367,7 @@ class _AppInfo(object):
     # pylint: disable=too-few-public-methods
 
     def __init__(self):
+        self.api_key_valid = True
         self.response_code = httplib.INTERNAL_SERVER_ERROR
         self.response_size = report_request.SIZE_NOT_SET
         self.request_size = report_request.SIZE_NOT_SET
@@ -367,6 +391,8 @@ class _LatencyTimer(object):
 
     def end(self):
         self._end = self._timer()
+        if self._app_start is None:
+            self._app_start = self._end
 
     @property
     def request_time(self):
