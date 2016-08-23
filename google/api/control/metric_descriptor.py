@@ -58,7 +58,7 @@ def _add_distribution_metric_value(name, value, an_op, distribution_args):
         name, metric_value.create(distributionValue=d), an_op)
 
 
-_SIZE_DISTRIBUTION_ARGS = (8, 10.0, 1e6)
+_SIZE_DISTRIBUTION_ARGS = (8, 10.0, 1.0)
 
 
 def _set_distribution_metric_to_request_size(name, info, an_op):
@@ -78,20 +78,20 @@ _TIME_DISTRIBUTION_ARGS = (8, 10.0, 1e-6)
 
 def _set_distribution_metric_to_request_time(name, info, an_op):
     if info.request_time:
-        _add_distribution_metric_value(name, info.request_time.seconds, an_op,
-                                       _TIME_DISTRIBUTION_ARGS)
+        _add_distribution_metric_value(name, info.request_time.total_seconds(),
+                                       an_op, _TIME_DISTRIBUTION_ARGS)
 
 
 def _set_distribution_metric_to_backend_time(name, info, an_op):
     if info.backend_time:
-        _add_distribution_metric_value(name, info.backend_time.seconds, an_op,
-                                       _TIME_DISTRIBUTION_ARGS)
+        _add_distribution_metric_value(name, info.backend_time.total_seconds(),
+                                       an_op, _TIME_DISTRIBUTION_ARGS)
 
 
 def _set_distribution_metric_to_overhead_time(name, info, an_op):
     if info.overhead_time:
-        _add_distribution_metric_value(name, info.overhead_time.seconds, an_op,
-                                       _TIME_DISTRIBUTION_ARGS)
+        _add_distribution_metric_value(name, info.overhead_time.total_seconds(),
+                                       an_op, _TIME_DISTRIBUTION_ARGS)
 
 
 class KnownMetrics(Enum):

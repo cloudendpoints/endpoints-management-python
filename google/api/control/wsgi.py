@@ -256,10 +256,9 @@ class Middleware(object):
         result = self._application(environ, inner_start_response)
 
         # perform reporting
+        result = b''.join(result)
         latency_timer.end()
-        if app_info.response_size == report_request.SIZE_NOT_SET:
-            result = b''.join(result)
-            app_info.response_size = len(result)
+        app_info.response_size = len(result)
         rules = environ.get(EnvironmentMiddleware.REPORTING_RULES)
         report_req = self._create_report_request(method_info,
                                                  check_info,
