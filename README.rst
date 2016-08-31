@@ -6,15 +6,14 @@ providing support for authentication, billing, monitoring and quota control.
 
 It achieves this by
 
-- allowing HTTP servers to control access to their APIs using the
-Google Service Management and Google Service Control APIs.
+- allowing HTTP servers to control access to their APIs using the Google Service Management and Google Service Control APIs
 - providing built-in, standards-compliant support for third-party authentication
-- doing this with minimal performance impact via the use of advanced
-  caching and aggregation algorithms.
-- making this easy to integrate via a set of WSGI middleware
-
+- doing this with minimal performance impact via the use of advanced caching and aggregation algorithms
+- making this easy to integrate via a set of `WSGI`_ middleware
 
 Example:
+
+  .. code:: python
 
    >>> application = MyWsgiApp()  # an existing WSGI application
    >>>
@@ -40,7 +39,8 @@ Installation
 
 Install using pip
 
-  ::
+  .. code:: bash
+
      [sudo] pip install google-endpoints-api-management
 
 
@@ -84,3 +84,4 @@ Apache - See `LICENSE`_ for more information.
 .. _`pip`: https://pip.pypa.io
 .. _`Semantic Versioning`: http://semver.org/
 .. _`DOCUMENTATION`: https://google-endpoints-api-management.readthedocs.org/
+.. _`WSGI`: https://wsgi.readthedocs.io/en/latest/
