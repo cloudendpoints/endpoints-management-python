@@ -11,6 +11,9 @@ It achieves this by
 - doing this with minimal performance impact via the use of advanced caching and aggregation algorithms
 - making this easy to integrate via a set of `WSGI`_ middleware
 
+.. _`WSGI`: https://wsgi.readthedocs.io/en/latest/
+
+
 Example:
 
   .. code:: python
@@ -37,17 +40,19 @@ Example:
 Installation
 -------------
 
-Install using pip
+Install using `pip`_
 
   .. code:: bash
 
      [sudo] pip install google-endpoints-api-management
 
+.. _`pip`: https://pip.pypa.io
+
 
 Python Versions
 ---------------
 
-google-endpoints-api-management is currently tested with Python 2.7.
+endpoints-management-python is currently tested with Python 2.7.
 
 
 Contributing
@@ -55,7 +60,9 @@ Contributing
 
 Contributions to this library are always welcome and highly encouraged.
 
-See the `CONTRIBUTING`_ documentation for more information on how to get started.
+See the `CONTRIBUTING documentation`_ for more information on how to get started.
+
+.. _`CONTRIBUTING documentation`: https://github.com/cloudendpoints/endpoints-management-python/blob/master/CONTRIBUTING.rst
 
 
 Versioning
@@ -63,25 +70,20 @@ Versioning
 
 This library follows `Semantic Versioning`_
 
-It is currently in major version zero (``0.y.z``), which means that anything may
-change at any time and the public API should not be considered stable.
+.. _`Semantic Versioning`: http://semver.org/
 
 
 Details
 -------
 
-For detailed documentation of the modules in google-endpoints-api-management, please watch `DOCUMENTATION`_.
+For detailed documentation of the modules in endpoints-management-python, please watch `DOCUMENTATION`_.
+
+.. _`DOCUMENTATION`: https://endpoints-management-python.readthedocs.org/
 
 
 License
 -------
 
-Apache - See `LICENSE`_ for more information.
+Apache - See `the full LICENSE`_ for more information.
 
-.. _`CONTRIBUTING`: https://github.com/googleapis/google-endpoints-api-management/blob/master/CONTRIBUTING.rst
-.. _`LICENSE`: https://github.com/googleapis/google-endpoints-api-management/blob/master/LICENSE
-.. _`Install virtualenv`: http://docs.python-guide.org/en/latest/dev/virtualenvs/
-.. _`pip`: https://pip.pypa.io
-.. _`Semantic Versioning`: http://semver.org/
-.. _`DOCUMENTATION`: https://google-endpoints-api-management.readthedocs.org/
-.. _`WSGI`: https://wsgi.readthedocs.io/en/latest/
+.. _`the full LICENSE`: https://github.com/cloudendpoints/endpoints-management-python/blob/master/LICENSE
