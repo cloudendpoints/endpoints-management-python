@@ -60,7 +60,7 @@ setup(
     long_description=open('README.rst').read(),
     author='Google Inc',
     author_email='googleapis-packages@google.com',
-    url='https://github.com/cloudendpoints/endpoints-api-management-python',
+    url='https://github.com/cloudendpoints/endpoints-management-python',
     packages=find_packages(),
     package_dir={'google-endpoints-api-management': 'google'},
     namespace_packages=['google', 'google.api'],

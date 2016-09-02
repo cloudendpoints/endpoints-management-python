@@ -1,6 +1,11 @@
 Google Endpoints API Management
 ===============================
 
+
+.. image:: https://img.shields.io/travis/cloudendpoints/endpoints-management-pyton.svg
+     :target: https://travis-ci.org/cloudendpoints/endpoints-management-python
+
+
 Google Endpoints API Management manages the 'control plane' of an API by
 providing support for authentication, billing, monitoring and quota control.
 
