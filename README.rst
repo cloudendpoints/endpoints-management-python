@@ -2,8 +2,8 @@ Google Endpoints API Management
 ===============================
 
 
-.. image:: https://img.shields.io/travis/cloudendpoints/endpoints-management-pyton.svg
-     :target: https://travis-ci.org/cloudendpoints/endpoints-management-python
+.. image:: https://travis-ci.org/cloudendpoints/endpoints-management-python.svg?branch=master
+    :target: https://travis-ci.org/cloudendpoints/endpoints-management-python
 .. image:: https://codecov.io/gh/cloudendpoints/endpoints-management-python/branch/master/graph/badge.svg
     :target: https://codecov.io/gh/cloudendpoints/endpoints-management-python
 
