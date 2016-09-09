@@ -63,7 +63,6 @@ setup(
     url='https://github.com/cloudendpoints/endpoints-management-python',
     packages=find_packages(),
     package_dir={'google-endpoints-api-management': 'google'},
-    namespace_packages=['google', 'google.api'],
     license='Apache License',
     classifiers=[
         'Development Status :: 4 - Beta',
