@@ -12,5 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=missing-docstring
-__import__('pkg_resources').declare_namespace(__name__)  # pragma: no cover
+"""Base ``google`` namespace package."""
+
+try:
+    import pkg_resources
+    pkg_resources.declare_namespace(__name__)
+except ImportError:
+    import pkgutil
+    __path__ = pkgutil.extend_path(__path__, __name__)

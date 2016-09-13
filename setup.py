@@ -15,9 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import re
-import sys
 
 from setuptools import setup, find_packages
 
@@ -62,6 +60,7 @@ setup(
     author_email='googleapis-packages@google.com',
     url='https://github.com/cloudendpoints/endpoints-management-python',
     packages=find_packages(),
+    namespace_packages=['google'],
     package_dir={'google-endpoints-api-management': 'google'},
     license='Apache License',
     classifiers=[
