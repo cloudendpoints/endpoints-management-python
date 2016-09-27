@@ -153,6 +153,7 @@ _ADD_LOG_TESTS = [
     )
 ]
 
+_TEST_API_KEY = 'test_key'
 _ADD_METRICS_TESTS = [
     (report_request.Info(
         operation_id='an_op_id',
@@ -164,7 +165,9 @@ _ADD_METRICS_TESTS = [
         request_time=_TEST_LATENCY,
         request_size=_TEST_SIZE,
         response_size=_TEST_SIZE,
-        service_name=_TEST_SERVICE_NAME),
+        service_name=_TEST_SERVICE_NAME,
+        api_key=_TEST_API_KEY,
+        api_key_valid=True),
      messages.Operation(
          importance=messages.Operation.ImportanceValueValuesEnum.LOW,
          logEntries=[],
@@ -176,6 +179,7 @@ _ADD_METRICS_TESTS = [
                  ]
              ),
          ],
+         consumerId='api_key:' + _TEST_API_KEY,
          operationId='an_op_id',
          operationName='an_op_name',
          startTime=_START_OF_EPOCH_TIMESTAMP,
@@ -192,7 +196,9 @@ _ADD_METRICS_TESTS = [
         request_time=_TEST_LATENCY,
         request_size=_TEST_SIZE,
         response_size=_TEST_SIZE,
-        service_name=_TEST_SERVICE_NAME),
+        service_name=_TEST_SERVICE_NAME,
+        api_key=_TEST_API_KEY,
+        api_key_valid=True),
      messages.Operation(
          importance=messages.Operation.ImportanceValueValuesEnum.LOW,
          logEntries=[],
@@ -210,6 +216,7 @@ _ADD_METRICS_TESTS = [
                  ]
              ),
          ],
+         consumerId='api_key:' + _TEST_API_KEY,
          operationId='an_op_id',
          operationName='an_op_name',
          startTime=_START_OF_EPOCH_TIMESTAMP,

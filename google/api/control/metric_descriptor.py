@@ -94,6 +94,12 @@ def _set_distribution_metric_to_overhead_time(name, info, an_op):
                                        an_op, _TIME_DISTRIBUTION_ARGS)
 
 
+class Mark(Enum):
+    """Enumerates the types of metric."""
+    PRODUCER = 1
+    CONSUMER = 2
+
+
 class KnownMetrics(Enum):
     """Enumerates the known metrics."""
 
@@ -102,15 +108,10 @@ class KnownMetrics(Enum):
         MetricKind.DELTA,
         ValueType.INT64,
         _set_int64_metric_to_constant_1,
+        Mark.CONSUMER,
     )
     PRODUCER_REQUEST_COUNT = (
         'serviceruntime.googleapis.com/api/producer/request_count',
-        MetricKind.DELTA,
-        ValueType.INT64,
-        _set_int64_metric_to_constant_1,
-    )
-    PRODUCER_BY_CONSUMER_REQUEST_COUNT = (
-        'serviceruntime.googleapis.com/api/producer/by_consumer/request_count',
         MetricKind.DELTA,
         ValueType.INT64,
         _set_int64_metric_to_constant_1,
@@ -120,15 +121,10 @@ class KnownMetrics(Enum):
         MetricKind.DELTA,
         ValueType.DISTRIBUTION,
         _set_distribution_metric_to_request_size,
+        Mark.CONSUMER,
     )
     PRODUCER_REQUEST_SIZES = (
         'serviceruntime.googleapis.com/api/producer/request_sizes',
-        MetricKind.DELTA,
-        ValueType.DISTRIBUTION,
-        _set_distribution_metric_to_request_size,
-    )
-    PRODUCER_BY_CONSUMER_REQUEST_SIZES = (
-        'serviceruntime.googleapis.com/api/producer/by_consumer/request_sizes',
         MetricKind.DELTA,
         ValueType.DISTRIBUTION,
         _set_distribution_metric_to_request_size,
@@ -138,15 +134,10 @@ class KnownMetrics(Enum):
         MetricKind.DELTA,
         ValueType.DISTRIBUTION,
         _set_distribution_metric_to_response_size,
+        Mark.CONSUMER,
     )
     PRODUCER_RESPONSE_SIZES = (
         'serviceruntime.googleapis.com/api/producer/response_sizes',
-        MetricKind.DELTA,
-        ValueType.DISTRIBUTION,
-        _set_distribution_metric_to_response_size,
-    )
-    PRODUCER_BY_CONSUMER_RESPONSE_SIZES = (
-        'serviceruntime.googleapis.com/api/producer/by_consumer/response_sizes',
         MetricKind.DELTA,
         ValueType.DISTRIBUTION,
         _set_distribution_metric_to_response_size,
@@ -156,15 +147,10 @@ class KnownMetrics(Enum):
         MetricKind.DELTA,
         ValueType.INT64,
         _set_int64_metric_to_constant_1_if_http_error,
+        Mark.CONSUMER,
     )
     PRODUCER_ERROR_COUNT = (
         'serviceruntime.googleapis.com/api/producer/error_count',
-        MetricKind.DELTA,
-        ValueType.INT64,
-        _set_int64_metric_to_constant_1_if_http_error,
-    )
-    PRODUCER_BY_CONSUMER_ERROR_COUNT = (
-        'serviceruntime.googleapis.com/api/producer/by_consumer/error_count',
         MetricKind.DELTA,
         ValueType.INT64,
         _set_int64_metric_to_constant_1_if_http_error,
@@ -174,16 +160,10 @@ class KnownMetrics(Enum):
         MetricKind.DELTA,
         ValueType.DISTRIBUTION,
         _set_distribution_metric_to_request_time,
+        Mark.CONSUMER,
     )
     PRODUCER_TOTAL_LATENCIES = (
         'serviceruntime.googleapis.com/api/producer/total_latencies',
-        MetricKind.DELTA,
-        ValueType.DISTRIBUTION,
-        _set_distribution_metric_to_request_time,
-    )
-    PRODUCER_BY_CONSUMER_TOTAL_LATENCIES = (
-        'serviceruntime.googleapis.com/api/producer/by_consumer/'
-        'total_latencies',
         MetricKind.DELTA,
         ValueType.DISTRIBUTION,
         _set_distribution_metric_to_request_time,
@@ -193,16 +173,10 @@ class KnownMetrics(Enum):
         MetricKind.DELTA,
         ValueType.DISTRIBUTION,
         _set_distribution_metric_to_backend_time,
+        Mark.CONSUMER,
     )
     PRODUCER_BACKEND_LATENCIES = (
         'serviceruntime.googleapis.com/api/producer/backend_latencies',
-        MetricKind.DELTA,
-        ValueType.DISTRIBUTION,
-        _set_distribution_metric_to_backend_time,
-    )
-    PRODUCER_BY_CONSUMER_BACKEND_LATENCIES = (
-        'serviceruntime.googleapis.com/api/producer/by_consumer/'
-        'backend_latencies',
         MetricKind.DELTA,
         ValueType.DISTRIBUTION,
         _set_distribution_metric_to_backend_time,
@@ -212,6 +186,7 @@ class KnownMetrics(Enum):
         MetricKind.DELTA,
         ValueType.DISTRIBUTION,
         _set_distribution_metric_to_overhead_time,
+        Mark.CONSUMER,
     )
     PRODUCER_REQUEST_OVERHEAD_LATENCIES = (
         'serviceruntime.googleapis.com/api/producer/request_overhead_latencies',
@@ -219,15 +194,9 @@ class KnownMetrics(Enum):
         ValueType.DISTRIBUTION,
         _set_distribution_metric_to_overhead_time,
     )
-    PRODUCER_BY_CONSUMER_REQUEST_OVERHEAD_LATENCIES = (
-        'serviceruntime.googleapis.com/api/producer/by_consumer/'
-        'request_overhead_latencies',
-        MetricKind.DELTA,
-        ValueType.DISTRIBUTION,
-        _set_distribution_metric_to_overhead_time,
-    )
 
-    def __init__(self, metric_name, kind, value_type, update_op_func):
+    def __init__(self, metric_name, kind, value_type, update_op_func,
+                 mark=Mark.PRODUCER):
         """Constructor.
 
         update_op_func is used to when updating an `Operation` from a
@@ -242,8 +211,10 @@ class KnownMetrics(Enum):
         """
         self.kind = kind
         self.metric_name = metric_name
-        self.update_op_func = update_op_func
+        self.update_op_func = (self._consumer_metric(update_op_func)
+                               if mark is Mark.CONSUMER else update_op_func)
         self.value_type = value_type
+        self.mark = mark
 
     def matches(self, desc):
         """Determines if a given metric descriptor matches this enum instance
@@ -274,6 +245,13 @@ class KnownMetrics(Enum):
 
         """
         self.update_op_func(self.metric_name, info, an_op)
+
+    def _consumer_metric(self, update_op_func):
+        def resulting_updater(metric_name, info, an_op):
+            if info.api_key_valid:
+                update_op_func(metric_name, info, an_op)
+
+        return resulting_updater
 
     @classmethod
     def is_supported(cls, desc):
