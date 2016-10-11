@@ -27,4 +27,4 @@ MetricKind = messages.MetricDescriptor.MetricKindValueValuesEnum
 ValueType = messages.MetricDescriptor.ValueTypeValueValuesEnum
 
 USER_AGENT = 'ESP'
-SERVICE_AGENT = USER_AGENT + '/' + __version__
+SERVICE_AGENT = 'EF_PYTHON/' + __version__
