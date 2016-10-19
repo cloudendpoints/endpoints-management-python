@@ -29,6 +29,7 @@ import httplib
 import logging
 import os
 import uuid
+import urllib2
 import urlparse
 import wsgiref.util
 
@@ -41,6 +42,44 @@ logger = logging.getLogger(__name__)
 
 _CONTENT_LENGTH = 'content-length'
 _DEFAULT_LOCATION = 'global'
+
+_METADATA_SERVER_URL = 'http://metadata.google.internal'
+
+
+def _running_on_gce():
+  headers = {'Metadata-Flavor': 'Google'}
+
+  try:
+    request = urllib2.Request(_METADATA_SERVER_URL, headers=headers)
+    response = urllib2.urlopen(request)
+    if response.info().getheader('Metadata-Flavor') == 'Google':
+      return True
+  except urllib2.URLError:
+    pass
+
+  return False
+
+
+def _get_platform():
+  server_software = os.environ.get('SERVER_SOFTWARE', '')
+
+  if server_software.startswith('Development'):
+    return report_request.ReportedPlatforms.DEVELOPMENT
+  elif os.environ.get('KUBERNETES_SERVICE_HOST'):
+    return report_request.ReportedPlatforms.GKE
+  elif _running_on_gce():
+    # We're either in GAE Flex or GCE
+    if os.environ.get('GAE_MODULE_NAME'):
+      return report_request.ReportedPlatforms.GAE_FLEX
+    else:
+      return report_request.ReportedPlatforms.GCE
+  elif os.environ.get('GAE_MODULE_NAME'):
+    return report_request.ReportedPlatforms.GAE_STANDARD
+
+  return report_request.ReportedPlatforms.UNKNOWN
+
+
+platform = _get_platform()
 
 
 def add_all(application, project_id, control_client,
@@ -287,8 +326,8 @@ class Middleware(object):
                                app_info,
                                latency_timer,
                                reporting_rules):
-        # TODO: determine how to obtain the consumer_project_id, the location
-        # and the platform correctly
+        # TODO: determine how to obtain the consumer_project_id and the location
+        # correctly
         report_info = report_request.Info(
             api_key=check_info.api_key,
             api_key_valid=app_info.api_key_valid,
@@ -300,7 +339,7 @@ class Middleware(object):
             operation_name=check_info.operation_name,
             backend_time=latency_timer.backend_time,
             overhead_time=latency_timer.overhead_time,
-            platform=report_request.ReportedPlatforms.GAE,  # TODO: see above
+            platform=platform,
             producer_project_id=self._project_id,
             protocol=report_request.ReportedProtocols.HTTP,
             request_size=app_info.request_size,

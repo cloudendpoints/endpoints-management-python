@@ -23,7 +23,7 @@ from expects import be_false, be_none, be_true, expect, equal, raise_error
 
 from google.api.auth import suppliers
 from google.api.auth import tokens
-from google.api.control import client, messages, service, wsgi
+from google.api.control import client, messages, report_request, service, wsgi
 
 
 def _dummy_start_response(content, dummy_response_headers):
@@ -464,6 +464,43 @@ class TestCreateAuthenticator(unittest2.TestCase):
         }"""
         service = _read_service_from_json(json)
         self.assertIsNotNone(wsgi._create_authenticator(service))
+
+
+patched_platform_environ = {}
+@mock.patch.dict('os.environ', patched_platform_environ, clear=True)
+class TestPlatformDetection(unittest2.TestCase):
+
+  def test_development(self):
+    os.environ['SERVER_SOFTWARE'] = 'Development/2.0.0'
+    self.assertEqual(report_request.ReportedPlatforms.DEVELOPMENT,
+                     wsgi._get_platform())
+
+  def test_gke(self):
+    os.environ['KUBERNETES_SERVICE_HOST'] = 'hostname'
+    self.assertEqual(report_request.ReportedPlatforms.GKE,
+                     wsgi._get_platform())
+
+  @mock.patch.object(wsgi, '_running_on_gce', return_value=True)
+  def test_gae_flex(self, _running_on_gce):
+    os.environ['GAE_MODULE_NAME'] = 'gae_module'
+    self.assertEqual(report_request.ReportedPlatforms.GAE_FLEX,
+                     wsgi._get_platform())
+
+  @mock.patch.object(wsgi, '_running_on_gce', return_value=True)
+  def test_gce(self, _running_on_gce):
+    self.assertEqual(report_request.ReportedPlatforms.GCE,
+                     wsgi._get_platform())
+
+  @mock.patch.object(wsgi, '_running_on_gce', return_value=False)
+  def test_gae_standard(self, _running_on_gce):
+    os.environ['GAE_MODULE_NAME'] = 'gae_module'
+    self.assertEqual(report_request.ReportedPlatforms.GAE_STANDARD,
+                     wsgi._get_platform())
+
+  @mock.patch.object(wsgi, '_running_on_gce', return_value=False)
+  def test_unknown(self, _running_on_gce):
+    self.assertEqual(report_request.ReportedPlatforms.UNKNOWN,
+                     wsgi._get_platform())
 
 
 def _read_service_from_json(json):

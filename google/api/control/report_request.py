@@ -124,9 +124,11 @@ class ReportedPlatforms(Enum):
     """Enumerates the platforms that can be reported."""
     # pylint: disable=too-few-public-methods
     UNKNOWN = 0
-    GAE = 1
-    GCE = 2
-    GKE = 3
+    GAE_FLEX = 1
+    GAE_STANDARD = 2
+    GCE = 3
+    GKE = 4
+    DEVELOPMENT = 5
 
 
 class ErrorCause(Enum):
