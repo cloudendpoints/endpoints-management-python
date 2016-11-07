@@ -28,6 +28,7 @@ from datetime import datetime
 import httplib
 import logging
 import os
+import socket
 import uuid
 import urllib2
 import urlparse
@@ -54,7 +55,7 @@ def _running_on_gce():
     response = urllib2.urlopen(request)
     if response.info().getheader('Metadata-Flavor') == 'Google':
       return True
-  except urllib2.URLError:
+  except (urllib2.URLError, socket.error):
     pass
 
   return False
