@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 _GOOGLE_API_SCOPE = "https://www.googleapis.com/auth/cloud-platform"
 
 _SERVICE_MGMT_URL_TEMPLATE = ("https://servicemanagement.googleapis.com"
-                              "/v1/services/{}/config?configId={}")
+                              "/v1/services/{}/configs/{}")
 
 _SERVICE_NAME_ENV_KEY = "ENDPOINTS_SERVICE_NAME"
 _SERVICE_VERSION_ENV_KEY = "ENDPOINTS_SERVICE_VERSION"
