@@ -83,6 +83,10 @@ def _get_platform():
 platform = _get_platform()
 
 
+def running_on_devserver():
+  return platform == report_request.ReportedPlatforms.DEVELOPMENT
+
+
 def add_all(application, project_id, control_client,
             loader=service.Loaders.FROM_SERVICE_MANAGEMENT):
     """Adds all endpoints middleware to a wsgi application.
