@@ -19,7 +19,7 @@ from __future__ import absolute_import
 import google.api.gen.servicecontrol_v1_messages as messages
 import google.api.gen.servicecontrol_v1_client as api_client
 
-__version__ = '1.0.0b7'
+__version__ = '1.0.0b9'
 
 # Alias the generated MetricKind and ValueType enums to simplify their usage
 # elsewhere
