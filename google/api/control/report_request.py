@@ -40,9 +40,9 @@ SIZE_NOT_SET = -1
 
 
 def _validate_int_arg(name, value):
-    if value == SIZE_NOT_SET or (isinstance(value, int) and value > 0):
+    if value == SIZE_NOT_SET or (isinstance(value, int) and value >= 0):
         return
-    raise ValueError('%s should be a positive int/long' % (name,))
+    raise ValueError('%s should be a non-negative int/long' % (name,))
 
 
 def _validate_timedelta_arg(name, value):
