@@ -493,7 +493,7 @@ class TestPlatformDetection(unittest2.TestCase):
 
   @mock.patch.object(wsgi, '_running_on_gce', return_value=False)
   def test_gae_standard(self, _running_on_gce):
-    os.environ['GAE_MODULE_NAME'] = 'gae_module'
+    os.environ['SERVER_SOFTWARE'] = 'Google App Engine/1.2.3'
     self.assertEqual(report_request.ReportedPlatforms.GAE_STANDARD,
                      wsgi._get_platform())
 

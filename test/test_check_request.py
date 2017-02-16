@@ -356,6 +356,7 @@ def _make_test_request(service_name, importance=None):
 
 
 _WANTED_USER_AGENT = label_descriptor.USER_AGENT
+_WANTED_SERVICE_AGENT = label_descriptor.SERVICE_AGENT
 _START_OF_EPOCH = timestamp.to_rfc3339(datetime.datetime(1970, 1, 1, 0, 0, 0))
 _TEST_SERVICE_NAME = 'a_service_name'
 _INFO_TESTS = [
@@ -369,7 +370,9 @@ _INFO_TESTS = [
          labels = encoding.PyValueToMessage(
              messages.Operation.LabelsValue, {
                  'servicecontrol.googleapis.com/user_agent': _WANTED_USER_AGENT,
-                 'servicecontrol.googleapis.com/referer': 'a_referer'
+                 'servicecontrol.googleapis.com/referer': 'a_referer',
+                 'servicecontrol.googleapis.com/service_agent':
+                     _WANTED_SERVICE_AGENT,
              }),
          operationId='an_op_id',
          operationName='an_op_name',
@@ -388,7 +391,9 @@ _INFO_TESTS = [
          labels = encoding.PyValueToMessage(
              messages.Operation.LabelsValue, {
                  'servicecontrol.googleapis.com/user_agent': _WANTED_USER_AGENT,
-                 'servicecontrol.googleapis.com/referer': 'a_referer'
+                 'servicecontrol.googleapis.com/referer': 'a_referer',
+                 'servicecontrol.googleapis.com/service_agent':
+                     _WANTED_SERVICE_AGENT,
              }),
          operationId='an_op_id',
          operationName='an_op_name',
@@ -410,7 +415,9 @@ _INFO_TESTS = [
              messages.Operation.LabelsValue, {
                  'servicecontrol.googleapis.com/caller_ip': '127.0.0.1',
                  'servicecontrol.googleapis.com/user_agent': _WANTED_USER_AGENT,
-                 'servicecontrol.googleapis.com/referer': 'a_referer'
+                 'servicecontrol.googleapis.com/referer': 'a_referer',
+                 'servicecontrol.googleapis.com/service_agent':
+                     _WANTED_SERVICE_AGENT,
              }),
          operationId='an_op_id',
          operationName='an_op_name',

@@ -74,7 +74,7 @@ def _get_platform():
       return report_request.ReportedPlatforms.GAE_FLEX
     else:
       return report_request.ReportedPlatforms.GCE
-  elif os.environ.get('GAE_MODULE_NAME'):
+  elif server_software.startswith('Google App Engine'):
     return report_request.ReportedPlatforms.GAE_STANDARD
 
   return report_request.ReportedPlatforms.UNKNOWN

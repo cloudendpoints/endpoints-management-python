@@ -109,6 +109,10 @@ _EXPECTED_NOK_LOG_ENTRY = messages.LogEntry(
     timestamp=_START_OF_EPOCH_TIMESTAMP
 )
 
+_WANTED_USER_AGENT = label_descriptor.USER_AGENT
+_WANTED_SERVICE_AGENT = label_descriptor.SERVICE_AGENT
+_WANTED_PLATFORM = 'Unknown'
+
 _EXPECTED_OK_METRIC = metric_descriptor.KnownMetrics.CONSUMER_REQUEST_COUNT
 _EXPECTED_NOK_METRIC = metric_descriptor.KnownMetrics.CONSUMER_ERROR_COUNT
 _ADD_LOG_TESTS = [
@@ -171,6 +175,15 @@ _ADD_METRICS_TESTS = [
      messages.Operation(
          importance=messages.Operation.ImportanceValueValuesEnum.LOW,
          logEntries=[],
+         labels=encoding.PyValueToMessage(
+             messages.Operation.LabelsValue, {
+                 'servicecontrol.googleapis.com/service_agent':
+                     _WANTED_SERVICE_AGENT,
+                 'servicecontrol.googleapis.com/user_agent':
+                     _WANTED_USER_AGENT,
+                 'servicecontrol.googleapis.com/platform':
+                     _WANTED_PLATFORM,
+             }),
          metricValueSets = [
              messages.MetricValueSet(
                  metricName=_EXPECTED_OK_METRIC.metric_name,
@@ -202,6 +215,15 @@ _ADD_METRICS_TESTS = [
      messages.Operation(
          importance=messages.Operation.ImportanceValueValuesEnum.LOW,
          logEntries=[],
+         labels=encoding.PyValueToMessage(
+             messages.Operation.LabelsValue, {
+                 'servicecontrol.googleapis.com/service_agent':
+                     _WANTED_SERVICE_AGENT,
+                 'servicecontrol.googleapis.com/user_agent':
+                     _WANTED_USER_AGENT,
+                 'servicecontrol.googleapis.com/platform':
+                     _WANTED_PLATFORM,
+             }),
          metricValueSets = [
              messages.MetricValueSet(
                  metricName=_EXPECTED_OK_METRIC.metric_name,
@@ -236,7 +258,14 @@ _ADD_LABELS_TESTS = [
          importance=messages.Operation.ImportanceValueValuesEnum.LOW,
          labels=encoding.PyValueToMessage(
              messages.Operation.LabelsValue, {
-                 _EXPECTED_OK_LABEL.label_name: 'a_referer'
+                 _EXPECTED_OK_LABEL.label_name: 'a_referer',
+                 'servicecontrol.googleapis.com/service_agent':
+                     _WANTED_SERVICE_AGENT,
+                 'servicecontrol.googleapis.com/user_agent':
+                     _WANTED_USER_AGENT,
+                 'servicecontrol.googleapis.com/platform':
+                     _WANTED_PLATFORM,
+
              }),
          logEntries=[],
          operationId='an_op_id',

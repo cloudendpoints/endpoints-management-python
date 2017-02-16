@@ -37,6 +37,7 @@ from apitools.base.py import encoding
 
 from . import caches, label_descriptor, messages
 from . import metric_value, operation, signing
+from . import USER_AGENT, SERVICE_AGENT
 
 logger = logging.getLogger(__name__)
 
@@ -229,14 +230,17 @@ class Info(collections.namedtuple('Info',
         if not self.operation_name:
             raise ValueError('the operation name must be set')
         op = super(Info, self).as_operation(timer=timer)
-        labels = {
-            _KNOWN_LABELS.SCC_USER_AGENT.label_name: label_descriptor.USER_AGENT
-        }
+        labels = {}
         if self.client_ip:
             labels[_KNOWN_LABELS.SCC_CALLER_IP.label_name] = self.client_ip
 
         if self.referer:
             labels[_KNOWN_LABELS.SCC_REFERER.label_name] = self.referer
+
+        # Forcibly add system label reporting here, as the base service
+        # config does not specify it as a label.
+        labels[_KNOWN_LABELS.SCC_SERVICE_AGENT.label_name] = SERVICE_AGENT
+        labels[_KNOWN_LABELS.SCC_USER_AGENT.label_name] = USER_AGENT
 
         op.labels = encoding.PyValueToMessage(
             messages.Operation.LabelsValue, labels)

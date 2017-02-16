@@ -33,6 +33,7 @@ from apitools.base.py import encoding
 from enum import Enum
 from . import caches, label_descriptor, operation, messages
 from . import metric_descriptor, signing, timestamp
+from . import USER_AGENT, SERVICE_AGENT
 
 logger = logging.getLogger(__name__)
 
@@ -130,6 +131,18 @@ class ReportedPlatforms(Enum):
     GKE = 4
     DEVELOPMENT = 5
 
+    def friendly_string(self):
+        if self.name == 'UNKNOWN':
+            return 'Unknown'
+        elif self.name == 'GAE_FLEX':
+            return 'GAE Flex'
+        elif self.name == 'GAE_STANDARD':
+            return 'GAE Standard'
+        elif self.name == 'DEVELOPMENT':
+            return 'Development (Python)'
+        else:
+            return self.name
+
 
 class ErrorCause(Enum):
     """Enumerates the causes of errors."""
@@ -146,6 +159,9 @@ _SEVERITY = messages.LogEntry.SeverityValueValuesEnum
 
 def _struct_payload_from(a_dict):
     return encoding.PyValueToMessage(messages.LogEntry.StructPayloadValue, a_dict)
+
+
+_KNOWN_LABELS = label_descriptor.KnownLabels
 
 
 class Info(
@@ -346,6 +362,15 @@ class Info(
             labels = {}
             for known_label in rules.labels:
                 known_label.do_labels_update(self, labels)
+
+            # Forcibly add system label reporting here, as the base service
+            # config does not specify it as a label.
+            labels[_KNOWN_LABELS.SCC_PLATFORM.label_name] = (
+                self.platform.friendly_string())
+            labels[_KNOWN_LABELS.SCC_SERVICE_AGENT.label_name] = (
+                SERVICE_AGENT)
+            labels[_KNOWN_LABELS.SCC_USER_AGENT.label_name] = USER_AGENT
+
             if labels:
                 op.labels = encoding.PyValueToMessage(
                     messages.Operation.LabelsValue,
