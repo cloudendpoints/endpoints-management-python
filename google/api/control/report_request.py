@@ -139,7 +139,7 @@ class ReportedPlatforms(Enum):
         elif self.name == 'GAE_STANDARD':
             return 'GAE Standard'
         elif self.name == 'DEVELOPMENT':
-            return 'Development (Python)'
+            return 'GAE Dev Server'
         else:
             return self.name
 
