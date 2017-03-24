@@ -20,7 +20,7 @@ that wraps another WSGI application to uses a provided
 :class:`google.api.control.client.Client` to provide service control.
 
 """
-#pylint: disable=too-many-arguments
+# pylint: disable=too-many-arguments
 
 from __future__ import absolute_import
 
@@ -48,43 +48,43 @@ _METADATA_SERVER_URL = 'http://metadata.google.internal'
 
 
 def _running_on_gce():
-  headers = {'Metadata-Flavor': 'Google'}
+    headers = {'Metadata-Flavor': 'Google'}
 
-  try:
-    request = urllib2.Request(_METADATA_SERVER_URL, headers=headers)
-    response = urllib2.urlopen(request)
-    if response.info().getheader('Metadata-Flavor') == 'Google':
-      return True
-  except (urllib2.URLError, socket.error):
-    pass
+    try:
+        request = urllib2.Request(_METADATA_SERVER_URL, headers=headers)
+        response = urllib2.urlopen(request)
+        if response.info().getheader('Metadata-Flavor') == 'Google':
+            return True
+    except (urllib2.URLError, socket.error):
+        pass
 
-  return False
+    return False
 
 
 def _get_platform():
-  server_software = os.environ.get('SERVER_SOFTWARE', '')
+    server_software = os.environ.get('SERVER_SOFTWARE', '')
 
-  if server_software.startswith('Development'):
-    return report_request.ReportedPlatforms.DEVELOPMENT
-  elif os.environ.get('KUBERNETES_SERVICE_HOST'):
-    return report_request.ReportedPlatforms.GKE
-  elif _running_on_gce():
-    # We're either in GAE Flex or GCE
-    if os.environ.get('GAE_MODULE_NAME'):
-      return report_request.ReportedPlatforms.GAE_FLEX
-    else:
-      return report_request.ReportedPlatforms.GCE
-  elif server_software.startswith('Google App Engine'):
-    return report_request.ReportedPlatforms.GAE_STANDARD
+    if server_software.startswith('Development'):
+        return report_request.ReportedPlatforms.DEVELOPMENT
+    elif os.environ.get('KUBERNETES_SERVICE_HOST'):
+        return report_request.ReportedPlatforms.GKE
+    elif _running_on_gce():
+        # We're either in GAE Flex or GCE
+        if os.environ.get('GAE_MODULE_NAME'):
+            return report_request.ReportedPlatforms.GAE_FLEX
+        else:
+            return report_request.ReportedPlatforms.GCE
+    elif server_software.startswith('Google App Engine'):
+        return report_request.ReportedPlatforms.GAE_STANDARD
 
-  return report_request.ReportedPlatforms.UNKNOWN
+    return report_request.ReportedPlatforms.UNKNOWN
 
 
 platform = _get_platform()
 
 
 def running_on_devserver():
-  return platform == report_request.ReportedPlatforms.DEVELOPMENT
+    return platform == report_request.ReportedPlatforms.DEVELOPMENT
 
 
 def add_all(application, project_id, control_client,
@@ -222,7 +222,7 @@ class Middleware(object):
         'Method does not allow callers without established identity.'
         ' Please use an API key or other form of API consumer identity'
         ' to call this API.'
-     )
+    )
 
     def __init__(self,
                  application,
@@ -505,6 +505,7 @@ def _find_api_key_header(info, environ):
             return value  # headers have single values
 
     return None
+
 
 def _create_authenticator(a_service):
     """Create an instance of :class:`google.auth.tokens.Authenticator`.

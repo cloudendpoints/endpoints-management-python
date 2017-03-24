@@ -683,18 +683,18 @@ class TestAuthenticationConfig(_JsonServiceBase, unittest2.TestCase):
     _INPUT = _AUTHENTICATION_CONFIG_TEST
 
     def test_lookup_method_with_authentication(self):
-      registry = self._get_registry()
-      info = registry.lookup('GET', '/shelves')
-      auth_info = info.auth_info
-      self.assertIsNotNone(auth_info)
-      self.assertTrue(auth_info.is_provider_allowed("shelves-provider"))
-      self.assertFalse(auth_info.is_provider_allowed("random-provider"))
-      self.assertEqual(["aud1", "aud2"],
-                       auth_info.get_allowed_audiences("shelves-provider"))
-      self.assertEqual([], auth_info.get_allowed_audiences("random-provider"))
+        registry = self._get_registry()
+        info = registry.lookup('GET', '/shelves')
+        auth_info = info.auth_info
+        self.assertIsNotNone(auth_info)
+        self.assertTrue(auth_info.is_provider_allowed("shelves-provider"))
+        self.assertFalse(auth_info.is_provider_allowed("random-provider"))
+        self.assertEqual(["aud1", "aud2"],
+                         auth_info.get_allowed_audiences("shelves-provider"))
+        self.assertEqual([], auth_info.get_allowed_audiences("random-provider"))
 
     def test_lookup_method_without_authentication(self):
-      registry = self._get_registry()
-      info = registry.lookup('OPTIONS', '/shelves')
-      self.assertIsNotNone(info)
-      self.assertIsNone(info.auth_info)
+        registry = self._get_registry()
+        info = registry.lookup('OPTIONS', '/shelves')
+        self.assertIsNotNone(info)
+        self.assertIsNone(info.auth_info)

@@ -193,6 +193,7 @@ def merge(prior, latest):
     for i, (x, y) in enumerate(zip(prior.bucketCounts, bucket_counts)):
         bucket_counts[i] = x + y
 
+
 _EPSILON = 1e-5
 
 

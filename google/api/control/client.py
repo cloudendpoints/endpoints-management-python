@@ -334,7 +334,7 @@ class Client(object):
     def _schedule_flushes(self):
         # the method expects to be run in the thread created in start()
         self._initialize_flushing()
-        self._scheduler.run() # should block until self._stopped is set
+        self._scheduler.run()  # should block until self._stopped is set
         logger.info('scheduler.run completed, %s will exit', threading.current_thread())
 
     def _cleanup_if_stopped(self):

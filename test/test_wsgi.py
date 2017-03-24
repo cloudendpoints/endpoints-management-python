@@ -350,99 +350,99 @@ AuthMiddleware = wsgi.AuthenticationMiddleware
 
 class TestAuthenticationMiddleware(unittest2.TestCase):
 
-  def setUp(self):
-      self._mock_application = _DummyWsgiApp()
-      self._mock_authenticator = mock.MagicMock(spec=tokens.Authenticator)
-      self._middleware = AuthMiddleware(self._mock_application,
-                                        self._mock_authenticator)
+    def setUp(self):
+        self._mock_application = _DummyWsgiApp()
+        self._mock_authenticator = mock.MagicMock(spec=tokens.Authenticator)
+        self._middleware = AuthMiddleware(self._mock_application,
+                                          self._mock_authenticator)
 
-  def test_no_authentication(self):
-      with self.assertRaisesRegex(ValueError, "Invalid authenticator"):
-          AuthMiddleware(self._mock_application, None)
+    def test_no_authentication(self):
+        with self.assertRaisesRegex(ValueError, "Invalid authenticator"):
+            AuthMiddleware(self._mock_application, None)
 
-  def test_no_method_info(self):
-      environ = {}
-      self.assertEqual(_DUMMY_RESPONSE,
-                       self._middleware(environ, _dummy_start_response))
+    def test_no_method_info(self):
+        environ = {}
+        self.assertEqual(_DUMMY_RESPONSE,
+                         self._middleware(environ, _dummy_start_response))
 
-  def test_no_auth_token(self):
-      auth_app = AuthMiddleware(self.UserInfoWsgiApp(), self._mock_authenticator)
-      method_info = mock.MagicMock()
-      method_info.auth_info = mock.MagicMock()
-      environ = {
-          wsgi.EnvironmentMiddleware.METHOD_INFO: method_info
-      }
-      self.assertIsNone(auth_app(environ, _dummy_start_response))
+    def test_no_auth_token(self):
+        auth_app = AuthMiddleware(self.UserInfoWsgiApp(), self._mock_authenticator)
+        method_info = mock.MagicMock()
+        method_info.auth_info = mock.MagicMock()
+        environ = {
+            wsgi.EnvironmentMiddleware.METHOD_INFO: method_info
+        }
+        self.assertIsNone(auth_app(environ, _dummy_start_response))
 
-  def test_malformed_authorization_header(self):
-      auth_app = AuthMiddleware(self.UserInfoWsgiApp(), self._mock_authenticator)
-      environ = {
-          "HTTP_AUTHORIZATION": "malformed-auth-token",
-          wsgi.EnvironmentMiddleware.METHOD_INFO: mock.MagicMock(),
-          wsgi.EnvironmentMiddleware.SERVICE_NAME: "service-name"
-      }
-      self._mock_authenticator.authenticate.side_effect = suppliers.UnauthenticatedException()
-      self.assertIsNone(auth_app(environ, _dummy_start_response))
+    def test_malformed_authorization_header(self):
+        auth_app = AuthMiddleware(self.UserInfoWsgiApp(), self._mock_authenticator)
+        environ = {
+            "HTTP_AUTHORIZATION": "malformed-auth-token",
+            wsgi.EnvironmentMiddleware.METHOD_INFO: mock.MagicMock(),
+            wsgi.EnvironmentMiddleware.SERVICE_NAME: "service-name"
+        }
+        self._mock_authenticator.authenticate.side_effect = suppliers.UnauthenticatedException()
+        self.assertIsNone(auth_app(environ, _dummy_start_response))
 
-  def test_successful_authentication(self):
-      auth_token = "Bearer test-bearer-token"
-      auth_info = mock.MagicMock()
-      service_name = "test-service-name"
-      method_info = mock.MagicMock()
-      method_info.auth_info = auth_info
-      environ = {
-          "HTTP_AUTHORIZATION": auth_token,
-          wsgi.EnvironmentMiddleware.METHOD_INFO: method_info,
-          wsgi.EnvironmentMiddleware.SERVICE_NAME: service_name
-      }
+    def test_successful_authentication(self):
+        auth_token = "Bearer test-bearer-token"
+        auth_info = mock.MagicMock()
+        service_name = "test-service-name"
+        method_info = mock.MagicMock()
+        method_info.auth_info = auth_info
+        environ = {
+            "HTTP_AUTHORIZATION": auth_token,
+            wsgi.EnvironmentMiddleware.METHOD_INFO: method_info,
+            wsgi.EnvironmentMiddleware.SERVICE_NAME: service_name
+        }
 
-      user_info = mock.MagicMock()
-      self._mock_authenticator.authenticate.return_value = user_info
-      self._middleware(environ, _dummy_start_response)
-      self.assertEqual(user_info, environ.get(AuthMiddleware.USER_INFO))
-      authenticate_mock = self._mock_authenticator.authenticate
-      authenticate_mock.assert_called_once_with("test-bearer-token", auth_info,
-                                                service_name)
+        user_info = mock.MagicMock()
+        self._mock_authenticator.authenticate.return_value = user_info
+        self._middleware(environ, _dummy_start_response)
+        self.assertEqual(user_info, environ.get(AuthMiddleware.USER_INFO))
+        authenticate_mock = self._mock_authenticator.authenticate
+        authenticate_mock.assert_called_once_with("test-bearer-token", auth_info,
+                                                  service_name)
 
-  def test_auth_token_in_query(self):
-      auth_token = "test-bearer-token"
-      auth_info = mock.MagicMock()
-      service_name = "test-service-name"
-      method_info = mock.MagicMock()
-      method_info.auth_info = auth_info
-      environ = {
-          "QUERY_STRING": "access_token=" + auth_token,
-          wsgi.EnvironmentMiddleware.METHOD_INFO: method_info,
-          wsgi.EnvironmentMiddleware.SERVICE_NAME: service_name
-      }
+    def test_auth_token_in_query(self):
+        auth_token = "test-bearer-token"
+        auth_info = mock.MagicMock()
+        service_name = "test-service-name"
+        method_info = mock.MagicMock()
+        method_info.auth_info = auth_info
+        environ = {
+            "QUERY_STRING": "access_token=" + auth_token,
+            wsgi.EnvironmentMiddleware.METHOD_INFO: method_info,
+            wsgi.EnvironmentMiddleware.SERVICE_NAME: service_name
+        }
 
-      user_info = mock.MagicMock()
-      self._mock_authenticator.authenticate.return_value = user_info
-      self._middleware(environ, _dummy_start_response)
-      self.assertEqual(user_info, environ.get(AuthMiddleware.USER_INFO))
-      authenticate_mock = self._mock_authenticator.authenticate
-      authenticate_mock.assert_called_once_with("test-bearer-token", auth_info,
-                                                service_name)
+        user_info = mock.MagicMock()
+        self._mock_authenticator.authenticate.return_value = user_info
+        self._middleware(environ, _dummy_start_response)
+        self.assertEqual(user_info, environ.get(AuthMiddleware.USER_INFO))
+        authenticate_mock = self._mock_authenticator.authenticate
+        authenticate_mock.assert_called_once_with("test-bearer-token", auth_info,
+                                                  service_name)
 
-  patched_environ = {}
-  @mock.patch("os.environ", patched_environ)
-  def test_set_user_info(self):
-    environ = {
-        "QUERY_STRING": "access_token=test-token",
-        wsgi.EnvironmentMiddleware.METHOD_INFO: mock.MagicMock(),
-        wsgi.EnvironmentMiddleware.SERVICE_NAME: "test-service-name"
-    }
-    application = self.UserInfoWsgiApp()
-    auth_middleware = AuthMiddleware(application, self._mock_authenticator)
-    user_info = mock.MagicMock()
-    self._mock_authenticator.authenticate.return_value = user_info
-    self.assertEqual(user_info, auth_middleware(environ,
-                                                _dummy_start_response))
-    self.assertFalse(self.patched_environ)
+    patched_environ = {}
+    @mock.patch("os.environ", patched_environ)
+    def test_set_user_info(self):
+        environ = {
+            "QUERY_STRING": "access_token=test-token",
+            wsgi.EnvironmentMiddleware.METHOD_INFO: mock.MagicMock(),
+            wsgi.EnvironmentMiddleware.SERVICE_NAME: "test-service-name"
+        }
+        application = self.UserInfoWsgiApp()
+        auth_middleware = AuthMiddleware(application, self._mock_authenticator)
+        user_info = mock.MagicMock()
+        self._mock_authenticator.authenticate.return_value = user_info
+        self.assertEqual(user_info, auth_middleware(environ,
+                                                    _dummy_start_response))
+        self.assertFalse(self.patched_environ)
 
-  class UserInfoWsgiApp(object):
-    def __call__(self, environ, start_response):
-      return os.environ.get(wsgi.AuthenticationMiddleware.USER_INFO)
+    class UserInfoWsgiApp(object):
+        def __call__(self, environ, start_response):
+            return os.environ.get(wsgi.AuthenticationMiddleware.USER_INFO)
 
 
 class TestCreateAuthenticator(unittest2.TestCase):
@@ -470,37 +470,37 @@ patched_platform_environ = {}
 @mock.patch.dict('os.environ', patched_platform_environ, clear=True)
 class TestPlatformDetection(unittest2.TestCase):
 
-  def test_development(self):
-    os.environ['SERVER_SOFTWARE'] = 'Development/2.0.0'
-    self.assertEqual(report_request.ReportedPlatforms.DEVELOPMENT,
-                     wsgi._get_platform())
+    def test_development(self):
+        os.environ['SERVER_SOFTWARE'] = 'Development/2.0.0'
+        self.assertEqual(report_request.ReportedPlatforms.DEVELOPMENT,
+                         wsgi._get_platform())
 
-  def test_gke(self):
-    os.environ['KUBERNETES_SERVICE_HOST'] = 'hostname'
-    self.assertEqual(report_request.ReportedPlatforms.GKE,
-                     wsgi._get_platform())
+    def test_gke(self):
+        os.environ['KUBERNETES_SERVICE_HOST'] = 'hostname'
+        self.assertEqual(report_request.ReportedPlatforms.GKE,
+                         wsgi._get_platform())
 
-  @mock.patch.object(wsgi, '_running_on_gce', return_value=True)
-  def test_gae_flex(self, _running_on_gce):
-    os.environ['GAE_MODULE_NAME'] = 'gae_module'
-    self.assertEqual(report_request.ReportedPlatforms.GAE_FLEX,
-                     wsgi._get_platform())
+    @mock.patch.object(wsgi, '_running_on_gce', return_value=True)
+    def test_gae_flex(self, _running_on_gce):
+        os.environ['GAE_MODULE_NAME'] = 'gae_module'
+        self.assertEqual(report_request.ReportedPlatforms.GAE_FLEX,
+                         wsgi._get_platform())
 
-  @mock.patch.object(wsgi, '_running_on_gce', return_value=True)
-  def test_gce(self, _running_on_gce):
-    self.assertEqual(report_request.ReportedPlatforms.GCE,
-                     wsgi._get_platform())
+    @mock.patch.object(wsgi, '_running_on_gce', return_value=True)
+    def test_gce(self, _running_on_gce):
+        self.assertEqual(report_request.ReportedPlatforms.GCE,
+                         wsgi._get_platform())
 
-  @mock.patch.object(wsgi, '_running_on_gce', return_value=False)
-  def test_gae_standard(self, _running_on_gce):
-    os.environ['SERVER_SOFTWARE'] = 'Google App Engine/1.2.3'
-    self.assertEqual(report_request.ReportedPlatforms.GAE_STANDARD,
-                     wsgi._get_platform())
+    @mock.patch.object(wsgi, '_running_on_gce', return_value=False)
+    def test_gae_standard(self, _running_on_gce):
+        os.environ['SERVER_SOFTWARE'] = 'Google App Engine/1.2.3'
+        self.assertEqual(report_request.ReportedPlatforms.GAE_STANDARD,
+                         wsgi._get_platform())
 
-  @mock.patch.object(wsgi, '_running_on_gce', return_value=False)
-  def test_unknown(self, _running_on_gce):
-    self.assertEqual(report_request.ReportedPlatforms.UNKNOWN,
-                     wsgi._get_platform())
+    @mock.patch.object(wsgi, '_running_on_gce', return_value=False)
+    def test_unknown(self, _running_on_gce):
+        self.assertEqual(report_request.ReportedPlatforms.UNKNOWN,
+                         wsgi._get_platform())
 
 
 def _read_service_from_json(json):

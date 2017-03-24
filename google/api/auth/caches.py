@@ -19,22 +19,22 @@ import pylru
 
 
 class LruBackend(api.CacheBackend):
-  """A dogpile.cache backend that uses LRU as the size management."""
+    """A dogpile.cache backend that uses LRU as the size management."""
 
-  def __init__(self, options):
-    """Initializes an LruBackend.
+    def __init__(self, options):
+        """Initializes an LruBackend.
 
-    Args:
-      options: a dictionary that contains configuration options.
-    """
-    capacity = options["capacity"] if "capacity" in options else 200
-    self._cache = pylru.lrucache(capacity)
+        Args:
+          options: a dictionary that contains configuration options.
+        """
+        capacity = options["capacity"] if "capacity" in options else 200
+        self._cache = pylru.lrucache(capacity)
 
-  def get(self, key):
-    return self._cache[key] if key in self._cache else api.NO_VALUE
+    def get(self, key):
+        return self._cache[key] if key in self._cache else api.NO_VALUE
 
-  def set(self, key, value):
-    self._cache[key] = value
+    def set(self, key, value):
+        self._cache[key] = value
 
-  def delete(self, key):
-    del self._cache[key]
+    def delete(self, key):
+        del self._cache[key]
