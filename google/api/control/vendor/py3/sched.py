@@ -22,12 +22,24 @@ arguments are be packed in a sequence) and keyword parameters in "kwargs".
 The action function may be an instance method so it
 has another way to reference private data (besides global variables).
 """
+from __future__ import unicode_literals
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
 
-# XXX The timefunc and delayfunc should have been defined as methods
-# XXX so you can define new kinds of schedulers using subclassing
-# XXX instead of having to define a module or class just to hold
-# XXX the global state of your particular time and delay functions.
+# This file is vendored in from the Python 3.6.1 stdlib module `sched`,
+# and processed with the `pasteurize` script from http://python-future.org
+# The original file is
+# Copyright (c) 2001-2016 Python Software Foundation. All rights reserved.
 
+# flake8: noqa
+# pylint: skip-file
+
+from builtins import map
+from builtins import object
+from future import standard_library
+standard_library.install_aliases()
+from future.utils import PY3
 import time
 import heapq
 from collections import namedtuple
@@ -35,37 +47,39 @@ try:
     import threading
 except ImportError:
     import dummy_threading as threading
+import future.utils
 
-# py3 only
-# from time import monotonic as _time
-from time import time as _time
+if PY3:
+    from time import monotonic as _time
+else:
+    from time import time as _time
 
 __all__ = ["scheduler"]
 
 class Event(namedtuple('Event', 'time, priority, action, argument, kwargs')):
     # pylint: disable=no-self-argument
+    __slots__ = []
     def __eq__(s, o): return (s.time, s.priority) == (o.time, o.priority)
     def __lt__(s, o): return (s.time, s.priority) <  (o.time, o.priority)
     def __le__(s, o): return (s.time, s.priority) <= (o.time, o.priority)
     def __gt__(s, o): return (s.time, s.priority) >  (o.time, o.priority)
     def __ge__(s, o): return (s.time, s.priority) >= (o.time, o.priority)
 
-# py3 only
-#
-# Event.time.__doc__ = ('''Numeric type compatible with the return value of the
-# timefunc function passed to the constructor.''')
-# Event.priority.__doc__ = ('''Events scheduled for the same time will be executed
-# in the order of their priority.''')
-# Event.action.__doc__ = ('''Executing the event means executing
-# action(*argument, **kwargs)''')
-# Event.argument.__doc__ = ('''argument is a sequence holding the positional
-# arguments for the action.''')
-# Event.kwargs.__doc__ = ('''kwargs is a dictionary holding the keyword
-# arguments for the action.''')
+if PY3:
+    Event.time.__doc__ = ('''Numeric type compatible with the return value of the
+    timefunc function passed to the constructor.''')
+    Event.priority.__doc__ = ('''Events scheduled for the same time will be executed
+    in the order of their priority.''')
+    Event.action.__doc__ = ('''Executing the event means executing
+    action(*argument, **kwargs)''')
+    Event.argument.__doc__ = ('''argument is a sequence holding the positional
+    arguments for the action.''')
+    Event.kwargs.__doc__ = ('''kwargs is a dictionary holding the keyword
+    arguments for the action.''')
 
 _sentinel = object()
 
-class scheduler:
+class scheduler(object):
 
     def __init__(self, timefunc=_time, delayfunc=time.sleep):
         """Initialize a new instance, passing the time and delay
