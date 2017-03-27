@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from __future__ import absolute_import
+from __future__ import print_function
 
 import datetime
 import time
@@ -340,13 +341,13 @@ class TestInfo(unittest2.TestCase):
             gotLogEntry = got.reportRequest.operations[0].logEntries[0]
             expect(gotLogEntry.name).to(equal(wantLogEntry.name))
             expect(gotLogEntry.timestamp).to(equal(wantLogEntry.timestamp))
-            print u'got timestamp', gotLogEntry.timestamp
-            print u'want timestamp', wantLogEntry.timestamp
+            print(u'got timestamp', gotLogEntry.timestamp)
+            print(u'want timestamp', wantLogEntry.timestamp)
             expect(gotLogEntry.severity).to(equal(wantLogEntry.severity))
             gotStruct = encoding.MessageToPyValue(gotLogEntry.structPayload)
-            print u'got struct', gotStruct
+            print(u'got struct', gotStruct)
             wantStruct = encoding.MessageToPyValue(wantLogEntry.structPayload)
-            print u'want struct', wantStruct
+            print(u'want struct', wantStruct)
             expect(gotStruct).to(equal(wantStruct))
 
     def test_should_add_expected_metric_as_report_request(self):

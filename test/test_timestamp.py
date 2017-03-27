@@ -53,7 +53,7 @@ class TestFromRfc3339(unittest2.TestCase):
          datetime.datetime(1996, 12, 20, 0, 39, 57, 123456)),
         # Beyond 2038
         (u'2100-01-01T00:00:00Z',
-         datetime.datetime(2100, 01, 01, 0, 0, 0, 0))
+         datetime.datetime(2100, 1, 1, 0, 0, 0, 0))
     ]
 
     NANO_TESTS = [
