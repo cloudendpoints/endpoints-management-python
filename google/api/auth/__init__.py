@@ -14,8 +14,7 @@
 
 from dogpile import cache
 
-from google.api.auth import suppliers
-from google.api.auth import tokens
+from . import suppliers, tokens
 
 
 cache.register_backend("lru_cache", "google.api.auth.caches", "LruBackend")

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from future.utils import PY3
 import copy
 import mock
 import json
@@ -26,6 +27,10 @@ from test import token_utils
 
 from google.api.auth import suppliers
 from google.api.auth import tokens
+
+
+if PY3:
+    long = int
 
 
 class AuthenticatorTest(unittest.TestCase):

@@ -26,6 +26,7 @@
 
 from __future__ import absolute_import
 
+from builtins import range
 import base64
 from enum import Enum
 from . import messages, USER_AGENT, SERVICE_AGENT

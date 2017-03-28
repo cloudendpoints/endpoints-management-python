@@ -13,7 +13,10 @@
 # limitations under the License.
 
 from __future__ import absolute_import
+from __future__ import division
 
+from builtins import zip
+from past.utils import old_div
 import sys
 import unittest2
 from expects import expect, equal, raise_error
@@ -114,7 +117,7 @@ _TEST_SAMPLES_AND_BUCKETS = [
 def _expect_stats_eq_direct_calc_from_samples(d, samples):
     # pylint: disable=fixme
     # TODO: update this the sum of rho-squared
-    want_mean = sum(samples) / len(samples)
+    want_mean = old_div(sum(samples), len(samples))
     expect(d.mean).to(equal(want_mean))
     expect(d.maximum).to(equal(max(samples)))
     expect(d.minimum).to(equal(min(samples)))
@@ -192,7 +195,7 @@ class TestMerge(unittest2.TestCase):
         for d1, d2, _ in self.merge_triples:
             distribution.merge(d1, d2)
             expect(d2.count).to(equal(2))
-            expect(d2.mean).to(equal((_HIGH_SAMPLE + _LOW_SAMPLE) / 2))
+            expect(d2.mean).to(equal(old_div((_HIGH_SAMPLE + _LOW_SAMPLE), 2)))
             expect(d2.maximum).to(equal(_HIGH_SAMPLE))
             expect(d2.minimum).to(equal(_LOW_SAMPLE))
 

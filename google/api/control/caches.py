@@ -33,6 +33,7 @@ from __future__ import absolute_import
 # makes sense to have this chain of ancestors, so it's right the disable the
 # warning here.
 
+from builtins import object
 import collections
 import logging
 import threading
@@ -210,8 +211,7 @@ class DequeOutTTLCache(cachetools.TTLCache):
     def out_deque(self):
         """The :class:`collections.deque` to which expired items are added."""
         self.expire()
-        expired = dict((k, v) for (k, v) in self._tracking.items()
-                       if self.get(k) is None)
+        expired = {k: v for (k, v) in self._tracking.items() if self.get(k) is None}
         for k, v in expired.items():
             del self._tracking[k]
             self._out_deque.append(v)
@@ -250,9 +250,8 @@ class DequeOutLRUCache(cachetools.LRUCache):
     @property
     def out_deque(self):
         """The :class:`collections.deque` to which expired items are added."""
-        expired = dict((k, v) for (k, v) in iter(self._tracking.items())
-                       if self.get(k) is None)
-        for k, v in iter(expired.items()):
+        expired = {k: v for (k, v) in self._tracking.items() if self.get(k) is None}
+        for k, v in expired.items():
             del self._tracking[k]
             self._out_deque.append(v)
         return self._out_deque

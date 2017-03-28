@@ -28,6 +28,7 @@ tracked.
 
 from __future__ import absolute_import
 
+from builtins import object
 import collections
 import logging
 import os
@@ -397,7 +398,7 @@ def extract_report_spec(
                                          metric_is_supported,
                                          labels_dict,
                                          label_is_supported)
-    return logs, metrics_dict.keys(), labels_dict.keys()
+    return logs, list(metrics_dict.keys()), list(labels_dict.keys())
 
 
 def _add_logging_destinations(destinations,

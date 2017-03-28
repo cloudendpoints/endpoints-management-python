@@ -24,6 +24,7 @@ standard python datetime types, or an rfc3339 string representation
 
 from __future__ import absolute_import
 
+from past.builtins import basestring
 import datetime
 import logging
 

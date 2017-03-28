@@ -14,8 +14,11 @@
 
 from __future__ import absolute_import
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 import datetime
-import httplib
+import http.client
 import unittest2
 from operator import attrgetter
 from expects import be_none, equal, expect, raise_error
@@ -472,7 +475,7 @@ class TestConvertResponse(unittest2.TestCase):
     def test_should_be_ok_with_no_errors(self):
         code, message, _ = check_request.convert_response(
             messages.CheckResponse(), self.PROJECT_ID)
-        expect(code).to(equal(httplib.OK))
+        expect(code).to(equal(http.client.OK))
         expect(message).to(equal(u''))
 
     def test_should_include_project_id_in_error_text_when_needed(self):
@@ -484,7 +487,7 @@ class TestConvertResponse(unittest2.TestCase):
         )
         code, got, _ = check_request.convert_response(resp, self.PROJECT_ID)
         want = u'Project %s has been deleted' % (self.PROJECT_ID,)
-        expect(code).to(equal(httplib.FORBIDDEN))
+        expect(code).to(equal(http.client.FORBIDDEN))
         expect(got).to(equal(want))
 
     def test_should_include_detail_in_error_text_when_needed(self):
@@ -497,7 +500,7 @@ class TestConvertResponse(unittest2.TestCase):
             ]
         )
         code, got, _ = check_request.convert_response(resp, self.PROJECT_ID)
-        expect(code).to(equal(httplib.FORBIDDEN))
+        expect(code).to(equal(http.client.FORBIDDEN))
         expect(got).to(equal(detail))
 
 

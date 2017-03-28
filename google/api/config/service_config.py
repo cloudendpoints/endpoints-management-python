@@ -15,6 +15,7 @@
 """Provides a method for fetching Service Configuration from Google Service
 Management API."""
 
+from __future__ import absolute_import
 
 import logging
 import json

@@ -14,6 +14,11 @@
 
 """Decodes and verifies the signature of auth tokens."""
 
+from __future__ import absolute_import
+
+from past.builtins import basestring
+from builtins import object
+from future.utils import PY3
 import datetime
 import jwkest
 import time
@@ -22,7 +27,12 @@ from dogpile import cache
 from jwkest import jws
 from jwkest import jwt
 
-from google.api.auth import suppliers
+from . import suppliers
+
+if PY3:
+    INT_TYPES = (int,)
+else:
+    INT_TYPES = (int, long)
 
 
 class Authenticator(object):  # pylint: disable=too-few-public-methods
@@ -180,7 +190,7 @@ def _check_jwt_claims(jwt_claims):
     current_time = time.time()
 
     expiration = jwt_claims[u"exp"]
-    if not isinstance(expiration, (int, long)):
+    if not isinstance(expiration, INT_TYPES):
         raise suppliers.UnauthenticatedException(u'Malformed claim: "exp" must be an integer')
     if current_time >= expiration:
         raise suppliers.UnauthenticatedException(u"The auth token has already expired")
@@ -189,7 +199,7 @@ def _check_jwt_claims(jwt_claims):
         return
 
     not_before_time = jwt_claims[u"nbf"]
-    if not isinstance(not_before_time, (int, long)):
+    if not isinstance(not_before_time, INT_TYPES):
         raise suppliers.UnauthenticatedException(u'Malformed claim: "nbf" must be an integer')
     if current_time < not_before_time:
         raise suppliers.UnauthenticatedException(u'Current time is less than the "nbf" time')

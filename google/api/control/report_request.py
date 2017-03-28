@@ -22,6 +22,8 @@ ReportRequests.
 
 from __future__ import absolute_import
 
+from builtins import range
+from builtins import object
 import collections
 import functools
 import hashlib
@@ -454,7 +456,7 @@ class Aggregator(object):
         if self._cache is None:
             return _NO_RESULTS
         with self._cache as c:
-            flushed_ops = [x.as_operation() for x in list(c.out_deque)]
+            flushed_ops = [x.as_operation() for x in c.out_deque]
             c.out_deque.clear()
             reqs = []
             max_ops = self.MAX_OPERATION_COUNT
@@ -515,7 +517,7 @@ class Aggregator(object):
         # This holds a lock on the cache while updating it.  No i/o operations
         # are performed, so any waiting threads see minimal delays
         with self._cache as cache:
-            for key, op in iter(ops_by_signature.items()):
+            for key, op in ops_by_signature.items():
                 agg = cache.get(key)
                 if agg is None:
                     cache[key] = operation.Aggregator(op, self._kinds)

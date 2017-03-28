@@ -14,6 +14,7 @@
 
 from __future__ import absolute_import
 
+from builtins import object
 import base64
 import datetime
 import unittest2

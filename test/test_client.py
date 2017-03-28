@@ -13,7 +13,10 @@
 # limitations under the License.
 
 from __future__ import absolute_import
+from __future__ import division
 
+from builtins import object
+from past.utils import old_div
 import datetime
 import mock
 import os
@@ -185,7 +188,7 @@ class TestClientStartAndStop(unittest2.TestCase):
         self._subject.start()
         self._subject.report(
             _make_dummy_report_request(self.PROJECT_ID, self.SERVICE_NAME))
-        self._mock_transport.services.report.side_effect = lambda: 1/0
+        self._mock_transport.services.report.side_effect = lambda: old_div(1,0)
         self._subject.stop()
         expect(self._mock_transport.services.report.called).to(be_true)
 
@@ -233,7 +236,7 @@ class TestClientCheck(unittest2.TestCase):
         self._subject.start()
         dummy_request = _make_dummy_check_request(self.PROJECT_ID,
                                                   self.SERVICE_NAME)
-        self._mock_transport.services.check.side_effect = lambda: 1/0
+        self._mock_transport.services.check.side_effect = lambda: old_div(1,0)
         expect(self._subject.check(dummy_request)).to(be_none)
 
 
@@ -281,7 +284,7 @@ class TestClientReport(unittest2.TestCase):
             self.SERVICE_NAME,
             create_transport=lambda: self._mock_transport)
 
-        self._mock_transport.services.report.side_effect = lambda: 1/0
+        self._mock_transport.services.report.side_effect = lambda: old_div(1,0)
         self._subject.start()
         dummy_request = _make_dummy_report_request(self.PROJECT_ID,
                                                    self.SERVICE_NAME)
@@ -308,7 +311,7 @@ class TestNoSchedulerThread(unittest2.TestCase):
     @mock.patch(u"google.api.control.client._THREAD_CLASS", spec=True)
     @mock.patch(u"google.api.control.client.sched", spec=True)
     def test_should_initialize_scheduler(self, sched, thread_class):
-        thread_class.return_value.start.side_effect = lambda: 1/0
+        thread_class.return_value.start.side_effect = lambda: old_div(1,0)
         for s in (self._subject, self._no_cache_subject):
             s.start()
             expect(sched.scheduler.called).to(be_true)
@@ -317,7 +320,7 @@ class TestNoSchedulerThread(unittest2.TestCase):
     @mock.patch(u"google.api.control.client._THREAD_CLASS", spec=True)
     @mock.patch(u"google.api.control.client.sched", spec=True)
     def test_should_not_enter_scheduler_when_there_is_no_cache(self, sched, thread_class):
-        thread_class.return_value.start.side_effect = lambda: 1/0
+        thread_class.return_value.start.side_effect = lambda: old_div(1,0)
         self._no_cache_subject.start()
         expect(sched.scheduler.called).to(be_true)
         scheduler = sched.scheduler.return_value
@@ -326,7 +329,7 @@ class TestNoSchedulerThread(unittest2.TestCase):
     @mock.patch(u"google.api.control.client._THREAD_CLASS", spec=True)
     @mock.patch(u"google.api.control.client.sched", spec=True)
     def test_should_enter_scheduler_when_there_is_a_cache(self, sched, thread_class):
-        thread_class.return_value.start.side_effect = lambda: 1/0
+        thread_class.return_value.start.side_effect = lambda: old_div(1,0)
         self._subject.start()
         expect(sched.scheduler.called).to(be_true)
         scheduler = sched.scheduler.return_value
@@ -335,7 +338,7 @@ class TestNoSchedulerThread(unittest2.TestCase):
     @mock.patch(u"google.api.control.client._THREAD_CLASS", spec=True)
     @mock.patch(u"google.api.control.client.sched", spec=True)
     def test_should_not_enter_scheduler_for_cached_checks(self, sched, thread_class):
-        thread_class.return_value.start.side_effect = lambda: 1/0
+        thread_class.return_value.start.side_effect = lambda: old_div(1,0)
         self._subject.start()
 
         # confirm scheduler is created and initialized
@@ -364,7 +367,7 @@ class TestNoSchedulerThread(unittest2.TestCase):
     @mock.patch(u"google.api.control.client._THREAD_CLASS", spec=True)
     @mock.patch(u"google.api.control.client.sched", spec=True)
     def test_should_enter_scheduler_for_aggregated_reports(self, sched, thread_class):
-        thread_class.return_value.start.side_effect = lambda: 1/0
+        thread_class.return_value.start.side_effect = lambda: old_div(1,0)
         self._subject.start()
 
         # confirm scheduler is created and initialized
@@ -382,7 +385,7 @@ class TestNoSchedulerThread(unittest2.TestCase):
 
     @mock.patch(u"google.api.control.client._THREAD_CLASS", spec=True)
     def test_should_flush_report_cache_in_scheduler(self, thread_class):
-        thread_class.return_value.start.side_effect = lambda: 1/0
+        thread_class.return_value.start.side_effect = lambda: old_div(1,0)
         self._subject.start()
 
         # call report once; transport is not called
@@ -400,7 +403,7 @@ class TestNoSchedulerThread(unittest2.TestCase):
     @mock.patch(u"google.api.control.client._THREAD_CLASS", spec=True)
     @mock.patch(u"google.api.control.client.sched", spec=True)
     def test_should_not_run_scheduler_when_stopping(self, sched, thread_class):
-        thread_class.return_value.start.side_effect = lambda: 1/0
+        thread_class.return_value.start.side_effect = lambda: old_div(1,0)
         self._subject.start()
 
         # confirm scheduler is created and initialized

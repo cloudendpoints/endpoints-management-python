@@ -25,6 +25,7 @@ The :class:`.Aggregator` support this.
 
 from __future__ import absolute_import
 
+from builtins import object
 import collections
 import logging
 from datetime import datetime
@@ -171,7 +172,7 @@ class Aggregator(object):
             mvs = self._metric_values_by_name_then_sign[name]
             result.metricValueSets.append(
                 messages.MetricValueSet(
-                    metricName=name, metricValues=mvs.values()))
+                    metricName=name, metricValues=list(mvs.values())))
         return result
 
     def add(self, other_op):
