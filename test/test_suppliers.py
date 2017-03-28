@@ -161,6 +161,7 @@ class JwksSupplierTest(unittest.TestCase):
 
     @mock.patch(u"time.time", _mock_timer)
     def test_supply_cached_jwks(self):
+        JwksSupplierTest._mock_timer.return_value = 10
         rsa_key = PublicKey.RSA.generate(2048)
         jwks = jwk.KEYS()
         jwks.wrap_add(rsa_key)
@@ -174,7 +175,6 @@ class JwksSupplierTest(unittest.TestCase):
             return jwks.dump_jwks()
 
         with httmock.HTTMock(_mock_response_with_jwks):
-            JwksSupplierTest._mock_timer.return_value = 10
             self.assertEqual(1, len(self._jwks_uri_supplier.supply(issuer)))
 
             # Add an additional key to the JWKS to be returned by the HTTP request.
