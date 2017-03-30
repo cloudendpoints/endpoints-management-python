@@ -37,8 +37,6 @@ from __future__ import absolute_import
 
 from builtins import map
 from builtins import object
-from future import standard_library
-standard_library.install_aliases()
 from future.utils import PY3
 import time
 import heapq

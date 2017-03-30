@@ -25,6 +25,7 @@ that wraps another WSGI application to uses a provided
 from __future__ import absolute_import
 
 from future import standard_library
+from future.utils import PY3
 from builtins import object
 from datetime import datetime
 
@@ -34,7 +35,6 @@ from . import check_request, messages, report_request, service
 # These imports should be above project-level imports, but flake8 doesn't like
 # it when the with block is above unadorned imports.
 with standard_library.hooks():
-    import http.client
     import logging
     import os
     import socket
@@ -43,6 +43,11 @@ with standard_library.hooks():
     import urllib.error
     import urllib.parse
     import wsgiref.util
+
+if PY3:
+    import http.client as httplib
+else:
+    import httplib
 
 
 logger = logging.getLogger(__name__)
@@ -394,7 +399,7 @@ class Middleware(object):
     def _handle_check_response(self, app_info, check_resp, start_response):
         code, detail, api_key_valid = check_request.convert_response(
             check_resp, self._project_id)
-        if code == http.client.OK:
+        if code == httplib.OK:
             return None  # the check was OK
 
         # there was problem; the request cannot proceed
@@ -406,7 +411,7 @@ class Middleware(object):
         return error_msg  # the request cannot continue
 
     def _handle_missing_api_key(self, app_info, start_response):
-        code = http.client.UNAUTHORIZED
+        code = httplib.UNAUTHORIZED
         detail = self._NO_API_KEY_MSG
         logger.warn(u'Check not performed %d, %s', code, detail)
         error_msg = u'%d %s' % (code, detail)
@@ -421,7 +426,7 @@ class _AppInfo(object):
 
     def __init__(self):
         self.api_key_valid = True
-        self.response_code = http.client.INTERNAL_SERVER_ERROR
+        self.response_code = httplib.INTERNAL_SERVER_ERROR
         self.response_size = report_request.SIZE_NOT_SET
         self.request_size = report_request.SIZE_NOT_SET
         self.http_method = None

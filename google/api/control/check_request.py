@@ -28,6 +28,7 @@ and caching their responses.
 from __future__ import absolute_import
 
 from future import standard_library
+from future.utils import PY3
 from builtins import object
 
 from apitools.base.py import encoding
@@ -41,82 +42,86 @@ from . import USER_AGENT, SERVICE_AGENT
 with standard_library.hooks():
     import collections
     import hashlib
-    import http.client
     import logging
     from datetime import datetime
+
+if PY3:
+    import http.client as httplib
+else:
+    import httplib
 
 logger = logging.getLogger(__name__)
 
 # alias for brevity
 _CheckErrors = messages.CheckError.CodeValueValuesEnum
-_IS_OK = (http.client.OK, u'', True)
+_IS_OK = (httplib.OK, u'', True)
 _IS_UNKNOWN = (
-    http.client.INTERNAL_SERVER_ERROR,
+    httplib.INTERNAL_SERVER_ERROR,
     u'Request blocked due to unsupported block reason {detail}',
     False)
 _CHECK_ERROR_CONVERSION = {
     _CheckErrors.NOT_FOUND: (
-        http.client.BAD_REQUEST,
+        httplib.BAD_REQUEST,
         u'Client project not found. Please pass a valid project',
         False,
     ),
     _CheckErrors.API_KEY_NOT_FOUND: (
-        http.client.BAD_REQUEST,
+        httplib.BAD_REQUEST,
         u'API key not found. Please pass a valid API key',
         True,
     ),
     _CheckErrors.API_KEY_EXPIRED: (
-        http.client.BAD_REQUEST,
+        httplib.BAD_REQUEST,
         u'API key expired. Please renew the API key',
         True,
     ),
     _CheckErrors.API_KEY_INVALID: (
-        http.client.BAD_REQUEST,
+        httplib.BAD_REQUEST,
         u'API not valid. Please pass a valid API key',
         True,
     ),
     _CheckErrors.SERVICE_NOT_ACTIVATED: (
-        http.client.FORBIDDEN,
+        httplib.FORBIDDEN,
         u'{detail} Please enable the project for {project_id}',
         False,
     ),
     _CheckErrors.PERMISSION_DENIED: (
-        http.client.FORBIDDEN,
+        httplib.FORBIDDEN,
         u'Permission denied: {detail}',
         False,
     ),
     _CheckErrors.IP_ADDRESS_BLOCKED: (
-        http.client.FORBIDDEN,
+        httplib.FORBIDDEN,
         u'{detail}',
         False,
     ),
     _CheckErrors.REFERER_BLOCKED: (
-        http.client.FORBIDDEN,
+        httplib.FORBIDDEN,
         u'{detail}',
         False,
     ),
     _CheckErrors.CLIENT_APP_BLOCKED: (
-        http.client.FORBIDDEN,
+        httplib.FORBIDDEN,
         u'{detail}',
         False,
     ),
     _CheckErrors.PROJECT_DELETED: (
-        http.client.FORBIDDEN,
+        httplib.FORBIDDEN,
         u'Project {project_id} has been deleted',
         False,
     ),
     _CheckErrors.PROJECT_INVALID: (
-        http.client.BAD_REQUEST,
+        httplib.BAD_REQUEST,
         u'Client Project is not valid.  Please pass a valid project',
         False,
     ),
     _CheckErrors.VISIBILITY_DENIED: (
-        http.client.FORBIDDEN,
+        httplib.FORBIDDEN,
         u'Project {project_id} has no visibility access to the service',
         False,
     ),
     _CheckErrors.BILLING_DISABLED: (
-        http.client.FORBIDDEN,
+        httplib.FORBIDDEN,
         u'Project {project_id} has billing disabled. Please enable it',
         False,
     ),
