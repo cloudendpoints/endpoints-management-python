@@ -17,6 +17,7 @@ from __future__ import absolute_import
 import datetime
 import time
 import unittest2
+from operator import attrgetter
 from expects import be_none, equal, expect, raise_error
 
 from apitools.base.py import encoding
@@ -275,6 +276,8 @@ _ADD_LABELS_TESTS = [
     ),
 ]
 
+KEYGETTER = attrgetter('key')
+
 
 class TestInfo(unittest2.TestCase):
 
@@ -353,6 +356,9 @@ class TestInfo(unittest2.TestCase):
         ])
         for info, want in _ADD_METRICS_TESTS:
             got = info.as_report_request(rules, timer=timer)
+            # These additional properties have no well-defined order, so sort them.
+            got.reportRequest.operations[0].labels.additionalProperties.sort(key=KEYGETTER)
+            want.labels.additionalProperties.sort(key=KEYGETTER)
             expect(got.serviceName).to(equal(_TEST_SERVICE_NAME))
             expect(got.reportRequest.operations[0]).to(equal(want))
 
@@ -363,6 +369,9 @@ class TestInfo(unittest2.TestCase):
         ])
         for info, want in _ADD_LABELS_TESTS:
             got = info.as_report_request(rules, timer=timer)
+            # These additional properties have no well-defined order, so sort them.
+            got.reportRequest.operations[0].labels.additionalProperties.sort(key=KEYGETTER)
+            want.labels.additionalProperties.sort(key=KEYGETTER)
             expect(got.serviceName).to(equal(_TEST_SERVICE_NAME))
             expect(got.reportRequest.operations[0]).to(equal(want))
 

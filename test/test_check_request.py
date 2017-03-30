@@ -17,6 +17,7 @@ from __future__ import absolute_import
 import datetime
 import httplib
 import unittest2
+from operator import attrgetter
 from expects import be_none, equal, expect, raise_error
 
 from apitools.base.py import encoding
@@ -436,6 +437,8 @@ _INCOMPLETE_INFO_TESTS = [
         operation_name='an_op_name')
 ]
 
+KEYGETTER = attrgetter('key')
+
 
 class TestInfo(unittest2.TestCase):
 
@@ -446,6 +449,9 @@ class TestInfo(unittest2.TestCase):
         timer = _DateTimeTimer()
         for info, want in _INFO_TESTS:
             got = info.as_check_request(timer=timer)
+            # These additional properties have no well-defined order, so sort them.
+            got.checkRequest.operation.labels.additionalProperties.sort(key=KEYGETTER)
+            want.labels.additionalProperties.sort(key=KEYGETTER)
             expect(got.checkRequest.operation).to(equal(want))
             expect(got.serviceName).to(equal(_TEST_SERVICE_NAME))
 
