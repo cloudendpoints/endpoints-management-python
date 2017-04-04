@@ -27,11 +27,10 @@ ValueType = label_descriptor.ValueType
 class KnownLabelsBase(object):
     SUBJECT = None
     GIVEN_INFO = report_request.Info(
-        api_method = 'dummy_method',
-        api_version = 'dummy_version',
-        location = 'dummy_location',
-        referer = 'dummy_referer'
-    )
+        api_method = u'dummy_method',
+        api_version = u'dummy_version',
+        location = u'dummy_location',
+        referer = u'dummy_referer')
     WANTED_LABEL_DICT = {}
 
     def _matching_descriptor(self, hide_default=False):
@@ -72,19 +71,18 @@ class TestCredentialIdWithNoCreds(KnownLabelsBase, unittest2.TestCase):
 class TestCredentialIdWithApiKey(KnownLabelsBase, unittest2.TestCase):
     SUBJECT = _KNOWN.CREDENTIAL_ID
     GIVEN_INFO = report_request.Info(
-        api_key = 'dummy_api_key',
+        api_key = u'dummy_api_key',
     )
-    WANTED_LABEL_DICT = {SUBJECT.label_name: 'apiKey:dummy_api_key'}
+    WANTED_LABEL_DICT = {SUBJECT.label_name: b'apiKey:dummy_api_key'}
 
 
 class TestCredentialIdWithAuthIssuer(KnownLabelsBase, unittest2.TestCase):
     SUBJECT = _KNOWN.CREDENTIAL_ID
     GIVEN_INFO = report_request.Info(
-        auth_issuer = 'dummy_issuer',
-        auth_audience = 'dummy_audience'
-    )
-    WANTED_VALUE = 'jwtAuth:issuer=' + base64.urlsafe_b64encode('dummy_issuer')
-    WANTED_VALUE += '&audience=' + base64.urlsafe_b64encode('dummy_audience')
+        auth_issuer = u'dummy_issuer',
+        auth_audience = u'dummy_audience')
+    WANTED_VALUE = b'jwtAuth:issuer=' + base64.urlsafe_b64encode(b'dummy_issuer')
+    WANTED_VALUE += b'&audience=' + base64.urlsafe_b64encode(b'dummy_audience')
     WANTED_LABEL_DICT = {SUBJECT.label_name: WANTED_VALUE}
 
 
@@ -98,7 +96,7 @@ class EndUserCountry(KnownLabelsBase, unittest2.TestCase):
 
 class ErrorType(KnownLabelsBase, unittest2.TestCase):
     SUBJECT = _KNOWN.ERROR_TYPE
-    WANTED_LABEL_DICT = {SUBJECT.label_name: '2xx'}
+    WANTED_LABEL_DICT = {SUBJECT.label_name: u'2xx'}
 
 
 class Protocol(KnownLabelsBase, unittest2.TestCase):
@@ -110,22 +108,22 @@ class Protocol(KnownLabelsBase, unittest2.TestCase):
 
 class Referer(KnownLabelsBase, unittest2.TestCase):
     SUBJECT = _KNOWN.REFERER
-    WANTED_LABEL_DICT = {SUBJECT.label_name: 'dummy_referer'}
+    WANTED_LABEL_DICT = {SUBJECT.label_name: u'dummy_referer'}
 
 
 class ResponseCode(KnownLabelsBase, unittest2.TestCase):
     SUBJECT = _KNOWN.RESPONSE_CODE
-    WANTED_LABEL_DICT = {SUBJECT.label_name: '200'}
+    WANTED_LABEL_DICT = {SUBJECT.label_name: u'200'}
 
 
 class ResponseCodeClass(KnownLabelsBase, unittest2.TestCase):
     SUBJECT = _KNOWN.RESPONSE_CODE_CLASS
-    WANTED_LABEL_DICT = {SUBJECT.label_name: '2xx'}
+    WANTED_LABEL_DICT = {SUBJECT.label_name: u'2xx'}
 
 
 class StatusCodeWithOkStatus(KnownLabelsBase, unittest2.TestCase):
     SUBJECT = _KNOWN.STATUS_CODE
-    WANTED_LABEL_DICT = {SUBJECT.label_name: '0'}
+    WANTED_LABEL_DICT = {SUBJECT.label_name: u'0'}
 
 
 class StatusCodeWithKnown4XXStatus(KnownLabelsBase, unittest2.TestCase):
@@ -133,7 +131,7 @@ class StatusCodeWithKnown4XXStatus(KnownLabelsBase, unittest2.TestCase):
     GIVEN_INFO = report_request.Info(
         response_code = 401,
     )
-    WANTED_LABEL_DICT = {SUBJECT.label_name: '16'}
+    WANTED_LABEL_DICT = {SUBJECT.label_name: u'16'}
 
 
 class StatusCodeWithUnknown4XXStatus(KnownLabelsBase, unittest2.TestCase):
@@ -141,7 +139,7 @@ class StatusCodeWithUnknown4XXStatus(KnownLabelsBase, unittest2.TestCase):
     GIVEN_INFO = report_request.Info(
         response_code = 477,
     )
-    WANTED_LABEL_DICT = {SUBJECT.label_name: '9'}
+    WANTED_LABEL_DICT = {SUBJECT.label_name: u'9'}
 
 
 class StatusCodeWithKnown5XXStatus(KnownLabelsBase, unittest2.TestCase):
@@ -149,7 +147,7 @@ class StatusCodeWithKnown5XXStatus(KnownLabelsBase, unittest2.TestCase):
     GIVEN_INFO = report_request.Info(
         response_code = 501,
     )
-    WANTED_LABEL_DICT = {SUBJECT.label_name: '12'}
+    WANTED_LABEL_DICT = {SUBJECT.label_name: u'12'}
 
 
 class StatusCodeWithUnknown5XXStatus(KnownLabelsBase, unittest2.TestCase):
@@ -157,7 +155,7 @@ class StatusCodeWithUnknown5XXStatus(KnownLabelsBase, unittest2.TestCase):
     GIVEN_INFO = report_request.Info(
         response_code = 577,
     )
-    WANTED_LABEL_DICT = {SUBJECT.label_name: '13'}
+    WANTED_LABEL_DICT = {SUBJECT.label_name: u'13'}
 
 
 class StatusCodeWithUnknownStatus(KnownLabelsBase, unittest2.TestCase):
@@ -165,7 +163,7 @@ class StatusCodeWithUnknownStatus(KnownLabelsBase, unittest2.TestCase):
     GIVEN_INFO = report_request.Info(
         response_code = 777,
     )
-    WANTED_LABEL_DICT = {SUBJECT.label_name: '2'}
+    WANTED_LABEL_DICT = {SUBJECT.label_name: u'2'}
 
 
 class GaeCloneId(KnownLabelsBase, unittest2.TestCase):
@@ -186,7 +184,7 @@ class GaeVersionId(KnownLabelsBase, unittest2.TestCase):
 
 class GcpLocation(KnownLabelsBase, unittest2.TestCase):
     SUBJECT = _KNOWN.GCP_LOCATION
-    WANTED_LABEL_DICT = {SUBJECT.label_name: 'dummy_location'}
+    WANTED_LABEL_DICT = {SUBJECT.label_name: u'dummy_location'}
 
 
 class GcpProject(KnownLabelsBase, unittest2.TestCase):
@@ -219,12 +217,12 @@ class GcpUid(KnownLabelsBase, unittest2.TestCase):
 
 class GcpApiMethod(KnownLabelsBase, unittest2.TestCase):
     SUBJECT = _KNOWN.GCP_API_METHOD
-    WANTED_LABEL_DICT = {SUBJECT.label_name: 'dummy_method'}
+    WANTED_LABEL_DICT = {SUBJECT.label_name: u'dummy_method'}
 
 
 class GcpApiVersion(KnownLabelsBase, unittest2.TestCase):
     SUBJECT = _KNOWN.GCP_API_VERSION
-    WANTED_LABEL_DICT = {SUBJECT.label_name: 'dummy_version'}
+    WANTED_LABEL_DICT = {SUBJECT.label_name: u'dummy_version'}
 
 
 class SccAndroidCertFingerprint(KnownLabelsBase, unittest2.TestCase):

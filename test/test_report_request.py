@@ -39,11 +39,11 @@ class TestReportingRules(unittest2.TestCase):
         expect(rules.labels).to(equal(tuple()))
 
     def test_should_construct_with_ok_expected_args(self):
-        rules = self.subject_cls(logs=['wanted_log'],
+        rules = self.subject_cls(logs=[u'wanted_log'],
                                  metrics=self.WANTED_METRICS,
                                  labels=self.WANTED_LABELS)
         expect(rules).not_to(be_none)
-        expect(rules.logs).to(equal(set(['wanted_log'])))
+        expect(rules.logs).to(equal(set([u'wanted_log'])))
         expect(rules.metrics).to(equal(self.WANTED_METRICS))
         expect(rules.labels).to(equal(self.WANTED_LABELS))
 
@@ -55,7 +55,7 @@ class TestReportingRules(unittest2.TestCase):
         expect(rules.labels).to(equal(tuple()))
 
     def test_should_construct_with_alt_constructor_with_ok_args(self):
-        logs = ['wanted_log', 'wanted_log']
+        logs = [u'wanted_log', u'wanted_log']
         label_names = [x.label_name for x in self.WANTED_LABELS]
         metric_names = [x.metric_name for x in self.WANTED_METRICS]
         rules = self.subject_cls.from_known_inputs(
@@ -64,64 +64,64 @@ class TestReportingRules(unittest2.TestCase):
             metric_names=metric_names
         )
         expect(rules).not_to(be_none)
-        expect(rules.logs).to(equal(set(['wanted_log'])))
+        expect(rules.logs).to(equal(set([u'wanted_log'])))
         expect(rules.metrics).to(equal(self.WANTED_METRICS))
         expect(rules.labels).to(equal(self.WANTED_LABELS))
 
 
-_TEST_CONSUMER_ID = 'testConsumerID'
-_TEST_OP1_NAME = 'testOp1'
-_TEST_OP2_NAME = 'testOp2'
+_TEST_CONSUMER_ID = u'testConsumerID'
+_TEST_OP1_NAME = u'testOp1'
+_TEST_OP2_NAME = u'testOp2'
 _WANTED_USER_AGENT = label_descriptor.USER_AGENT
 _START_OF_EPOCH = datetime.datetime.utcfromtimestamp(0)
 _START_OF_EPOCH_TIMESTAMP = timestamp.to_rfc3339(_START_OF_EPOCH)
-_TEST_SERVICE_NAME = 'a_service_name'
+_TEST_SERVICE_NAME = u'a_service_name'
 _TEST_SIZE=1
 _TEST_LATENCY=datetime.timedelta(seconds=7)
 _EXPECTED_OK_LOG_ENTRY = messages.LogEntry(
-    name = 'endpoints-log',
+    name = u'endpoints-log',
     severity = messages.LogEntry.SeverityValueValuesEnum.INFO,
     structPayload=encoding.PyValueToMessage(
         messages.LogEntry.StructPayloadValue, {
-            'http_response_code': 200,
-            'http_method': 'GET',
-            'request_latency_in_ms': 7000.0,
-            'timestamp': time.mktime(_START_OF_EPOCH.timetuple()),
-            'response_size': 1,
-            'request_size': 1,
-            'referer': 'a_referer',
+            u'http_response_code': 200,
+            u'http_method': u'GET',
+            u'request_latency_in_ms': 7000.0,
+            u'timestamp': time.mktime(_START_OF_EPOCH.timetuple()),
+            u'response_size': 1,
+            u'request_size': 1,
+            u'referer': u'a_referer',
         }),
     timestamp=_START_OF_EPOCH_TIMESTAMP
 )
 _EXPECTED_NOK_LOG_ENTRY = messages.LogEntry(
-    name = 'endpoints-log',
+    name = u'endpoints-log',
     severity = messages.LogEntry.SeverityValueValuesEnum.ERROR,
     structPayload=encoding.PyValueToMessage(
         messages.LogEntry.StructPayloadValue, {
-            'http_response_code': 404,
-            'http_method': 'GET',
-            'request_latency_in_ms': 7000.0,
-            'timestamp': time.mktime(_START_OF_EPOCH.timetuple()),
-            'response_size': 1,
-            'request_size': 1,
-            'referer': 'a_referer',
-            'error_cause': 'internal',
+            u'http_response_code': 404,
+            u'http_method': u'GET',
+            u'request_latency_in_ms': 7000.0,
+            u'timestamp': time.mktime(_START_OF_EPOCH.timetuple()),
+            u'response_size': 1,
+            u'request_size': 1,
+            u'referer': u'a_referer',
+            u'error_cause': u'internal',
         }),
     timestamp=_START_OF_EPOCH_TIMESTAMP
 )
 
 _WANTED_USER_AGENT = label_descriptor.USER_AGENT
 _WANTED_SERVICE_AGENT = label_descriptor.SERVICE_AGENT
-_WANTED_PLATFORM = 'Unknown'
+_WANTED_PLATFORM = u'Unknown'
 
 _EXPECTED_OK_METRIC = metric_descriptor.KnownMetrics.CONSUMER_REQUEST_COUNT
 _EXPECTED_NOK_METRIC = metric_descriptor.KnownMetrics.CONSUMER_ERROR_COUNT
 _ADD_LOG_TESTS = [
     (report_request.Info(
-        operation_id='an_op_id',
-        operation_name='an_op_name',
-        method='GET',
-        referer='a_referer',
+        operation_id=u'an_op_id',
+        operation_name=u'an_op_name',
+        method=u'GET',
+        referer=u'a_referer',
         backend_time=_TEST_LATENCY,
         overhead_time=_TEST_LATENCY,
         request_time=_TEST_LATENCY,
@@ -131,17 +131,17 @@ _ADD_LOG_TESTS = [
      messages.Operation(
          importance=messages.Operation.ImportanceValueValuesEnum.LOW,
          logEntries=[_EXPECTED_OK_LOG_ENTRY],
-         operationId='an_op_id',
-         operationName='an_op_name',
+         operationId=u'an_op_id',
+         operationName=u'an_op_name',
          startTime=_START_OF_EPOCH_TIMESTAMP,
          endTime=_START_OF_EPOCH_TIMESTAMP)
     ),
     (report_request.Info(
         response_code=404,
-        operation_id='an_op_id',
-        operation_name='an_op_name',
-        method='GET',
-        referer='a_referer',
+        operation_id=u'an_op_id',
+        operation_name=u'an_op_name',
+        method=u'GET',
+        referer=u'a_referer',
         backend_time=_TEST_LATENCY,
         overhead_time=_TEST_LATENCY,
         request_time=_TEST_LATENCY,
@@ -151,20 +151,20 @@ _ADD_LOG_TESTS = [
      messages.Operation(
          importance=messages.Operation.ImportanceValueValuesEnum.LOW,
          logEntries=[_EXPECTED_NOK_LOG_ENTRY],
-         operationId='an_op_id',
-         operationName='an_op_name',
+         operationId=u'an_op_id',
+         operationName=u'an_op_name',
          startTime=_START_OF_EPOCH_TIMESTAMP,
          endTime=_START_OF_EPOCH_TIMESTAMP)
     )
 ]
 
-_TEST_API_KEY = 'test_key'
+_TEST_API_KEY = u'test_key'
 _ADD_METRICS_TESTS = [
     (report_request.Info(
-        operation_id='an_op_id',
-        operation_name='an_op_name',
-        method='GET',
-        referer='a_referer',
+        operation_id=u'an_op_id',
+        operation_name=u'an_op_name',
+        method=u'GET',
+        referer=u'a_referer',
         backend_time=_TEST_LATENCY,
         overhead_time=_TEST_LATENCY,
         request_time=_TEST_LATENCY,
@@ -178,11 +178,11 @@ _ADD_METRICS_TESTS = [
          logEntries=[],
          labels=encoding.PyValueToMessage(
              messages.Operation.LabelsValue, {
-                 'servicecontrol.googleapis.com/service_agent':
+                 u'servicecontrol.googleapis.com/service_agent':
                      _WANTED_SERVICE_AGENT,
-                 'servicecontrol.googleapis.com/user_agent':
+                 u'servicecontrol.googleapis.com/user_agent':
                      _WANTED_USER_AGENT,
-                 'servicecontrol.googleapis.com/platform':
+                 u'servicecontrol.googleapis.com/platform':
                      _WANTED_PLATFORM,
              }),
          metricValueSets = [
@@ -193,18 +193,18 @@ _ADD_METRICS_TESTS = [
                  ]
              ),
          ],
-         consumerId='api_key:' + _TEST_API_KEY,
-         operationId='an_op_id',
-         operationName='an_op_name',
+         consumerId=u'api_key:' + _TEST_API_KEY,
+         operationId=u'an_op_id',
+         operationName=u'an_op_name',
          startTime=_START_OF_EPOCH_TIMESTAMP,
          endTime=_START_OF_EPOCH_TIMESTAMP)
     ),
     (report_request.Info(
         response_code=404,
-        operation_id='an_op_id',
-        operation_name='an_op_name',
-        method='GET',
-        referer='a_referer',
+        operation_id=u'an_op_id',
+        operation_name=u'an_op_name',
+        method=u'GET',
+        referer=u'a_referer',
         backend_time=_TEST_LATENCY,
         overhead_time=_TEST_LATENCY,
         request_time=_TEST_LATENCY,
@@ -218,11 +218,11 @@ _ADD_METRICS_TESTS = [
          logEntries=[],
          labels=encoding.PyValueToMessage(
              messages.Operation.LabelsValue, {
-                 'servicecontrol.googleapis.com/service_agent':
+                 u'servicecontrol.googleapis.com/service_agent':
                      _WANTED_SERVICE_AGENT,
-                 'servicecontrol.googleapis.com/user_agent':
+                 u'servicecontrol.googleapis.com/user_agent':
                      _WANTED_USER_AGENT,
-                 'servicecontrol.googleapis.com/platform':
+                 u'servicecontrol.googleapis.com/platform':
                      _WANTED_PLATFORM,
              }),
          metricValueSets = [
@@ -239,9 +239,9 @@ _ADD_METRICS_TESTS = [
                  ]
              ),
          ],
-         consumerId='api_key:' + _TEST_API_KEY,
-         operationId='an_op_id',
-         operationName='an_op_name',
+         consumerId=u'api_key:' + _TEST_API_KEY,
+         operationId=u'an_op_id',
+         operationName=u'an_op_name',
          startTime=_START_OF_EPOCH_TIMESTAMP,
          endTime=_START_OF_EPOCH_TIMESTAMP)
     ),
@@ -250,33 +250,33 @@ _ADD_METRICS_TESTS = [
 _EXPECTED_OK_LABEL = label_descriptor.KnownLabels.REFERER
 _ADD_LABELS_TESTS = [
     (report_request.Info(
-        operation_id='an_op_id',
-        operation_name='an_op_name',
-        method='GET',
-        referer='a_referer',
+        operation_id=u'an_op_id',
+        operation_name=u'an_op_name',
+        method=u'GET',
+        referer=u'a_referer',
         service_name=_TEST_SERVICE_NAME),
      messages.Operation(
          importance=messages.Operation.ImportanceValueValuesEnum.LOW,
          labels=encoding.PyValueToMessage(
              messages.Operation.LabelsValue, {
-                 _EXPECTED_OK_LABEL.label_name: 'a_referer',
-                 'servicecontrol.googleapis.com/service_agent':
+                 _EXPECTED_OK_LABEL.label_name: u'a_referer',
+                 u'servicecontrol.googleapis.com/service_agent':
                      _WANTED_SERVICE_AGENT,
-                 'servicecontrol.googleapis.com/user_agent':
+                 u'servicecontrol.googleapis.com/user_agent':
                      _WANTED_USER_AGENT,
-                 'servicecontrol.googleapis.com/platform':
+                 u'servicecontrol.googleapis.com/platform':
                      _WANTED_PLATFORM,
 
              }),
          logEntries=[],
-         operationId='an_op_id',
-         operationName='an_op_name',
+         operationId=u'an_op_id',
+         operationName=u'an_op_name',
          startTime=_START_OF_EPOCH_TIMESTAMP,
          endTime=_START_OF_EPOCH_TIMESTAMP)
     ),
 ]
 
-KEYGETTER = attrgetter('key')
+KEYGETTER = attrgetter(u'key')
 
 
 class TestInfo(unittest2.TestCase):
@@ -330,7 +330,7 @@ class TestInfo(unittest2.TestCase):
 
     def test_should_add_expected_logs_as_report_request(self):
         timer = _DateTimeTimer()
-        rules = report_request.ReportingRules(logs=['endpoints-log'])
+        rules = report_request.ReportingRules(logs=[u'endpoints-log'])
         for info, want in _ADD_LOG_TESTS:
             got = info.as_report_request(rules, timer=timer)
             expect(got.serviceName).to(equal(_TEST_SERVICE_NAME))
@@ -340,13 +340,13 @@ class TestInfo(unittest2.TestCase):
             gotLogEntry = got.reportRequest.operations[0].logEntries[0]
             expect(gotLogEntry.name).to(equal(wantLogEntry.name))
             expect(gotLogEntry.timestamp).to(equal(wantLogEntry.timestamp))
-            print 'got timestamp', gotLogEntry.timestamp
-            print 'want timestamp', wantLogEntry.timestamp
+            print u'got timestamp', gotLogEntry.timestamp
+            print u'want timestamp', wantLogEntry.timestamp
             expect(gotLogEntry.severity).to(equal(wantLogEntry.severity))
             gotStruct = encoding.MessageToPyValue(gotLogEntry.structPayload)
-            print 'got struct', gotStruct
+            print u'got struct', gotStruct
             wantStruct = encoding.MessageToPyValue(wantLogEntry.structPayload)
-            print 'want struct', wantStruct
+            print u'want struct', wantStruct
             expect(gotStruct).to(equal(wantStruct))
 
     def test_should_add_expected_metric_as_report_request(self):
@@ -377,7 +377,7 @@ class TestInfo(unittest2.TestCase):
 
 
 class TestAggregatorReport(unittest2.TestCase):
-    SERVICE_NAME = 'service.report'
+    SERVICE_NAME = u'service.report'
 
     def setUp(self):
         self.timer = _DateTimeTimer()
@@ -391,7 +391,7 @@ class TestAggregatorReport(unittest2.TestCase):
         expect(testf).to(raise_error(ValueError))
 
     def test_should_fail_if_service_name_does_not_match(self):
-        req = _make_test_request(self.SERVICE_NAME + '-will-not-match')
+        req = _make_test_request(self.SERVICE_NAME + u'-will-not-match')
         testf = lambda: self.agg.report(req)
         expect(testf).to(raise_error(ValueError))
 
@@ -403,7 +403,7 @@ class TestAggregatorReport(unittest2.TestCase):
 
 
 class TestAggregatorTheCannotCache(unittest2.TestCase):
-    SERVICE_NAME = 'service.no_cache'
+    SERVICE_NAME = u'service.no_cache'
 
     def setUp(self):
         # -ve num_entries means no cache is present
@@ -423,7 +423,7 @@ class TestAggregatorTheCannotCache(unittest2.TestCase):
 
 
 class TestCachingAggregator(unittest2.TestCase):
-    SERVICE_NAME = 'service.with_cache'
+    SERVICE_NAME = u'service.with_cache'
 
     def setUp(self):
         self.timer = _DateTimeTimer()
@@ -514,7 +514,7 @@ class _DateTimeTimer(object):
 
 
 def _make_op_names(n, start=0):
-    return ('testOp%d' % (x,) for x in range(start, start + n))
+    return (u'testOp%d' % (x,) for x in range(start, start + n))
 
 
 def _make_test_request(service_name, importance=None, n=3, start=0):
@@ -527,8 +527,7 @@ def _make_test_request(service_name, importance=None, n=3, start=0):
     if ops:
         ops[0].labels = encoding.PyValueToMessage(
             messages.Operation.LabelsValue, {
-                'key1': 'always add a label to the first op'
-            })
+                u'key1': u'always add a label to the first op'})
     report_request = messages.ReportRequest(operations=ops)
     return messages.ServicecontrolServicesReportRequest(
         serviceName=service_name,

@@ -28,20 +28,20 @@ _LATER = timestamp.to_rfc3339(datetime.datetime(1980, 2, 2, 10, 0, 0))
 _LATER_STILL = timestamp.to_rfc3339(datetime.datetime(1981, 2, 2, 10, 0, 0))
 
 _TEST_LABELS = {
-    'key1': 'value1',
-    'key2': 'value2',
+    u'key1': u'value1',
+    u'key2': u'value2',
 }
 
 # in tests, the description field is not currently used, but should be filled
 _TESTS = [
     {
-        'description': 'update the start time to that of the earliest',
-        'kinds': None,
-        'initial': messages.Operation(
+        u'description': u'update the start time to that of the earliest',
+        u'kinds': None,
+        u'initial': messages.Operation(
             startTime=_EARLY,
             endTime=_LATER
         ),
-        'ops': [
+        u'ops': [
             messages.Operation(
                 startTime=_REALLY_EARLY,
                 endTime=_LATER
@@ -51,16 +51,16 @@ _TESTS = [
                 endTime=_LATER
             ),
         ],
-        'want': messages.Operation(startTime=_REALLY_EARLY, endTime=_LATER)
+        u'want': messages.Operation(startTime=_REALLY_EARLY, endTime=_LATER)
     },
     {
-        'description': 'update the end time to that of the latest',
-        'kinds': None,
-        'initial': messages.Operation(
+        u'description': u'update the end time to that of the latest',
+        u'kinds': None,
+        u'initial': messages.Operation(
             startTime=_EARLY,
             endTime=_LATER
         ),
-        'ops': [
+        u'ops': [
             messages.Operation(
                 startTime=_EARLY,
                 endTime=_LATER
@@ -70,47 +70,47 @@ _TESTS = [
                 endTime=_LATER_STILL
             ),
         ],
-        'want': messages.Operation(startTime=_EARLY, endTime=_LATER_STILL)
+        u'want': messages.Operation(startTime=_EARLY, endTime=_LATER_STILL)
     },
     {
-        'description': 'combine the log entries',
-        'kinds': None,
-        'initial': messages.Operation(
+        u'description': u'combine the log entries',
+        u'kinds': None,
+        u'initial': messages.Operation(
             startTime=_EARLY,
             endTime=_LATER,
-            logEntries=[messages.LogEntry(textPayload='initial')]
+            logEntries=[messages.LogEntry(textPayload=u'initial')]
         ),
-        'ops': [
+        u'ops': [
             messages.Operation(
                 startTime=_EARLY,
                 endTime=_LATER,
-                logEntries=[messages.LogEntry(textPayload='agg1')]
+                logEntries=[messages.LogEntry(textPayload=u'agg1')]
             ),
             messages.Operation(
                 startTime=_EARLY,
                 endTime=_LATER,
-                logEntries=[messages.LogEntry(textPayload='agg2')]
+                logEntries=[messages.LogEntry(textPayload=u'agg2')]
             ),
         ],
-        'want': messages.Operation(
+        u'want': messages.Operation(
             startTime=_EARLY,
             endTime=_LATER,
             logEntries=[
-                messages.LogEntry(textPayload='initial'),
-                messages.LogEntry(textPayload='agg1'),
-                messages.LogEntry(textPayload='agg2')
+                messages.LogEntry(textPayload=u'initial'),
+                messages.LogEntry(textPayload=u'agg1'),
+                messages.LogEntry(textPayload=u'agg2')
             ]
         )
     },
     {
-        'description': 'combines the metric value using the default kind',
-        'kinds': None,
-        'initial': messages.Operation(
+        u'description': u'combines the metric value using the default kind',
+        u'kinds': None,
+        u'initial': messages.Operation(
             startTime=_EARLY,
             endTime=_LATER,
             metricValueSets = [
                 messages.MetricValueSet(
-                    metricName='some_floats',
+                    metricName=u'some_floats',
                     metricValues=[
                         metric_value.create(
                             labels=_TEST_LABELS,
@@ -120,7 +120,7 @@ _TESTS = [
                     ]
                 ),
                 messages.MetricValueSet(
-                    metricName='other_floats',
+                    metricName=u'other_floats',
                     metricValues=[
                         metric_value.create(
                             labels=_TEST_LABELS,
@@ -131,13 +131,13 @@ _TESTS = [
                 )
             ]
         ),
-        'ops': [
+        u'ops': [
             messages.Operation(
                 startTime=_EARLY,
                 endTime=_LATER,
                 metricValueSets = [
                     messages.MetricValueSet(
-                        metricName='some_floats',
+                        metricName=u'some_floats',
                         metricValues=[
                             metric_value.create(
                                 labels=_TEST_LABELS,
@@ -153,7 +153,7 @@ _TESTS = [
                 endTime=_LATER,
                 metricValueSets = [
                     messages.MetricValueSet(
-                        metricName='other_floats',
+                        metricName=u'other_floats',
                         metricValues=[
                             metric_value.create(
                                 labels=_TEST_LABELS,
@@ -166,12 +166,12 @@ _TESTS = [
 
             ),
         ],
-        'want': messages.Operation(
+        u'want': messages.Operation(
             startTime=_EARLY,
             endTime=_LATER,
             metricValueSets = [
                 messages.MetricValueSet(
-                    metricName='other_floats',
+                    metricName=u'other_floats',
                     metricValues=[
                         metric_value.create(
                             labels=_TEST_LABELS,
@@ -181,7 +181,7 @@ _TESTS = [
                     ]
                 ),
                 messages.MetricValueSet(
-                    metricName='some_floats',
+                    metricName=u'some_floats',
                     metricValues=[
                         metric_value.create(
                             labels=_TEST_LABELS,
@@ -194,14 +194,14 @@ _TESTS = [
         )
     },
     {
-        'description': 'combines a metric value using a kind that is not DELTA',
-        'kinds': { 'some_floats': MetricKind.GAUGE },
-        'initial': messages.Operation(
+        u'description': u'combines a metric value using a kind that is not DELTA',
+        u'kinds': {u'some_floats': MetricKind.GAUGE },
+        u'initial': messages.Operation(
             startTime=_EARLY,
             endTime=_LATER,
             metricValueSets = [
                 messages.MetricValueSet(
-                    metricName='some_floats',
+                    metricName=u'some_floats',
                     metricValues=[
                         metric_value.create(
                             labels=_TEST_LABELS,
@@ -211,7 +211,7 @@ _TESTS = [
                     ]
                 ),
                 messages.MetricValueSet(
-                    metricName='other_floats',
+                    metricName=u'other_floats',
                     metricValues=[
                         metric_value.create(
                             labels=_TEST_LABELS,
@@ -222,13 +222,13 @@ _TESTS = [
                 )
             ]
         ),
-        'ops': [
+        u'ops': [
             messages.Operation(
                 startTime=_EARLY,
                 endTime=_LATER,
                 metricValueSets = [
                     messages.MetricValueSet(
-                        metricName='some_floats',
+                        metricName=u'some_floats',
                         metricValues=[
                             metric_value.create(
                                 labels=_TEST_LABELS,
@@ -244,7 +244,7 @@ _TESTS = [
                 endTime=_LATER,
                 metricValueSets = [
                     messages.MetricValueSet(
-                        metricName='other_floats',
+                        metricName=u'other_floats',
                         metricValues=[
                             metric_value.create(
                                 labels=_TEST_LABELS,
@@ -257,12 +257,12 @@ _TESTS = [
 
             ),
         ],
-        'want': messages.Operation(
+        u'want': messages.Operation(
             startTime=_EARLY,
             endTime=_LATER,
             metricValueSets = [
                 messages.MetricValueSet(
-                    metricName='other_floats',
+                    metricName=u'other_floats',
                     metricValues=[
                         metric_value.create(
                             labels=_TEST_LABELS,
@@ -272,7 +272,7 @@ _TESTS = [
                     ]
                 ),
                 messages.MetricValueSet(
-                    metricName='some_floats',
+                    metricName=u'some_floats',
                     metricValues=[
                         metric_value.create(
                             labels=_TEST_LABELS,
@@ -290,77 +290,77 @@ class TestOperationAggregation(unittest2.TestCase):
 
     def test_should_aggregate_as_expected(self):
         for t in _TESTS:
-            desc = t['description']
-            initial = t['initial']
-            want = t['want']
-            agg = operation.Aggregator(initial, kinds=t['kinds'])
-            for o in t['ops']:
+            desc = t[u'description']
+            initial = t[u'initial']
+            want = t[u'want']
+            agg = operation.Aggregator(initial, kinds=t[u'kinds'])
+            for o in t[u'ops']:
                 agg.add(o)
                 got = agg.as_operation()
             try:
                 expect(got).to(equal(want))
             except AssertionError as e:
-                raise AssertionError('Failed to {0}\n{1}'.format(desc, e))
+                raise AssertionError(u'Failed to {0}\n{1}'.format(desc, e))
 
 
 _INFO_TESTS = [
     (operation.Info(
-        referer='a_referer',
-        service_name='a_service_name'),
+        referer=u'a_referer',
+        service_name=u'a_service_name'),
      messages.Operation(
          importance=messages.Operation.ImportanceValueValuesEnum.LOW,
          startTime=_REALLY_EARLY,
          endTime=_REALLY_EARLY)),
     (operation.Info(
-        operation_id='an_op_id',
-        referer='a_referer',
-        service_name='a_service_name'),
+        operation_id=u'an_op_id',
+        referer=u'a_referer',
+        service_name=u'a_service_name'),
      messages.Operation(
          importance=messages.Operation.ImportanceValueValuesEnum.LOW,
-         operationId='an_op_id',
+         operationId=u'an_op_id',
          startTime=_REALLY_EARLY,
          endTime=_REALLY_EARLY)),
     (operation.Info(
-        operation_id='an_op_id',
-        operation_name='an_op_name',
-        referer='a_referer',
-        service_name='a_service_name'),
+        operation_id=u'an_op_id',
+        operation_name=u'an_op_name',
+        referer=u'a_referer',
+        service_name=u'a_service_name'),
      messages.Operation(
          importance=messages.Operation.ImportanceValueValuesEnum.LOW,
-         operationId='an_op_id',
-         operationName='an_op_name',
+         operationId=u'an_op_id',
+         operationName=u'an_op_name',
          startTime=_REALLY_EARLY,
          endTime=_REALLY_EARLY)),
     (operation.Info(
-        android_cert_fingerprint='an_android_cert_fingerprint',
-        android_package_name='an_android_package_name',
-        api_key='an_api_key',
+        android_cert_fingerprint=u'an_android_cert_fingerprint',
+        android_package_name=u'an_android_package_name',
+        api_key=u'an_api_key',
         api_key_valid=True,
-        ios_bundle_id='an_ios_bundle_id',
-        operation_id='an_op_id',
-        operation_name='an_op_name',
-        referer='a_referer',
-        service_name='a_service_name'),
+        ios_bundle_id=u'an_ios_bundle_id',
+        operation_id=u'an_op_id',
+        operation_name=u'an_op_name',
+        referer=u'a_referer',
+        service_name=u'a_service_name'),
      messages.Operation(
          importance=messages.Operation.ImportanceValueValuesEnum.LOW,
-         consumerId='api_key:an_api_key',
-         operationId='an_op_id',
-         operationName='an_op_name',
+         consumerId=u'api_key:an_api_key',
+         operationId=u'an_op_id',
+         operationName=u'an_op_name',
          startTime=_REALLY_EARLY,
          endTime=_REALLY_EARLY)),
     (operation.Info(
-        api_key='an_api_key',
+        api_key=u'an_api_key',
         api_key_valid=False,
-        consumer_project_id='project_id',
-        operation_id='an_op_id',
-        operation_name='an_op_name',
-        referer='a_referer',
-        service_name='a_service_name'),
+        consumer_project_id=u'project_id',
+        operation_id=u'an_op_id',
+        operation_name=u'an_op_name',
+        referer=u'a_referer',
+        service_name=u'a_service_name'),
      messages.Operation(
          importance=messages.Operation.ImportanceValueValuesEnum.LOW,
-         consumerId='project:project_id',
-         operationId='an_op_id',
-         operationName='an_op_name',
+         consumerId=u'project:project_id',
+         operationId=u'an_op_id',
+         operationName=u'an_op_name',
          startTime=_REALLY_EARLY,
          endTime=_REALLY_EARLY)),
 ]

@@ -63,9 +63,8 @@ class TestSign(unittest2.TestCase):
         without_labels = check_request.sign(self.test_check_request)
         self.test_op.labels = encoding.PyValueToMessage(
             messages.Operation.LabelsValue, {
-                'key1': 'value1',
-                'key2': 'value2'
-            })
+                u'key1': u'value1',
+                u'key2': u'value2'})
         with_labels = check_request.sign(self.test_check_request)
         expect(with_labels).not_to(equal(without_labels))
 
@@ -73,13 +72,12 @@ class TestSign(unittest2.TestCase):
         without_mvs = check_request.sign(self.test_check_request)
         self.test_op.metricValueSets = [
             messages.MetricValueSet(
-                metricName='a_float',
+                metricName=u'a_float',
                 metricValues=[
                     metric_value.create(
                         labels={
-                            'key1': 'value1',
-                            'key2': 'value2'
-                        },
+                            u'key1': u'value1',
+                            u'key2': u'value2'},
                         doubleValue=1.1,
                     ),
                 ]
@@ -96,8 +94,8 @@ class TestSign(unittest2.TestCase):
 
 
 class TestAggregatorCheck(unittest2.TestCase):
-    SERVICE_NAME = 'service.check'
-    FAKE_OPERATION_ID = 'service.general.check'
+    SERVICE_NAME = u'service.check'
+    FAKE_OPERATION_ID = u'service.general.check'
 
     def setUp(self):
         self.timer = _DateTimeTimer()
@@ -111,7 +109,7 @@ class TestAggregatorCheck(unittest2.TestCase):
         expect(testf).to(raise_error(ValueError))
 
     def test_should_fail_if_service_name_does_not_match(self):
-        req = _make_test_request(self.SERVICE_NAME + '-will-not-match')
+        req = _make_test_request(self.SERVICE_NAME + u'-will-not-match')
         testf = lambda: self.agg.check(req)
         expect(testf).to(raise_error(ValueError))
 
@@ -137,8 +135,8 @@ class TestAggregatorCheck(unittest2.TestCase):
 
 
 class TestAggregatorThatCannotCache(unittest2.TestCase):
-    SERVICE_NAME = 'service.no_cache'
-    FAKE_OPERATION_ID = 'service.no_cache.op_id'
+    SERVICE_NAME = u'service.no_cache'
+    FAKE_OPERATION_ID = u'service.no_cache.op_id'
 
     def setUp(self):
         # -ve num_entries means no cache is present
@@ -180,8 +178,8 @@ class _DateTimeTimer(object):
 
 
 class TestCachingAggregator(unittest2.TestCase):
-    SERVICE_NAME = 'service.with_cache'
-    FAKE_OPERATION_ID = 'service.with_cache.op_id'
+    SERVICE_NAME = u'service.with_cache'
+    FAKE_OPERATION_ID = u'service.with_cache.op_id'
 
     def setUp(self):
         self.timer = _DateTimeTimer()
@@ -338,8 +336,8 @@ class TestCachingAggregator(unittest2.TestCase):
         expect(len(agg.flush())).to(equal(0))
 
 
-_TEST_CONSUMER_ID = 'testConsumerID'
-_TEST_OP_NAME = 'testOperationName'
+_TEST_CONSUMER_ID = u'testConsumerID'
+_TEST_OP_NAME = u'testOperationName'
 
 
 def _make_test_request(service_name, importance=None):
@@ -359,91 +357,91 @@ def _make_test_request(service_name, importance=None):
 _WANTED_USER_AGENT = label_descriptor.USER_AGENT
 _WANTED_SERVICE_AGENT = label_descriptor.SERVICE_AGENT
 _START_OF_EPOCH = timestamp.to_rfc3339(datetime.datetime(1970, 1, 1, 0, 0, 0))
-_TEST_SERVICE_NAME = 'a_service_name'
+_TEST_SERVICE_NAME = u'a_service_name'
 _INFO_TESTS = [
     (check_request.Info(
-        operation_id='an_op_id',
-        operation_name='an_op_name',
-        referer='a_referer',
+        operation_id=u'an_op_id',
+        operation_name=u'an_op_name',
+        referer=u'a_referer',
         service_name=_TEST_SERVICE_NAME),
      messages.Operation(
          importance=messages.Operation.ImportanceValueValuesEnum.LOW,
          labels = encoding.PyValueToMessage(
              messages.Operation.LabelsValue, {
-                 'servicecontrol.googleapis.com/user_agent': _WANTED_USER_AGENT,
-                 'servicecontrol.googleapis.com/referer': 'a_referer',
-                 'servicecontrol.googleapis.com/service_agent':
+                 u'servicecontrol.googleapis.com/user_agent': _WANTED_USER_AGENT,
+                 u'servicecontrol.googleapis.com/referer': u'a_referer',
+                 u'servicecontrol.googleapis.com/service_agent':
                      _WANTED_SERVICE_AGENT,
              }),
-         operationId='an_op_id',
-         operationName='an_op_name',
+         operationId=u'an_op_id',
+         operationName=u'an_op_name',
          startTime=_START_OF_EPOCH,
          endTime=_START_OF_EPOCH)),
     (check_request.Info(
-        android_cert_fingerprint='an_android_cert_fingerprint',
-        android_package_name='an_android_package_name',
-        api_key='an_api_key',
+        android_cert_fingerprint=u'an_android_cert_fingerprint',
+        android_package_name=u'an_android_package_name',
+        api_key=u'an_api_key',
         api_key_valid=True,
-        ios_bundle_id='an_ios_bundle_id',
-        operation_id='an_op_id',
-        operation_name='an_op_name',
-        referer='a_referer',
+        ios_bundle_id=u'an_ios_bundle_id',
+        operation_id=u'an_op_id',
+        operation_name=u'an_op_name',
+        referer=u'a_referer',
         service_name=_TEST_SERVICE_NAME),
      messages.Operation(
          importance=messages.Operation.ImportanceValueValuesEnum.LOW,
-         consumerId='api_key:an_api_key',
+         consumerId=u'api_key:an_api_key',
          labels = encoding.PyValueToMessage(
              messages.Operation.LabelsValue, {
-                 'servicecontrol.googleapis.com/android_cert_fingerprint': 'an_android_cert_fingerprint',
-                 'servicecontrol.googleapis.com/android_package_name': 'an_android_package_name',
-                 'servicecontrol.googleapis.com/ios_bundle_id': 'an_ios_bundle_id',
-                 'servicecontrol.googleapis.com/user_agent': _WANTED_USER_AGENT,
-                 'servicecontrol.googleapis.com/referer': 'a_referer',
-                 'servicecontrol.googleapis.com/service_agent':
+                 u'servicecontrol.googleapis.com/android_cert_fingerprint': u'an_android_cert_fingerprint',
+                 u'servicecontrol.googleapis.com/android_package_name': u'an_android_package_name',
+                 u'servicecontrol.googleapis.com/ios_bundle_id': u'an_ios_bundle_id',
+                 u'servicecontrol.googleapis.com/user_agent': _WANTED_USER_AGENT,
+                 u'servicecontrol.googleapis.com/referer': u'a_referer',
+                 u'servicecontrol.googleapis.com/service_agent':
                      _WANTED_SERVICE_AGENT,
              }),
-         operationId='an_op_id',
-         operationName='an_op_name',
+         operationId=u'an_op_id',
+         operationName=u'an_op_name',
          startTime=_START_OF_EPOCH,
          endTime=_START_OF_EPOCH)),
     (check_request.Info(
-        api_key='an_api_key',
+        api_key=u'an_api_key',
         api_key_valid=False,
-        client_ip='127.0.0.1',
-        consumer_project_id='project_id',
-        operation_id='an_op_id',
-        operation_name='an_op_name',
-        referer='a_referer',
+        client_ip=u'127.0.0.1',
+        consumer_project_id=u'project_id',
+        operation_id=u'an_op_id',
+        operation_name=u'an_op_name',
+        referer=u'a_referer',
         service_name=_TEST_SERVICE_NAME),
      messages.Operation(
          importance=messages.Operation.ImportanceValueValuesEnum.LOW,
-         consumerId='project:project_id',
+         consumerId=u'project:project_id',
          labels = encoding.PyValueToMessage(
              messages.Operation.LabelsValue, {
-                 'servicecontrol.googleapis.com/caller_ip': '127.0.0.1',
-                 'servicecontrol.googleapis.com/user_agent': _WANTED_USER_AGENT,
-                 'servicecontrol.googleapis.com/referer': 'a_referer',
-                 'servicecontrol.googleapis.com/service_agent':
+                 u'servicecontrol.googleapis.com/caller_ip': u'127.0.0.1',
+                 u'servicecontrol.googleapis.com/user_agent': _WANTED_USER_AGENT,
+                 u'servicecontrol.googleapis.com/referer': u'a_referer',
+                 u'servicecontrol.googleapis.com/service_agent':
                      _WANTED_SERVICE_AGENT,
              }),
-         operationId='an_op_id',
-         operationName='an_op_name',
+         operationId=u'an_op_id',
+         operationName=u'an_op_name',
          startTime=_START_OF_EPOCH,
          endTime=_START_OF_EPOCH)),
 ]
 _INCOMPLETE_INFO_TESTS = [
     check_request.Info(
-        operation_name='an_op_name',
+        operation_name=u'an_op_name',
         service_name=_TEST_SERVICE_NAME),
     check_request.Info(
-        operation_id='an_op_id',
+        operation_id=u'an_op_id',
         service_name=_TEST_SERVICE_NAME),
     check_request.Info(
-        operation_id='an_op_id',
-        operation_name='an_op_name')
+        operation_id=u'an_op_id',
+        operation_name=u'an_op_name')
 ]
 
-KEYGETTER = attrgetter('key')
+KEYGETTER = attrgetter(u'key')
 
 
 class TestInfo(unittest2.TestCase):
@@ -469,13 +467,13 @@ class TestInfo(unittest2.TestCase):
 
 
 class TestConvertResponse(unittest2.TestCase):
-    PROJECT_ID = 'test_convert_response'
+    PROJECT_ID = u'test_convert_response'
 
     def test_should_be_ok_with_no_errors(self):
         code, message, _ = check_request.convert_response(
             messages.CheckResponse(), self.PROJECT_ID)
         expect(code).to(equal(httplib.OK))
-        expect(message).to(equal(''))
+        expect(message).to(equal(u''))
 
     def test_should_include_project_id_in_error_text_when_needed(self):
         resp = messages.CheckResponse(
@@ -485,12 +483,12 @@ class TestConvertResponse(unittest2.TestCase):
             ]
         )
         code, got, _ = check_request.convert_response(resp, self.PROJECT_ID)
-        want = 'Project %s has been deleted' % (self.PROJECT_ID,)
+        want = u'Project %s has been deleted' % (self.PROJECT_ID,)
         expect(code).to(equal(httplib.FORBIDDEN))
         expect(got).to(equal(want))
 
     def test_should_include_detail_in_error_text_when_needed(self):
-        detail = 'details, details, details'
+        detail = u'details, details, details'
         resp = messages.CheckResponse(
             checkErrors = [
                 messages.CheckError(

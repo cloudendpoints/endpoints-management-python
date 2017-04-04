@@ -41,9 +41,9 @@ class Authenticator(object):  # pylint: disable=too-few-public-methods
         self._issuers_to_provider_ids = issuers_to_provider_ids
         self._jwks_supplier = jwks_supplier
 
-        arguments = {"capacity": cache_capacity}
+        arguments = {u"capacity": cache_capacity}
         expiration_time = datetime.timedelta(minutes=5)
-        self._cache = cache.make_region().configure("lru_cache",
+        self._cache = cache.make_region().configure(u"lru_cache",
                                                     arguments=arguments,
                                                     expiration_time=expiration_time)
 
@@ -67,7 +67,7 @@ class Authenticator(object):  # pylint: disable=too-few-public-methods
         try:
             jwt_claims = self.get_jwt_claims(auth_token)
         except Exception as error:
-            raise suppliers.UnauthenticatedException("Cannot decode the auth token",
+            raise suppliers.UnauthenticatedException(u"Cannot decode the auth token",
                                                      error)
         _check_jwt_claims(jwt_claims)
 
@@ -75,12 +75,12 @@ class Authenticator(object):  # pylint: disable=too-few-public-methods
 
         issuer = user_info.issuer
         if issuer not in self._issuers_to_provider_ids:
-            raise suppliers.UnauthenticatedException("Unknown issuer: " + issuer)
+            raise suppliers.UnauthenticatedException(u"Unknown issuer: " + issuer)
         provider_id = self._issuers_to_provider_ids[issuer]
 
         if not auth_info.is_provider_allowed(provider_id):
-            raise suppliers.UnauthenticatedException("The requested method does not "
-                                                     "allow provider id: " + provider_id)
+            raise suppliers.UnauthenticatedException(u"The requested method does not "
+                                                     u"allow provider id: " + provider_id)
 
         # Check the audiences decoded from the auth token. The auth token is
         # allowed when 1) an audience is equal to the service name, or 2) at least
@@ -91,7 +91,7 @@ class Authenticator(object):  # pylint: disable=too-few-public-methods
         allowed_audiences = auth_info.get_allowed_audiences(provider_id)
         intersected_audiences = set(allowed_audiences).intersection(audiences)
         if not has_service_name and not intersected_audiences:
-            raise suppliers.UnauthenticatedException("Audiences not allowed")
+            raise suppliers.UnauthenticatedException(u"Audiences not allowed")
 
         return user_info
 
@@ -119,13 +119,13 @@ class Authenticator(object):  # pylint: disable=too-few-public-methods
             jwt_claims = jwt.JWT().unpack(auth_token).payload()
             _verify_required_claims_exist(jwt_claims)
 
-            issuer = jwt_claims["iss"]
+            issuer = jwt_claims[u"iss"]
             keys = self._jwks_supplier.supply(issuer)
             try:
                 return jws.JWS().verify_compact(auth_token, keys)
             except (jwkest.BadSignature, jws.NoSuitableSigningKeys,
                     jws.SignerAlgError) as exception:
-                raise suppliers.UnauthenticatedException("Signature verification failed",
+                raise suppliers.UnauthenticatedException(u"Signature verification failed",
                                                          exception)
 
         return self._cache.get_or_create(auth_token, _decode_and_verify)
@@ -135,15 +135,15 @@ class UserInfo(object):
     """An object that holds the authentication results."""
 
     def __init__(self, jwt_claims):
-        audiences = jwt_claims["aud"]
+        audiences = jwt_claims[u"aud"]
         if isinstance(audiences, basestring):
             audiences = [audiences]
         self._audiences = audiences
 
         # email is not required
-        self._email = jwt_claims["email"] if "email" in jwt_claims else None
-        self._subject_id = jwt_claims["sub"]
-        self._issuer = jwt_claims["iss"]
+        self._email = jwt_claims[u"email"] if u"email" in jwt_claims else None
+        self._subject_id = jwt_claims[u"sub"]
+        self._issuer = jwt_claims[u"iss"]
 
     @property
     def audiences(self):
@@ -179,20 +179,20 @@ def _check_jwt_claims(jwt_claims):
     """
     current_time = time.time()
 
-    expiration = jwt_claims["exp"]
+    expiration = jwt_claims[u"exp"]
     if not isinstance(expiration, (int, long)):
-        raise suppliers.UnauthenticatedException('Malformed claim: "exp" must be an integer')
+        raise suppliers.UnauthenticatedException(u'Malformed claim: "exp" must be an integer')
     if current_time >= expiration:
-        raise suppliers.UnauthenticatedException("The auth token has already expired")
+        raise suppliers.UnauthenticatedException(u"The auth token has already expired")
 
-    if "nbf" not in jwt_claims:
+    if u"nbf" not in jwt_claims:
         return
 
-    not_before_time = jwt_claims["nbf"]
+    not_before_time = jwt_claims[u"nbf"]
     if not isinstance(not_before_time, (int, long)):
-        raise suppliers.UnauthenticatedException('Malformed claim: "nbf" must be an integer')
+        raise suppliers.UnauthenticatedException(u'Malformed claim: "nbf" must be an integer')
     if current_time < not_before_time:
-        raise suppliers.UnauthenticatedException('Current time is less than the "nbf" time')
+        raise suppliers.UnauthenticatedException(u'Current time is less than the "nbf" time')
 
 
 def _verify_required_claims_exist(jwt_claims):
@@ -204,6 +204,6 @@ def _verify_required_claims_exist(jwt_claims):
     Raises:
       UnauthenticatedException: if some claim doesn't exist.
     """
-    for claim_name in ["aud", "exp", "iss", "sub"]:
+    for claim_name in [u"aud", u"exp", u"iss", u"sub"]:
         if claim_name not in jwt_claims:
-            raise suppliers.UnauthenticatedException('Missing "%s" claim' % claim_name)
+            raise suppliers.UnauthenticatedException(u'Missing "%s" claim' % claim_name)

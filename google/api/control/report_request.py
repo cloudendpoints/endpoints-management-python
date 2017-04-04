@@ -43,17 +43,17 @@ SIZE_NOT_SET = -1
 def _validate_int_arg(name, value):
     if value == SIZE_NOT_SET or (isinstance(value, int) and value >= 0):
         return
-    raise ValueError('%s should be a non-negative int/long' % (name,))
+    raise ValueError(u'%s should be a non-negative int/long' % (name,))
 
 
 def _validate_timedelta_arg(name, value):
     if value is None or isinstance(value, timedelta):
         return
-    raise ValueError('%s should be a timedelta' % (name,))
+    raise ValueError(u'%s should be a timedelta' % (name,))
 
 
-class ReportingRules(collections.namedtuple('ReportingRules',
-                                            ['logs', 'metrics', 'labels'])):
+class ReportingRules(collections.namedtuple(u'ReportingRules',
+                                            [u'logs', u'metrics', u'labels'])):
     """Holds information that determines how to fill a `ReportRequest`.
 
     Attributes:
@@ -132,14 +132,14 @@ class ReportedPlatforms(Enum):
     DEVELOPMENT = 5
 
     def friendly_string(self):
-        if self.name == 'UNKNOWN':
-            return 'Unknown'
-        elif self.name == 'GAE_FLEX':
-            return 'GAE Flex'
-        elif self.name == 'GAE_STANDARD':
-            return 'GAE Standard'
-        elif self.name == 'DEVELOPMENT':
-            return 'GAE Dev Server'
+        if self.name == u'UNKNOWN':
+            return u'Unknown'
+        elif self.name == u'GAE_FLEX':
+            return u'GAE Flex'
+        elif self.name == u'GAE_STANDARD':
+            return u'GAE Standard'
+        elif self.name == u'DEVELOPMENT':
+            return u'GAE Dev Server'
         else:
             return self.name
 
@@ -166,26 +166,26 @@ _KNOWN_LABELS = label_descriptor.KnownLabels
 
 class Info(
         collections.namedtuple(
-            'Info', (
-                'api_name',
-                'api_method',
-                'api_version',
-                'auth_issuer',
-                'auth_audience',
-                'backend_time',
-                'error_cause',
-                'location',
-                'log_message',
-                'method',
-                'overhead_time',
-                'platform',
-                'producer_project_id',
-                'protocol',
-                'request_size',
-                'request_time',
-                'response_code',
-                'response_size',
-                'url',
+            u'Info', (
+                u'api_name',
+                u'api_method',
+                u'api_version',
+                u'auth_issuer',
+                u'auth_audience',
+                u'backend_time',
+                u'error_cause',
+                u'location',
+                u'log_message',
+                u'method',
+                u'overhead_time',
+                u'platform',
+                u'producer_project_id',
+                u'protocol',
+                u'request_size',
+                u'request_time',
+                u'response_code',
+                u'response_size',
+                u'url',
             ) + operation.Info._fields),
         operation.Info):
     """Holds the information necessary to fill in a ReportRequest.
@@ -217,50 +217,50 @@ class Info(
     # pylint: disable=too-many-arguments,too-many-locals
 
     COPYABLE_LOG_FIELDS = [
-        'api_name',
-        'api_method',
-        'api_key',
-        'producer_project_id',
-        'referer',
-        'location',
-        'log_message',
-        'url',
+        u'api_name',
+        u'api_method',
+        u'api_key',
+        u'producer_project_id',
+        u'referer',
+        u'location',
+        u'log_message',
+        u'url',
     ]
 
     def __new__(cls,
-                api_name='',
-                api_method='',
-                api_version='',
-                auth_issuer='',
-                auth_audience='',
+                api_name=u'',
+                api_method=u'',
+                api_version=u'',
+                auth_issuer=u'',
+                auth_audience=u'',
                 backend_time=None,
                 error_cause=ErrorCause.internal,
-                location='',
-                log_message='',
-                method='',
+                location=u'',
+                log_message=u'',
+                method=u'',
                 overhead_time=None,
                 platform=ReportedPlatforms.UNKNOWN,
-                producer_project_id='',
+                producer_project_id=u'',
                 protocol=ReportedProtocols.UNKNOWN,
                 request_size=SIZE_NOT_SET,
                 request_time=None,
                 response_size=SIZE_NOT_SET,
                 response_code=200,
-                url='',
+                url=u'',
                 **kw):
         """Invokes the base constructor with default values."""
         op_info = operation.Info(**kw)
-        _validate_timedelta_arg('backend_time', backend_time)
-        _validate_timedelta_arg('overhead_time', overhead_time)
-        _validate_timedelta_arg('request_time', request_time)
-        _validate_int_arg('request_size', request_size)
-        _validate_int_arg('response_size', response_size)
+        _validate_timedelta_arg(u'backend_time', backend_time)
+        _validate_timedelta_arg(u'overhead_time', overhead_time)
+        _validate_timedelta_arg(u'request_time', request_time)
+        _validate_int_arg(u'request_size', request_size)
+        _validate_int_arg(u'response_size', response_size)
         if not isinstance(protocol, ReportedProtocols):
-            raise ValueError('protocol should be a %s' % (ReportedProtocols,))
+            raise ValueError(u'protocol should be a %s' % (ReportedProtocols,))
         if not isinstance(platform, ReportedPlatforms):
-            raise ValueError('platform should be a %s' % (ReportedPlatforms,))
+            raise ValueError(u'platform should be a %s' % (ReportedPlatforms,))
         if not isinstance(error_cause, ErrorCause):
-            raise ValueError('error_cause should be a %s' % (ErrorCause,))
+            raise ValueError(u'error_cause should be a %s' % (ErrorCause,))
         return super(cls, Info).__new__(
             cls,
             api_name,
@@ -303,25 +303,25 @@ class Info(
         """
         # initialize the struct with fields that are always present
         d = {
-            'http_response_code': self.response_code,
-            'timestamp': time.mktime(now.timetuple())
+            u'http_response_code': self.response_code,
+            u'timestamp': time.mktime(now.timetuple())
         }
 
         # compute the severity
         severity = _SEVERITY.INFO
         if self.response_code >= 400:
             severity = _SEVERITY.ERROR
-            d['error_cause'] = self.error_cause.name
+            d[u'error_cause'] = self.error_cause.name
 
         # add 'optional' fields to the struct
         if self.request_size > 0:
-            d['request_size'] = self.request_size
+            d[u'request_size'] = self.request_size
         if self.response_size > 0:
-            d['response_size'] = self.response_size
+            d[u'response_size'] = self.response_size
         if self.method:
-            d['http_method'] = self.method
+            d[u'http_method'] = self.method
         if self.request_time:
-            d['request_latency_in_ms'] = self.request_time.total_seconds() * 1000
+            d[u'request_latency_in_ms'] = self.request_time.total_seconds() * 1000
 
         # add 'copyable' fields to the struct
         for key in self.COPYABLE_LOG_FIELDS:
@@ -353,7 +353,7 @@ class Info(
 
         """
         if not self.service_name:
-            raise ValueError('the service name must be set')
+            raise ValueError(u'the service name must be set')
         op = super(Info, self).as_operation(timer=timer)
 
         # Populate metrics and labels if they can be associated with a
@@ -496,15 +496,15 @@ class Aggregator(object):
         if self._cache is None:
             return None  # no cache, send request now
         if not isinstance(req, messages.ServicecontrolServicesReportRequest):
-            raise ValueError('Invalid request')
+            raise ValueError(u'Invalid request')
         if req.serviceName != self.service_name:
-            logger.error('bad report(): service_name %s does not match ours %s',
+            logger.error(u'bad report(): service_name %s does not match ours %s',
                          req.serviceName, self.service_name)
-            raise ValueError('Service name mismatch')
+            raise ValueError(u'Service name mismatch')
         report_req = req.reportRequest
         if report_req is None:
-            logger.error('bad report(): no report_request in %s', req)
-            raise ValueError('Expected report_request not set')
+            logger.error(u'bad report(): no report_request in %s', req)
+            raise ValueError(u'Expected report_request not set')
         if _has_high_important_operation(report_req) or self._cache is None:
             return None
         ops_by_signature = _key_by_signature(report_req.operations,
@@ -557,9 +557,9 @@ def _sign_operation(op):
        string: a unique signature for that operation
     """
     md5 = hashlib.md5()
-    md5.update(op.consumerId)
-    md5.update('\x00')
-    md5.update(op.operationName)
+    md5.update(op.consumerId.encode('utf-8'))
+    md5.update(b'\x00')
+    md5.update(op.operationName.encode('utf-8'))
     if op.labels:
         signing.add_dict_to_hash(md5, encoding.MessageToPyValue(op.labels))
     return md5.digest()

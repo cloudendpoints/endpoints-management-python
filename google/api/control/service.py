@@ -43,22 +43,22 @@ from google.api.config import service_config
 logger = logging.getLogger(__name__)
 
 
-CONFIG_VAR = 'ENDPOINTS_SERVICE_CONFIG_FILE'
+CONFIG_VAR = u'ENDPOINTS_SERVICE_CONFIG_FILE'
 
 
 def _load_from_well_known_env():
     if CONFIG_VAR not in os.environ:
-        logger.info('did not load service; no environ var %s', CONFIG_VAR)
+        logger.info(u'did not load service; no environ var %s', CONFIG_VAR)
         return None
     config_file = os.environ[CONFIG_VAR]
     if not os.path.exists(os.environ[CONFIG_VAR]):
-        logger.warn('did not load service; missing config file %s', config_file)
+        logger.warn(u'did not load service; missing config file %s', config_file)
         return None
     try:
         with open(config_file) as f:
             return encoding.JsonToMessage(messages.Service, f.read())
     except ValueError:
-        logger.warn('did not load service; bad json config file %s', config_file)
+        logger.warn(u'did not load service; bad json config file %s', config_file)
         return None
 
 
@@ -118,7 +118,7 @@ class MethodRegistry(object):
 
     """
     # pylint: disable=too-few-public-methods
-    _OPTIONS = 'OPTIONS'
+    _OPTIONS = u'OPTIONS'
 
     def __init__(self, service):
         """Constructor.
@@ -128,9 +128,9 @@ class MethodRegistry(object):
             a service instance
         """
         if not isinstance(service, messages.Service):
-            raise ValueError('service should be an instance of Service')
+            raise ValueError(u'service should be an instance of Service')
         if not service.name:
-            raise ValueError('Bad service: the name is missing')
+            raise ValueError(u'Bad service: the name is missing')
 
         self._service = service  # the service that provides the methods
         self._extracted_methods = {}  # tracks all extracted_methods by selector
@@ -143,11 +143,11 @@ class MethodRegistry(object):
 
     def lookup(self, http_method, path):
         http_method = http_method.lower()
-        if path.startswith('/'):
+        if path.startswith(u'/'):
             path = path[1:]
         tmi = self._templates_method_infos.get(http_method)
         if not tmi:
-            logger.debug('No methods for http method %s in %s',
+            logger.debug(u'No methods for http method %s in %s',
                          http_method,
                          self._templates_method_infos.keys())
             return None
@@ -158,13 +158,13 @@ class MethodRegistry(object):
         # There is sophisticated trie-based solution in esp, something similar
         # could be built around the path_template implementation
         for template, method_info in tmi:
-            logger.debug('trying %s with template %s', path, template)
+            logger.debug(u'trying %s with template %s', path, template)
             try:
                 template.match(path)
-                logger.debug('%s matched template %s', path, template)
+                logger.debug(u'%s matched template %s', path, template)
                 return method_info
             except path_template.ValidationException:
-                logger.debug('%s did not match template %s', path, template)
+                logger.debug(u'%s did not match template %s', path, template)
                 continue
 
         return None
@@ -183,7 +183,7 @@ class MethodRegistry(object):
             for requirement in auth_rule.requirements:
                 provider_id = requirement.providerId
                 if provider_id and requirement.audiences:
-                    audiences = requirement.audiences.split(",")
+                    audiences = requirement.audiences.split(u",")
                     provider_ids_to_audiences[provider_id] = audiences
             auth_infos[selector] = AuthInfo(provider_ids_to_audiences)
         return auth_infos
@@ -198,7 +198,7 @@ class MethodRegistry(object):
         for rule in service.http.rules:
             http_method, url = _detect_pattern_option(rule)
             if not url or not http_method or not rule.selector:
-                logger.error('invalid HTTP binding encountered')
+                logger.error(u'invalid HTTP binding encountered')
                 continue
 
             # Obtain the method info
@@ -221,12 +221,12 @@ class MethodRegistry(object):
             http_method = http_method.lower()
             template = path_template.PathTemplate(url)
             self._templates_method_infos[http_method].append((template, method_info))
-            logger.debug('Registered template %s under method %s',
+            logger.debug(u'Registered template %s under method %s',
                          template,
                          http_method)
             return True
         except path_template.ValidationException:
-            logger.error('invalid HTTP template provided: %s', url)
+            logger.error(u'invalid HTTP template provided: %s', url)
             return False
 
     def _update_usage(self):
@@ -240,7 +240,7 @@ class MethodRegistry(object):
             if method:
                 method.allow_unregistered_calls = rule.allowUnregisteredCalls
             else:
-                logger.error('bad usage selector: No HTTP rule for %s', selector)
+                logger.error(u'bad usage selector: No HTTP rule for %s', selector)
 
     def _get_or_create_method_info(self, selector):
         extracted_methods = self._extracted_methods
@@ -257,14 +257,14 @@ class MethodRegistry(object):
 
     def _add_cors_options_selectors(self, urls):
         extracted_methods = self._extracted_methods
-        base_selector = '%s.%s' % (self._service.name, self._OPTIONS)
+        base_selector = u'%s.%s' % (self._service.name, self._OPTIONS)
 
         # ensure that no existing options selector is being used
         options_selector = base_selector
         n = 0
         while extracted_methods.get(options_selector) is not None:
             n += 1
-            options_selector = '%s.%d' % (base_selector, n)
+            options_selector = u'%s.%d' % (base_selector, n)
         method_info = self._get_or_create_method_info(options_selector)
         method_info.allow_unregistered_calls = True
         for u in urls:
@@ -280,14 +280,14 @@ class MethodRegistry(object):
             selector = rule.selector
             method = extracted_methods.get(selector)
             if not method:
-                logger.error('bad system parameter: No HTTP rule for %s',
+                logger.error(u'bad system parameter: No HTTP rule for %s',
                              selector)
                 continue
 
             for parameter in rule.parameters:
                 name = parameter.name
                 if not name:
-                    logger.error('bad system parameter: no parameter name %s',
+                    logger.error(u'bad system parameter: no parameter name %s',
                                  selector)
                     continue
 
@@ -318,15 +318,15 @@ class AuthInfo(object):
 
 class MethodInfo(object):
     """Consolidates information about methods defined in a ``Service``."""
-    API_KEY_NAME = 'api_key'
+    API_KEY_NAME = u'api_key'
     # pylint: disable=too-many-instance-attributes
 
     def __init__(self, selector, auth_info):
         self.selector = selector
         self.auth_info = auth_info
         self.allow_unregistered_calls = False
-        self.backend_address = ''
-        self.body_field_path = ''
+        self.backend_address = u''
+        self.body_field_path = u''
         self._url_query_parameters = collections.defaultdict(list)
         self._header_parameters = collections.defaultdict(list)
 
@@ -448,7 +448,7 @@ def _add_labels_from_descriptors(descs, labels_dict, is_supported):
     for desc in descs:
         existing = labels_dict.get(desc.key)
         if existing and existing.valueType != desc.valueType:
-            logger.warn('halted label scan: conflicting label in %s', desc.key)
+            logger.warn(u'halted label scan: conflicting label in %s', desc.key)
             return False
     # Update labels_dict
     for desc in descs:
@@ -462,7 +462,7 @@ def _add_labels_for_a_log(logging_descs, log_name, labels_dict, is_supported):
         if d.name == log_name:
             _add_labels_from_descriptors(d.labels, labels_dict, is_supported)
             return True
-    logger.warn('bad log label scan: log not found %s', log_name)
+    logger.warn(u'bad log label scan: log not found %s', log_name)
     return False
 
 
@@ -474,7 +474,7 @@ def _add_labels_for_a_monitored_resource(resource_descs,
         if d.type == resource_name:
             _add_labels_from_descriptors(d.labels, labels_dict, is_supported)
             return True
-    logger.warn('bad monitored resource label scan: resource not found %s',
+    logger.warn(u'bad monitored resource label scan: resource not found %s',
                 resource_name)
     return False
 
@@ -493,14 +493,14 @@ def _find_metric_descriptor(metric_descs, name, metric_is_supported):
 # This is derived from the oneof choices of the HttpRule message's pattern
 # field in google/api/http.proto, and should be kept in sync with that
 _HTTP_RULE_ONE_OF_FIELDS = (
-    'get', 'put', 'post', 'delete', 'patch', 'custom')
+    u'get', u'put', u'post', u'delete', u'patch', u'custom')
 
 
 def _detect_pattern_option(http_rule):
     for f in _HTTP_RULE_ONE_OF_FIELDS:
         value = http_rule.get_assigned_value(f)
         if value is not None:
-            if f == 'custom':
+            if f == u'custom':
                 return value.kind, value.path
             else:
                 return f, value

@@ -26,49 +26,49 @@ from google.api.auth import suppliers
 class KeyUriSupplierTest(unittest.TestCase):
 
     def test_supply_issuer(self):
-        issuer = "https://issuer.com"
-        jwks_uri = "https://issuer.com/jwks/uri"
+        issuer = u"https://issuer.com"
+        jwks_uri = u"https://issuer.com/jwks/uri"
         configs = {issuer: suppliers.IssuerUriConfig(False, jwks_uri)}
         supplier = suppliers.KeyUriSupplier(configs)
         self.assertEquals(jwks_uri, supplier.supply(issuer))
-        self.assertIsNone(supplier.supply("random-issuer"))
+        self.assertIsNone(supplier.supply(u"random-issuer"))
 
     def test_openid_discovery(self):
-        jwks_uri = "https://issuer.com/jwks/uri"
-        @httmock.urlmatch(scheme="https", netloc="issuer.com",
-                          path="/" + suppliers._OPEN_ID_CONFIG_PATH)
+        jwks_uri = u"https://issuer.com/jwks/uri"
+        @httmock.urlmatch(scheme=u"https", netloc=u"issuer.com",
+                          path=u"/" + suppliers._OPEN_ID_CONFIG_PATH)
         def _mock_response(url, request):  # pylint: disable=unused-argument
-            response = {"jwks_uri": jwks_uri}
+            response = {u"jwks_uri": jwks_uri}
             return json.dumps(response)
 
-        issuer = "https://issuer.com"
+        issuer = u"https://issuer.com"
         configs = {issuer: suppliers.IssuerUriConfig(True, None)}
         supplier = suppliers.KeyUriSupplier(configs)
         with httmock.HTTMock(_mock_response):
             self.assertEquals(jwks_uri, supplier.supply(issuer))
 
     def test_issuer_without_protocol(self):
-        jwks_uri = "https://issuer.com/jwks/uri"
-        @httmock.urlmatch(scheme="https", netloc="issuer.com",
-                          path="/" + suppliers._OPEN_ID_CONFIG_PATH)
+        jwks_uri = u"https://issuer.com/jwks/uri"
+        @httmock.urlmatch(scheme=u"https", netloc=u"issuer.com",
+                          path=u"/" + suppliers._OPEN_ID_CONFIG_PATH)
         def _mock_response(url, request):  # pylint: disable=unused-argument
-            response = {"jwks_uri": jwks_uri}
+            response = {u"jwks_uri": jwks_uri}
             return json.dumps(response)
 
         # Specify an issuer without protocol to make sure the "https://" prefix is
         # added automatically.
-        issuer = "issuer.com"
+        issuer = u"issuer.com"
         configs = {issuer: suppliers.IssuerUriConfig(True, None)}
         supplier = suppliers.KeyUriSupplier(configs)
         with httmock.HTTMock(_mock_response):
             self.assertEquals(jwks_uri, supplier.supply(issuer))
 
     def test_openid_discovery_with_bad_json(self):
-        @httmock.urlmatch(scheme="https", netloc="issuer.com")
+        @httmock.urlmatch(scheme=u"https", netloc=u"issuer.com")
         def _mock_response_with_bad_json(url, request):  # pylint: disable=unused-argument
-            return "bad-json"
+            return u"bad-json"
 
-        issuer = "https://issuer.com"
+        issuer = u"https://issuer.com"
         configs = {issuer: suppliers.IssuerUriConfig(True, None)}
         supplier = suppliers.KeyUriSupplier(configs)
         with httmock.HTTMock(_mock_response_with_bad_json):
@@ -85,20 +85,20 @@ class JwksSupplierTest(unittest.TestCase):
 
     def test_supply_with_unknown_issuer(self):
         self._key_uri_supplier.supply.return_value = None
-        issuer = "unknown-issuer"
-        expected_message = "Cannot find the `jwks_uri` for issuer " + issuer
+        issuer = u"unknown-issuer"
+        expected_message = u"Cannot find the `jwks_uri` for issuer " + issuer
         with self.assertRaisesRegexp(suppliers.UnauthenticatedException,
                                      expected_message):
             self._jwks_uri_supplier.supply(issuer)
 
     def test_supply_with_invalid_json_response(self):
-        scheme = "https"
-        issuer = "issuer.com"
-        self._key_uri_supplier.supply.return_value = scheme + "://" + issuer
+        scheme = u"https"
+        issuer = u"issuer.com"
+        self._key_uri_supplier.supply.return_value = scheme + u"://" + issuer
 
         @httmock.urlmatch(scheme=scheme, netloc=issuer)
         def _mock_response_with_invalid_json(url, response):  # pylint: disable=unused-argument
-            return "invalid-json"
+            return u"invalid-json"
 
         with httmock.HTTMock(_mock_response_with_invalid_json):
             with self.assertRaises(suppliers.UnauthenticatedException):
@@ -109,9 +109,9 @@ class JwksSupplierTest(unittest.TestCase):
         jwks = jwk.KEYS()
         jwks.wrap_add(rsa_key)
 
-        scheme = "https"
-        issuer = "issuer.com"
-        self._key_uri_supplier.supply.return_value = scheme + "://" + issuer
+        scheme = u"https"
+        issuer = u"issuer.com"
+        self._key_uri_supplier.supply.return_value = scheme + u"://" + issuer
 
         @httmock.urlmatch(scheme=scheme, netloc=issuer)
         def _mock_response_with_jwks(url, response):  # pylint: disable=unused-argument
@@ -126,16 +126,16 @@ class JwksSupplierTest(unittest.TestCase):
 
     def test_supply_jwks_with_x509_certificate(self):
         rsa_key = PublicKey.RSA.generate(2048)
-        cert = rsa_key.publickey().exportKey("PEM")
-        kid = "rsa-cert"
+        cert = rsa_key.publickey().exportKey(u"PEM")
+        kid = u"rsa-cert"
 
-        scheme = "https"
-        issuer = "issuer.com"
-        self._key_uri_supplier.supply.return_value = scheme + "://" + issuer
+        scheme = u"https"
+        issuer = u"issuer.com"
+        self._key_uri_supplier.supply.return_value = scheme + u"://" + issuer
 
         @httmock.urlmatch(scheme=scheme, netloc=issuer)
         def _mock_response_with_x509_certificates(url, response):  # pylint: disable=unused-argument
-            return json.dumps({kid: cert})
+            return json.dumps({kid: cert.decode('ascii')})
 
         with httmock.HTTMock(_mock_response_with_x509_certificates):
             actual_jwks = self._jwks_uri_supplier.supply(issuer)
@@ -147,27 +147,27 @@ class JwksSupplierTest(unittest.TestCase):
             self.assertEquals(rsa_key.e, actual_key.e)
 
     def test_supply_empty_x509_certificate(self):
-        scheme = "https"
-        issuer = "issuer.com"
-        self._key_uri_supplier.supply.return_value = scheme + "://" + issuer
+        scheme = u"https"
+        issuer = u"issuer.com"
+        self._key_uri_supplier.supply.return_value = scheme + u"://" + issuer
 
         @httmock.urlmatch(scheme=scheme, netloc=issuer)
         def _mock_invalid_response(url, response):  # pylint: disable=unused-argument
-            return json.dumps({"kid": "invlid-certificate"})
+            return json.dumps({u"kid": u"invlid-certificate"})
 
         with httmock.HTTMock(_mock_invalid_response):
             with self.assertRaises(suppliers.UnauthenticatedException):
                 self._jwks_uri_supplier.supply(issuer)
 
-    @mock.patch("time.time", _mock_timer)
+    @mock.patch(u"time.time", _mock_timer)
     def test_supply_cached_jwks(self):
         rsa_key = PublicKey.RSA.generate(2048)
         jwks = jwk.KEYS()
         jwks.wrap_add(rsa_key)
 
-        scheme = "https"
-        issuer = "issuer.com"
-        self._key_uri_supplier.supply.return_value = scheme + "://" + issuer
+        scheme = u"https"
+        issuer = u"issuer.com"
+        self._key_uri_supplier.supply.return_value = scheme + u"://" + issuer
 
         @httmock.urlmatch(scheme=scheme, netloc=issuer)
         def _mock_response_with_jwks(url, response):  # pylint: disable=unused-argument

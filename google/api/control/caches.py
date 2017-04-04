@@ -45,10 +45,10 @@ logger = logging.getLogger(__name__)
 
 class CheckOptions(
         collections.namedtuple(
-            'CheckOptions',
-            ['num_entries',
-             'flush_interval',
-             'expiration'])):
+            u'CheckOptions',
+            [u'num_entries',
+             u'flush_interval',
+             u'expiration'])):
     """Holds values used to control report check behavior.
 
     Attributes:
@@ -73,9 +73,9 @@ class CheckOptions(
                 flush_interval=DEFAULT_FLUSH_INTERVAL,
                 expiration=DEFAULT_EXPIRATION):
         """Invokes the base constructor with default values."""
-        assert isinstance(num_entries, int), 'should be an int'
-        assert isinstance(flush_interval, timedelta), 'should be a timedelta'
-        assert isinstance(expiration, timedelta), 'should be a timedelta'
+        assert isinstance(num_entries, int), u'should be an int'
+        assert isinstance(flush_interval, timedelta), u'should be a timedelta'
+        assert isinstance(expiration, timedelta), u'should be a timedelta'
         if expiration <= flush_interval:
             expiration = flush_interval + timedelta(milliseconds=1)
         return super(cls, CheckOptions).__new__(
@@ -87,9 +87,9 @@ class CheckOptions(
 
 class ReportOptions(
         collections.namedtuple(
-            'ReportOptions',
-            ['num_entries',
-             'flush_interval'])):
+            u'ReportOptions',
+            [u'num_entries',
+             u'flush_interval'])):
     """Holds values used to control report aggregation behavior.
 
     Attributes:
@@ -109,8 +109,8 @@ class ReportOptions(
                 num_entries=DEFAULT_NUM_ENTRIES,
                 flush_interval=DEFAULT_FLUSH_INTERVAL):
         """Invokes the base constructor with default values."""
-        assert isinstance(num_entries, int), 'should be an int'
-        assert isinstance(flush_interval, timedelta), 'should be a timedelta'
+        assert isinstance(num_entries, int), u'should be an int'
+        assert isinstance(flush_interval, timedelta), u'should be a timedelta'
 
         return super(cls, ReportOptions).__new__(
             cls,
@@ -153,19 +153,19 @@ def create(options, timer=None):
 
     if not (isinstance(options, CheckOptions) or
             isinstance(options, ReportOptions)):
-        logger.error('make_cache(): bad options %s', options)
-        raise ValueError('Invalid options')
+        logger.error(u'make_cache(): bad options %s', options)
+        raise ValueError(u'Invalid options')
 
     if (options.num_entries <= 0):
-        logger.info("did not create cache, options was %s", options)
+        logger.info(u"did not create cache, options was %s", options)
         return None
 
-    logger.info("creating a cache from %s", options)
+    logger.info(u"creating a cache from %s", options)
     if (options.flush_interval > ZERO_INTERVAL):
         # options always has a flush_interval, but may have an expiration
         # field. If the expiration is present, use that instead of the
         # flush_interval for the ttl
-        ttl = getattr(options, 'expiration', options.flush_interval)
+        ttl = getattr(options, u'expiration', options.flush_interval)
         return LockedObject(
             DequeOutTTLCache(
                 options.num_entries,
@@ -198,7 +198,7 @@ class DequeOutTTLCache(cachetools.TTLCache):
         if out_deque is None:
             out_deque = collections.deque()
         elif not isinstance(out_deque, collections.deque):
-            raise ValueError('out_deque should be a collections.deque')
+            raise ValueError(u'out_deque should be a collections.deque')
         self._out_deque = out_deque
         self._tracking = {}
 
@@ -239,7 +239,7 @@ class DequeOutLRUCache(cachetools.LRUCache):
         if out_deque is None:
             out_deque = collections.deque()
         elif not isinstance(out_deque, collections.deque):
-            raise ValueError('out_deque should be collections.deque')
+            raise ValueError(u'out_deque should be collections.deque')
         self._out_deque = out_deque
         self._tracking = {}
 

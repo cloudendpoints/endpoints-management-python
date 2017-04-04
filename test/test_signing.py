@@ -31,7 +31,7 @@ class TestAddDictToHash(unittest2.TestCase):
         expect(md5.digest()).to(equal(self.NOTHING_ADDED))
 
     def test_should_add_matching_hashes_for_matching_dicts(self):
-        a_dict = {'test': 'dict'}
+        a_dict = {u'test': u'dict'}
         same_dict = dict(a_dict)
         want_hash = hashlib.md5()
         signing.add_dict_to_hash(want_hash, a_dict)

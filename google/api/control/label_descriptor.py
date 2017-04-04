@@ -78,15 +78,15 @@ def set_credential_id(name, info, labels):
     # 2) If auth issuer and audience both are available, set it as:
     #    jwtAuth:issuer=base64(issuer)&audience=base64(audience)
     if info.api_key:
-        labels[name] = 'apiKey:' + info.api_key
+        labels[name] = b'apiKey:' + info.api_key.encode('utf-8')
     elif info.auth_issuer:
-        value = 'jwtAuth:issuer=' + base64.urlsafe_b64encode(info.auth_issuer)
+        value = b'jwtAuth:issuer=' + base64.urlsafe_b64encode(info.auth_issuer.encode('utf-8'))
         if info.auth_audience:
-            value += '&audience=' + base64.urlsafe_b64encode(info.auth_audience)
+            value += b'&audience=' + base64.urlsafe_b64encode(info.auth_audience.encode('utf-8'))
         labels[name] = value
 
 
-_ERROR_TYPES = tuple('%dxx' % (x,) for x in range(10))
+_ERROR_TYPES = tuple(u'%dxx' % (x,) for x in range(10))
 
 
 def set_error_type(name, info, labels):
@@ -106,7 +106,7 @@ def set_referer(name, info, labels):
 
 
 def set_response_code(name, info, labels):
-    labels[name] = '%d' % (info.response_code,)
+    labels[name] = u'%d' % (info.response_code,)
 
 
 def set_response_code_class(name, info, labels):
@@ -118,7 +118,7 @@ def set_response_code_class(name, info, labels):
 
 def set_status_code(name, info, labels):
     if info.response_code > 0:
-        labels[name] = '%d' % (_canonical_code(info.response_code),)
+        labels[name] = u'%d' % (_canonical_code(info.response_code),)
 
 
 def set_location(name, info, labels):
@@ -152,71 +152,71 @@ class KnownLabels(Enum):
     """Enumerates the known labels."""
 
     CREDENTIAL_ID = (
-        '/credential_id', ValueType.STRING, Kind.USER, set_credential_id)
-    END_USER = ('/end_user', ValueType.STRING, Kind.USER, None)
-    END_USER_COUNTRY = ('/end_user_country', ValueType.STRING, Kind.USER, None)
-    ERROR_TYPE = ('/error_type', ValueType.STRING, Kind.USER,
+        u'/credential_id', ValueType.STRING, Kind.USER, set_credential_id)
+    END_USER = (u'/end_user', ValueType.STRING, Kind.USER, None)
+    END_USER_COUNTRY = (u'/end_user_country', ValueType.STRING, Kind.USER, None)
+    ERROR_TYPE = (u'/error_type', ValueType.STRING, Kind.USER,
                   set_error_type)
-    PROTOCOL = ('/protocol', ValueType.STRING, Kind.USER,
+    PROTOCOL = (u'/protocol', ValueType.STRING, Kind.USER,
                 set_protocol)
-    REFERER = ('/referer', ValueType.STRING, Kind.USER,
+    REFERER = (u'/referer', ValueType.STRING, Kind.USER,
                set_referer)
-    RESPONSE_CODE = ('/response_code', ValueType.STRING, Kind.USER,
+    RESPONSE_CODE = (u'/response_code', ValueType.STRING, Kind.USER,
                      set_response_code)
-    RESPONSE_CODE_CLASS = ('/response_code_class', ValueType.STRING, Kind.USER,
+    RESPONSE_CODE_CLASS = (u'/response_code_class', ValueType.STRING, Kind.USER,
                            set_response_code_class)
-    STATUS_CODE = ('/status_code', ValueType.STRING, Kind.USER,
+    STATUS_CODE = (u'/status_code', ValueType.STRING, Kind.USER,
                    set_status_code)
     GAE_CLONE_ID = (
-        'appengine.googleapis.com/clone_id', ValueType.STRING, Kind.USER, None)
+        u'appengine.googleapis.com/clone_id', ValueType.STRING, Kind.USER, None)
     GAE_MODULE_ID = (
-        'appengine.googleapis.com/module_id', ValueType.STRING, Kind.USER, None)
+        u'appengine.googleapis.com/module_id', ValueType.STRING, Kind.USER, None)
     GAE_REPLICA_INDEX = (
-        'appengine.googleapis.com/replica_index', ValueType.STRING, Kind.USER,
+        u'appengine.googleapis.com/replica_index', ValueType.STRING, Kind.USER,
         None)
     GAE_VERSION_ID = (
-        'appengine.googleapis.com/version_id', ValueType.STRING, Kind.USER, None)
+        u'appengine.googleapis.com/version_id', ValueType.STRING, Kind.USER, None)
     GCP_LOCATION = (
-        'cloud.googleapis.com/location', ValueType.STRING, Kind.SYSTEM,
+        u'cloud.googleapis.com/location', ValueType.STRING, Kind.SYSTEM,
         set_location)
     GCP_PROJECT = (
-        'cloud.googleapis.com/project', ValueType.STRING, Kind.SYSTEM, None)
+        u'cloud.googleapis.com/project', ValueType.STRING, Kind.SYSTEM, None)
     GCP_REGION = (
-        'cloud.googleapis.com/region', ValueType.STRING, Kind.SYSTEM, None)
+        u'cloud.googleapis.com/region', ValueType.STRING, Kind.SYSTEM, None)
     GCP_RESOURCE_ID = (
-        'cloud.googleapis.com/resource_id', ValueType.STRING, Kind.USER, None)
+        u'cloud.googleapis.com/resource_id', ValueType.STRING, Kind.USER, None)
     GCP_RESOURCE_TYPE = (
-        'cloud.googleapis.com/resource_type', ValueType.STRING, Kind.USER, None)
+        u'cloud.googleapis.com/resource_type', ValueType.STRING, Kind.USER, None)
     GCP_SERVICE = (
-        'cloud.googleapis.com/service', ValueType.STRING, Kind.SYSTEM, None)
+        u'cloud.googleapis.com/service', ValueType.STRING, Kind.SYSTEM, None)
     GCP_ZONE = (
-        'cloud.googleapis.com/zone', ValueType.STRING, Kind.SYSTEM, None)
+        u'cloud.googleapis.com/zone', ValueType.STRING, Kind.SYSTEM, None)
     GCP_UID = (
-        'cloud.googleapis.com/uid', ValueType.STRING, Kind.SYSTEM, None)
+        u'cloud.googleapis.com/uid', ValueType.STRING, Kind.SYSTEM, None)
     GCP_API_METHOD = (
-        'serviceruntime.googleapis.com/api_method', ValueType.STRING, Kind.USER,
+        u'serviceruntime.googleapis.com/api_method', ValueType.STRING, Kind.USER,
         set_api_method)
     GCP_API_VERSION = (
-        'serviceruntime.googleapis.com/api_version', ValueType.STRING, Kind.USER,
+        u'serviceruntime.googleapis.com/api_version', ValueType.STRING, Kind.USER,
         set_api_version)
     SCC_ANDROID_CERT_FINGERPRINT = (
         'servicecontrol.googleapis.com/android_cert_fingerprint', ValueType.STRING, Kind.SYSTEM, None)
     SCC_ANDROID_PACKAGE_NAME = (
         'servicecontrol.googleapis.com/android_package_name', ValueType.STRING, Kind.SYSTEM, None)
     SCC_CALLER_IP = (
-        'servicecontrol.googleapis.com/caller_ip', ValueType.STRING, Kind.SYSTEM, None)
+        u'servicecontrol.googleapis.com/caller_ip', ValueType.STRING, Kind.SYSTEM, None)
     SCC_IOS_BUNDLE_ID = (
-        'servicecontrol.googleapis.com/ios_bundle_id', ValueType.STRING, Kind.SYSTEM, None)
+        u'servicecontrol.googleapis.com/ios_bundle_id', ValueType.STRING, Kind.SYSTEM, None)
     SCC_PLATFORM = (
-        'servicecontrol.googleapis.com/platform', ValueType.STRING, Kind.SYSTEM,
+        u'servicecontrol.googleapis.com/platform', ValueType.STRING, Kind.SYSTEM,
         set_platform)
     SCC_REFERER = (
-        'servicecontrol.googleapis.com/referer', ValueType.STRING, Kind.SYSTEM, None)
+        u'servicecontrol.googleapis.com/referer', ValueType.STRING, Kind.SYSTEM, None)
     SCC_SERVICE_AGENT = (
-        'servicecontrol.googleapis.com/service_agent', ValueType.STRING, Kind.SYSTEM,
+        u'servicecontrol.googleapis.com/service_agent', ValueType.STRING, Kind.SYSTEM,
         set_service_agent)
     SCC_USER_AGENT = (
-        'servicecontrol.googleapis.com/user_agent', ValueType.STRING, Kind.SYSTEM,
+        u'servicecontrol.googleapis.com/user_agent', ValueType.STRING, Kind.SYSTEM,
         set_user_agent)
 
     def __init__(self, label_name, value_type, kind, update_label_func):

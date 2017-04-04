@@ -57,9 +57,9 @@ def compare(a, b):
     a_is_text = isinstance(a, basestring)
     b_is_text = isinstance(b, basestring)
     if type(a) != type(b) and not (a_is_text and b_is_text):
-        logger.error('Cannot compare %s to %s, types differ %s!=%s',
+        logger.error(u'Cannot compare %s to %s, types differ %s!=%s',
                      a, b, type(a), type(b))
-        raise ValueError('cannot compare inputs of differing types')
+        raise ValueError(u'cannot compare inputs of differing types')
 
     if a_is_text:
         a = from_rfc3339(a, with_nanos=True)
@@ -96,8 +96,8 @@ def to_rfc3339(timestamp):
     if isinstance(timestamp, datetime.datetime):
         timestamp = timestamp - _EPOCH_START
     if not isinstance(timestamp, datetime.timedelta):
-        logger.error('Could not convert %s to a rfc3339 time,', timestamp)
-        raise ValueError('Invalid timestamp type')
+        logger.error(u'Could not convert %s to a rfc3339 time,', timestamp)
+        raise ValueError(u'Invalid timestamp type')
     return strict_rfc3339.timestamp_to_rfc3339_utcoffset(
         timestamp.total_seconds())
 

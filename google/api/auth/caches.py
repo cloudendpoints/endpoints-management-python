@@ -27,7 +27,7 @@ class LruBackend(api.CacheBackend):
         Args:
           options: a dictionary that contains configuration options.
         """
-        capacity = options["capacity"] if "capacity" in options else 200
+        capacity = options[u"capacity"] if u"capacity" in options else 200
         self._cache = pylru.lrucache(capacity)
 
     def get(self, key):

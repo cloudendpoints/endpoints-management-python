@@ -25,9 +25,9 @@ from google.api.control import timestamp
 class TestToRfc3339(unittest2.TestCase):
     A_LONG_TIME_AGO = datetime.datetime(1971, 12, 31, 21, 0, 20, 21000)
     TESTS = [
-        (A_LONG_TIME_AGO, '1971-12-31T21:00:20.021Z'),
+        (A_LONG_TIME_AGO, u'1971-12-31T21:00:20.021Z'),
         (A_LONG_TIME_AGO - datetime.datetime(1970, 1, 1),
-         '1971-12-31T21:00:20.021Z')
+         u'1971-12-31T21:00:20.021Z')
     ]
 
     def test_should_converts_correctly(self):
@@ -35,7 +35,7 @@ class TestToRfc3339(unittest2.TestCase):
             expect(timestamp.to_rfc3339(t[0])).to(equal(t[1]))
 
     def test_should_fail_on_invalid_input(self):
-        testf = lambda: timestamp.to_rfc3339('this will not work')
+        testf = lambda: timestamp.to_rfc3339(u'this will not work')
         expect(testf).to(raise_error(ValueError))
 
 
@@ -43,28 +43,28 @@ class TestFromRfc3339(unittest2.TestCase):
     TOLERANCE = 10000  # 1e-5 * 1e9
     TESTS = [
         # Simple
-        ('1971-12-31T21:00:20.021Z',
+        (u'1971-12-31T21:00:20.021Z',
          datetime.datetime(1971, 12, 31, 21, 0, 20, 21000)),
         # different timezone
-        ('1996-12-19T16:39:57-08:00',
+        (u'1996-12-19T16:39:57-08:00',
          datetime.datetime(1996, 12, 20, 0, 39, 57, 0)),
         # microseconds
-        ('1996-12-19T16:39:57.123456-08:00',
+        (u'1996-12-19T16:39:57.123456-08:00',
          datetime.datetime(1996, 12, 20, 0, 39, 57, 123456)),
         # Beyond 2038
-        ('2100-01-01T00:00:00Z',
+        (u'2100-01-01T00:00:00Z',
          datetime.datetime(2100, 01, 01, 0, 0, 0, 0))
     ]
 
     NANO_TESTS = [
         # Simple
-        ('1971-12-31T21:00:20.021Z',
+        (u'1971-12-31T21:00:20.021Z',
          (datetime.datetime(1971, 12, 31, 21, 0, 20, 21000), 21000000)),
         # different timezone
-        ('1996-12-19T16:39:57-08:00',
+        (u'1996-12-19T16:39:57-08:00',
          (datetime.datetime(1996, 12, 20, 0, 39, 57, 0), 0)),
         # microseconds
-        ('1996-12-19T16:39:57.123456789-08:00',
+        (u'1996-12-19T16:39:57.123456789-08:00',
          (datetime.datetime(1996, 12, 20, 0, 39, 57, 123457), 123456789)),
     ]
 
@@ -84,11 +84,11 @@ class TestFromRfc3339(unittest2.TestCase):
 class TestCompare(unittest2.TestCase):
     TESTS = [
         # Strings
-        ('1971-10-31T21:00:20.021Z', '1971-11-30T21:00:20.021Z', -1),
-        ('1971-11-30T21:00:20.021Z', '1971-10-30T21:00:20.021Z', 1),
-        ('1971-11-30T21:00:20Z', '1971-11-30T21:00:20Z', 0),
-        ('1971-11-30T21:00:20.021Z', '1971-11-30T21:00:20.041Z', -1),
-        ('1971-11-30T21:00:20.021Z', '1971-11-30T21:00:20.001Z', 1),
+        (u'1971-10-31T21:00:20.021Z', u'1971-11-30T21:00:20.021Z', -1),
+        (u'1971-11-30T21:00:20.021Z', u'1971-10-30T21:00:20.021Z', 1),
+        (u'1971-11-30T21:00:20Z', u'1971-11-30T21:00:20Z', 0),
+        (u'1971-11-30T21:00:20.021Z', u'1971-11-30T21:00:20.041Z', -1),
+        (u'1971-11-30T21:00:20.021Z', u'1971-11-30T21:00:20.001Z', 1),
         # Datetimes
         (datetime.datetime(1996, 10, 20, 0, 39, 57, 0),
          datetime.datetime(1996, 11, 20, 0, 39, 57, 0),

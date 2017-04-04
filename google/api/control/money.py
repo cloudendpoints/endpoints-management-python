@@ -32,9 +32,9 @@ _INT64_MAX = sys.maxint
 _INT64_MIN = -sys.maxint - 1
 _BILLION = 1000000000
 MAX_NANOS = _BILLION - 1
-_MSG_3_LETTERS_LONG = 'The currency code is not 3 letters long'
-_MSG_UNITS_NANOS_MISMATCH = 'The signs of the units and nanos do not match'
-_MSG_NANOS_OOB = 'The nanos field must be between -999999999 and 999999999'
+_MSG_3_LETTERS_LONG = u'The currency code is not 3 letters long'
+_MSG_UNITS_NANOS_MISMATCH = u'The signs of the units and nanos do not match'
+_MSG_NANOS_OOB = u'The nanos field must be between -999999999 and 999999999'
 
 
 def check_valid(money):
@@ -48,7 +48,7 @@ def check_valid(money):
       ValueError: if the money instance is invalid
     """
     if not isinstance(money, messages.Money):
-        raise ValueError('Inputs should be of type %s' % (messages.Money,))
+        raise ValueError(u'Inputs should be of type %s' % (messages.Money,))
     currency = money.currencyCode
     if not currency or len(currency) != 3:
         raise ValueError(_MSG_3_LETTERS_LONG)
@@ -79,9 +79,9 @@ def add(a, b, allow_overflow=False):
     """
     for m in (a, b):
         if not isinstance(m, messages.Money):
-            raise ValueError('Inputs should be of type %s' % (messages.Money,))
+            raise ValueError(u'Inputs should be of type %s' % (messages.Money,))
     if a.currencyCode != b.currencyCode:
-        raise ValueError('Money values need the same currency to be summed')
+        raise ValueError(u'Money values need the same currency to be summed')
     nano_carry, nanos_sum = _sum_nanos(a, b)
     units_sum_no_carry = a.units + b.units
     units_sum = units_sum_no_carry + nano_carry
@@ -99,7 +99,7 @@ def add(a, b, allow_overflow=False):
     sign_b = _sign_of(b)
     if sign_a > 0 and sign_b > 0 and units_sum >= _INT64_MAX:
         if not allow_overflow:
-            raise OverflowError('Money addition positive overflow')
+            raise OverflowError(u'Money addition positive overflow')
         else:
             return messages.Money(units=_INT64_MAX,
                                   nanos=MAX_NANOS,
@@ -107,7 +107,7 @@ def add(a, b, allow_overflow=False):
     elif (sign_a < 0 and sign_b < 0 and
           (units_sum_no_carry <= -_INT64_MAX or units_sum <= -_INT64_MAX)):
         if not allow_overflow:
-            raise OverflowError('Money addition negative overflow')
+            raise OverflowError(u'Money addition negative overflow')
         else:
             return messages.Money(units=_INT64_MIN,
                                   nanos=-MAX_NANOS,

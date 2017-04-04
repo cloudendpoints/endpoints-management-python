@@ -49,14 +49,14 @@ class KnownMetricsBase(object):
     SUBJECT = None
     WANTED_ADDED_METRICS = []
     WANTED_SIZE = 7426 # arbitrary
-    TEST_API_KEY = 'test_key'
+    TEST_API_KEY = u'test_key'
     GIVEN_INFO = _given_info(WANTED_SIZE, TEST_API_KEY, api_key_valid=True)
 
     def _base_operation(self):
         return messages.Operation(
-            consumerId='project:project_id',
-            operationId='an_op_id',
-            operationName='an_op_name')
+            consumerId=u'project:project_id',
+            operationId=u'an_op_id',
+            operationName=u'an_op_name')
 
     def _wanted_operation(self):
         op = self._base_operation()

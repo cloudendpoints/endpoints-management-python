@@ -38,8 +38,8 @@ from . import messages
 logger = logging.getLogger(__name__)
 
 
-_BAD_NUM_FINITE_BUCKETS = 'number of finite buckets should be > 0'
-_BAD_FLOAT_ARG = '%s should be > %f'
+_BAD_NUM_FINITE_BUCKETS = u'number of finite buckets should be > 0'
+_BAD_FLOAT_ARG = u'%s should be > %f'
 
 
 def create_exponential(num_finite_buckets, growth_factor, scale):
@@ -59,9 +59,9 @@ def create_exponential(num_finite_buckets, growth_factor, scale):
     if num_finite_buckets <= 0:
         raise ValueError(_BAD_NUM_FINITE_BUCKETS)
     if growth_factor <= 1.0:
-        raise ValueError(_BAD_FLOAT_ARG % ('growth factor', 1.0))
+        raise ValueError(_BAD_FLOAT_ARG % (u'growth factor', 1.0))
     if scale <= 0.0:
-        raise ValueError(_BAD_FLOAT_ARG % ('scale', 0.0))
+        raise ValueError(_BAD_FLOAT_ARG % (u'scale', 0.0))
     return messages.Distribution(
         bucketCounts=[0] * (num_finite_buckets + 2),
         exponentialBuckets=messages.ExponentialBuckets(
@@ -87,7 +87,7 @@ def create_linear(num_finite_buckets, width, offset):
     if num_finite_buckets <= 0:
         raise ValueError(_BAD_NUM_FINITE_BUCKETS)
     if width <= 0.0:
-        raise ValueError(_BAD_FLOAT_ARG % ('width', 0.0))
+        raise ValueError(_BAD_FLOAT_ARG % (u'width', 0.0))
     return messages.Distribution(
         bucketCounts=[0] * (num_finite_buckets + 2),
         linearBuckets=messages.LinearBuckets(
@@ -112,7 +112,7 @@ def create_explicit(bounds):
     """
     safe_bounds = sorted(float(x) for x in bounds)
     if len(safe_bounds) != len(set(safe_bounds)):
-        raise ValueError('Detected two elements of bounds that are the same')
+        raise ValueError(u'Detected two elements of bounds that are the same')
     return messages.Distribution(
         bucketCounts=[0] * (len(safe_bounds) + 1),
         explicitBuckets=messages.ExplicitBuckets(bounds=safe_bounds))
@@ -131,18 +131,18 @@ def add_sample(a_float, dist):
       ValueError: if there are not enough bucket count fields in `dist`
     """
     dist_type, _ = _detect_bucket_option(dist)
-    if dist_type == 'exponentialBuckets':
+    if dist_type == u'exponentialBuckets':
         _update_general_statistics(a_float, dist)
         _update_exponential_bucket_count(a_float, dist)
-    elif dist_type == 'linearBuckets':
+    elif dist_type == u'linearBuckets':
         _update_general_statistics(a_float, dist)
         _update_linear_bucket_count(a_float, dist)
-    elif dist_type == 'explicitBuckets':
+    elif dist_type == u'explicitBuckets':
         _update_general_statistics(a_float, dist)
         _update_explicit_bucket_count(a_float, dist)
     else:
-        logger.error('Could not determine bucket option type for %s', dist)
-        raise ValueError('Unknown bucket option type')
+        logger.error(u'Could not determine bucket option type for %s', dist)
+        raise ValueError(u'Unknown bucket option type')
 
 
 def merge(prior, latest):
@@ -163,15 +163,15 @@ def merge(prior, latest):
 
     """
     if not _buckets_nearly_equal(prior, latest):
-        logger.error('Bucket options do not match. From %s To: %s',
+        logger.error(u'Bucket options do not match. From %s To: %s',
                      prior,
                      latest)
-        raise ValueError('Bucket options do not match')
+        raise ValueError(u'Bucket options do not match')
     if len(prior.bucketCounts) != len(latest.bucketCounts):
-        logger.error('Bucket count sizes do not match. From %s To: %s',
+        logger.error(u'Bucket count sizes do not match. From %s To: %s',
                      prior,
                      latest)
-        raise ValueError('Bucket count sizes do not match')
+        raise ValueError(u'Bucket count sizes do not match')
     if prior.count <= 0:
         return
 
@@ -207,7 +207,7 @@ def _is_close_enough(x, y):
 # bucket_option field in google/api/servicecontrol/v1/distribution.proto, and
 # should be kept in sync with that
 _DISTRIBUTION_ONEOF_FIELDS = (
-    'linearBuckets', 'exponentialBuckets', 'explicitBuckets')
+    u'linearBuckets', u'exponentialBuckets', u'explicitBuckets')
 
 
 def _detect_bucket_option(distribution):
@@ -255,11 +255,11 @@ def _buckets_nearly_equal(a_dist, b_dist):
     b_type, b_buckets = _detect_bucket_option(b_dist)
     if a_type != b_type:
         return False
-    elif a_type == 'linearBuckets':
+    elif a_type == u'linearBuckets':
         return _linear_buckets_nearly_equal(a_buckets, b_buckets)
-    elif a_type == 'exponentialBuckets':
+    elif a_type == u'exponentialBuckets':
         return _exponential_buckets_nearly_equal(a_buckets, b_buckets)
-    elif a_type == 'explicitBuckets':
+    elif a_type == u'explicitBuckets':
         return _explicit_buckets_nearly_equal(a_buckets, b_buckets)
     else:
         return False
@@ -292,8 +292,8 @@ def _update_general_statistics(a_float, dist):
         dist.sumOfSquaredDeviation += delta_sum_squares
 
 
-_BAD_UNSET_BUCKETS = 'cannot update a distribution with unset %s'
-_BAD_LOW_BUCKET_COUNT = 'cannot update a distribution with a low bucket count'
+_BAD_UNSET_BUCKETS = u'cannot update a distribution with unset %s'
+_BAD_LOW_BUCKET_COUNT = u'cannot update a distribution with a low bucket count'
 
 
 def _update_exponential_bucket_count(a_float, dist):
@@ -310,7 +310,7 @@ def _update_exponential_bucket_count(a_float, dist):
     """
     buckets = dist.exponentialBuckets
     if buckets is None:
-        raise ValueError(_BAD_UNSET_BUCKETS % ('exponential buckets'))
+        raise ValueError(_BAD_UNSET_BUCKETS % (u'exponential buckets'))
     bucket_counts = dist.bucketCounts
     num_finite_buckets = buckets.numFiniteBuckets
     if len(bucket_counts) < num_finite_buckets + 2:
@@ -323,7 +323,7 @@ def _update_exponential_bucket_count(a_float, dist):
         index = 1 + int((math.log(a_float / scale) / math.log(factor)))
         index = min(index, num_finite_buckets + 1)
     bucket_counts[index] += 1
-    logger.debug('scale:%f, factor:%f, sample:%f, index:%d',
+    logger.debug(u'scale:%f, factor:%f, sample:%f, index:%d',
                  scale, factor, a_float, index)
 
 
@@ -341,7 +341,7 @@ def _update_linear_bucket_count(a_float, dist):
     """
     buckets = dist.linearBuckets
     if buckets is None:
-        raise ValueError(_BAD_UNSET_BUCKETS % ('linear buckets'))
+        raise ValueError(_BAD_UNSET_BUCKETS % (u'linear buckets'))
     bucket_counts = dist.bucketCounts
     num_finite_buckets = buckets.numFiniteBuckets
     if len(bucket_counts) < num_finite_buckets + 2:
@@ -356,7 +356,7 @@ def _update_linear_bucket_count(a_float, dist):
     else:
         index = 1 + int(((a_float - lower) / width))
     bucket_counts[index] += 1
-    logger.debug('upper:%f, lower:%f, width:%f, sample:%f, index:%d',
+    logger.debug(u'upper:%f, lower:%f, width:%f, sample:%f, index:%d',
                  upper, lower, width, a_float, index)
 
 
@@ -374,7 +374,7 @@ def _update_explicit_bucket_count(a_float, dist):
     """
     buckets = dist.explicitBuckets
     if buckets is None:
-        raise ValueError(_BAD_UNSET_BUCKETS % ('explicit buckets'))
+        raise ValueError(_BAD_UNSET_BUCKETS % (u'explicit buckets'))
     bucket_counts = dist.bucketCounts
     bounds = buckets.bounds
     if len(bucket_counts) < len(bounds) + 1:

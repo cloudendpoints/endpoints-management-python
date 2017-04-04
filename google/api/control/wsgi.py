@@ -41,19 +41,19 @@ from . import check_request, messages, report_request, service
 logger = logging.getLogger(__name__)
 
 
-_CONTENT_LENGTH = 'content-length'
-_DEFAULT_LOCATION = 'global'
+_CONTENT_LENGTH = u'content-length'
+_DEFAULT_LOCATION = u'global'
 
-_METADATA_SERVER_URL = 'http://metadata.google.internal'
+_METADATA_SERVER_URL = u'http://metadata.google.internal'
 
 
 def _running_on_gce():
-    headers = {'Metadata-Flavor': 'Google'}
+    headers = {u'Metadata-Flavor': u'Google'}
 
     try:
         request = urllib2.Request(_METADATA_SERVER_URL, headers=headers)
         response = urllib2.urlopen(request)
-        if response.info().getheader('Metadata-Flavor') == 'Google':
+        if response.info().getheader(u'Metadata-Flavor') == u'Google':
             return True
     except (urllib2.URLError, socket.error):
         pass
@@ -62,19 +62,19 @@ def _running_on_gce():
 
 
 def _get_platform():
-    server_software = os.environ.get('SERVER_SOFTWARE', '')
+    server_software = os.environ.get(u'SERVER_SOFTWARE', u'')
 
-    if server_software.startswith('Development'):
+    if server_software.startswith(u'Development'):
         return report_request.ReportedPlatforms.DEVELOPMENT
-    elif os.environ.get('KUBERNETES_SERVICE_HOST'):
+    elif os.environ.get(u'KUBERNETES_SERVICE_HOST'):
         return report_request.ReportedPlatforms.GKE
     elif _running_on_gce():
         # We're either in GAE Flex or GCE
-        if os.environ.get('GAE_MODULE_NAME'):
+        if os.environ.get(u'GAE_MODULE_NAME'):
             return report_request.ReportedPlatforms.GAE_FLEX
         else:
             return report_request.ReportedPlatforms.GCE
-    elif server_software.startswith('Google App Engine'):
+    elif server_software.startswith(u'Google App Engine'):
         return report_request.ReportedPlatforms.GAE_STANDARD
 
     return report_request.ReportedPlatforms.UNKNOWN
@@ -120,7 +120,7 @@ def add_all(application, project_id, control_client,
     """
     a_service = loader.load()
     if not a_service:
-        raise ValueError("Failed to load service config")
+        raise ValueError(u"Failed to load service config")
     authenticator = _create_authenticator(a_service)
 
     wrapped_app = Middleware(application, project_id, control_client)
@@ -146,11 +146,11 @@ class EnvironmentMiddleware(object):
     """
     # pylint: disable=too-few-public-methods
 
-    SERVICE = 'google.api.config.service'
-    SERVICE_NAME = 'google.api.config.service_name'
-    METHOD_REGISTRY = 'google.api.config.method_registry'
-    METHOD_INFO = 'google.api.config.method_info'
-    REPORTING_RULES = 'google.api.config.reporting_rules'
+    SERVICE = u'google.api.config.service'
+    SERVICE_NAME = u'google.api.config.service_name'
+    METHOD_REGISTRY = u'google.api.config.method_registry'
+    METHOD_INFO = u'google.api.config.method_info'
+    REPORTING_RULES = u'google.api.config.reporting_rules'
 
     def __init__(self, application, a_service):
         """Initializes a new Middleware instance.
@@ -161,7 +161,7 @@ class EnvironmentMiddleware(object):
             a service instance
         """
         if not isinstance(a_service, messages.Service):
-            raise ValueError("service is None or not an instance of Service")
+            raise ValueError(u"service is None or not an instance of Service")
 
         self._application = application
         self._service = a_service
@@ -186,7 +186,7 @@ class EnvironmentMiddleware(object):
         environ[self.METHOD_REGISTRY] = self._method_registry
         environ[self.REPORTING_RULES] = self._reporting_rules
         parsed_uri = urlparse.urlparse(wsgiref.util.request_uri(environ))
-        http_method = environ.get('REQUEST_METHOD')
+        http_method = environ.get(u'REQUEST_METHOD')
         method_info = self._method_registry.lookup(http_method, parsed_uri.path)
         if method_info:
             environ[self.METHOD_INFO] = method_info
@@ -219,10 +219,9 @@ class Middleware(object):
     """
     # pylint: disable=too-few-public-methods, fixme
     _NO_API_KEY_MSG = (
-        'Method does not allow callers without established identity.'
-        ' Please use an API key or other form of API consumer identity'
-        ' to call this API.'
-    )
+        u'Method does not allow callers without established identity.'
+        u' Please use an API key or other form of API consumer identity'
+        u' to call this API.')
 
     def __init__(self,
                  application,
@@ -250,35 +249,35 @@ class Middleware(object):
         method_info = environ.get(EnvironmentMiddleware.METHOD_INFO)
         if not method_info:
             # just allow the wrapped application to handle the request
-            logger.debug('method_info not present in the wsgi environment'
-                         ', no service control')
+            logger.debug(u'method_info not present in the wsgi environment'
+                         u', no service control')
             return self._application(environ, start_response)
 
         latency_timer = _LatencyTimer(self._timer)
         latency_timer.start()
 
         # Determine if the request can proceed
-        http_method = environ.get('REQUEST_METHOD')
+        http_method = environ.get(u'REQUEST_METHOD')
         parsed_uri = urlparse.urlparse(wsgiref.util.request_uri(environ))
         app_info = _AppInfo()
         # TODO: determine if any of the more complex ways of getting the request size
         # (e.g) buffering and counting the wsgi input stream is more appropriate here
         try:
-            app_info.request_size = int(environ.get('CONTENT_LENGTH',
+            app_info.request_size = int(environ.get(u'CONTENT_LENGTH',
                                                     report_request.SIZE_NOT_SET))
         except ValueError:
-            logger.warn('ignored bad content-length: %s', environ.get('CONTENT_LENGTH'))
+            logger.warn(u'ignored bad content-length: %s', environ.get(u'CONTENT_LENGTH'))
 
         app_info.http_method = http_method
         app_info.url = parsed_uri
 
         check_info = self._create_check_info(method_info, parsed_uri, environ)
         if not check_info.api_key and not method_info.allow_unregistered_calls:
-            logger.debug("skipping %s, no api key was provided", parsed_uri)
+            logger.debug(u"skipping %s, no api key was provided", parsed_uri)
             error_msg = self._handle_missing_api_key(app_info, start_response)
         else:
             check_req = check_info.as_check_request()
-            logger.debug('checking %s with %s', method_info, check_request)
+            logger.debug(u'checking %s with %s', method_info, check_request)
             check_resp = self._control_client.check(check_req)
             error_msg = self._handle_check_response(app_info, check_resp, start_response)
 
@@ -291,7 +290,7 @@ class Middleware(object):
                                                      app_info,
                                                      latency_timer,
                                                      rules)
-            logger.debug('scheduling report_request %s', report_req)
+            logger.debug(u'scheduling report_request %s', report_req)
             self._control_client.report(report_req)
             return error_msg
 
@@ -301,7 +300,7 @@ class Middleware(object):
         # run the application request in an inner handler that sets the status
         # and response code on app_info
         def inner_start_response(status, response_headers, exc_info=None):
-            app_info.response_code = int(status.partition(' ')[0])
+            app_info.response_code = int(status.partition(u' ')[0])
             for name, value in response_headers:
                 if name.lower() == _CONTENT_LENGTH:
                     app_info.response_size = int(value)
@@ -321,7 +320,7 @@ class Middleware(object):
                                                  app_info,
                                                  latency_timer,
                                                  rules)
-        logger.debug('scheduling report_request %s', report_req)
+        logger.debug(u'scheduling report_request %s', report_req)
         self._control_client.report(report_req)
         return result
 
@@ -375,12 +374,12 @@ class Middleware(object):
             android_package_name=environ.get('HTTP_X_ANDROID_PACKAGE', ''),
             api_key=api_key,
             api_key_valid=api_key_valid,
-            client_ip=environ.get('REMOTE_ADDR', ''),
+            client_ip=environ.get(u'REMOTE_ADDR', u''),
             consumer_project_id=self._project_id,  # TODO: switch this to producer_project_id
             ios_bundle_id=environ.get('HTTP_X_IOS_BUNDLE_IDENTIFIER', ''),
             operation_id=operation_id,
             operation_name=method_info.selector,
-            referer=environ.get('HTTP_REFERER', ''),
+            referer=environ.get(u'HTTP_REFERER', u''),
             service_name=service_name
         )
         return check_info
@@ -392,8 +391,8 @@ class Middleware(object):
             return None  # the check was OK
 
         # there was problem; the request cannot proceed
-        logger.warn('Check failed %d, %s', code, detail)
-        error_msg = '%d %s' % (code, detail)
+        logger.warn(u'Check failed %d, %s', code, detail)
+        error_msg = u'%d %s' % (code, detail)
         start_response(error_msg, [])
         app_info.response_code = code
         app_info.api_key_valid = api_key_valid
@@ -402,8 +401,8 @@ class Middleware(object):
     def _handle_missing_api_key(self, app_info, start_response):
         code = httplib.UNAUTHORIZED
         detail = self._NO_API_KEY_MSG
-        logger.warn('Check not performed %d, %s', code, detail)
-        error_msg = '%d %s' % (code, detail)
+        logger.warn(u'Check not performed %d, %s', code, detail)
+        error_msg = u'%d %s' % (code, detail)
         start_response(error_msg, [])
         app_info.response_code = code
         app_info.api_key_valid = False
@@ -479,7 +478,7 @@ def _find_api_key_param(info, parsed_uri):
     return None
 
 
-_DEFAULT_API_KEYS = ('key', 'api_key')
+_DEFAULT_API_KEYS = (u'key', u'api_key')
 
 
 def _find_default_api_key_param(parsed_uri):
@@ -503,7 +502,7 @@ def _find_api_key_header(info, environ):
         return None
 
     for h in headers:
-        value = environ.get('HTTP_' + h.upper())
+        value = environ.get(u'HTTP_' + h.upper())
         if value:
             return value  # headers have single values
 
@@ -518,12 +517,12 @@ def _create_authenticator(a_service):
         service instance
     """
     if not isinstance(a_service, messages.Service):
-        raise ValueError("service is None or not an instance of Service")
+        raise ValueError(u"service is None or not an instance of Service")
 
     authentication = a_service.authentication
     if not authentication:
-        logger.info("authentication is not configured in service, "
-                    "authentication checks will be disabled")
+        logger.info(u"authentication is not configured in service, "
+                    u"authentication checks will be disabled")
         return
 
     issuers_to_provider_ids = {}
@@ -554,7 +553,7 @@ class AuthenticationMiddleware(object):
     """
     # pylint: disable=too-few-public-methods
 
-    USER_INFO = "google.api.auth.user_info"
+    USER_INFO = u"google.api.auth.user_info"
 
     def __init__(self, application, authenticator):
         """Initializes an authentication middleware instance.
@@ -565,7 +564,7 @@ class AuthenticationMiddleware(object):
             authenticator that authenticates incoming requests
         """
         if not isinstance(authenticator, tokens.Authenticator):
-            raise ValueError("Invalid authenticator")
+            raise ValueError(u"Invalid authenticator")
 
         self._application = application
         self._authenticator = authenticator
@@ -574,13 +573,13 @@ class AuthenticationMiddleware(object):
         method_info = environ.get(EnvironmentMiddleware.METHOD_INFO)
         if not method_info or not method_info.auth_info:
             # No authentication configuration for this method
-            logger.debug("authentication is not configured")
+            logger.debug(u"authentication is not configured")
             return self._application(environ, start_response)
 
         auth_token = _extract_auth_token(environ)
         user_info = None
         if not auth_token:
-            logger.debug("No auth token is attached to the request")
+            logger.debug(u"No auth token is attached to the request")
         else:
             try:
                 service_name = environ.get(EnvironmentMiddleware.SERVICE_NAME)
@@ -588,8 +587,8 @@ class AuthenticationMiddleware(object):
                                                              method_info.auth_info,
                                                              service_name)
             except Exception:  # pylint: disable=broad-except
-                logger.debug("Cannot decode and verify the auth token. The backend "
-                             "will not be able to retrieve user info", exc_info=True)
+                logger.debug(u"Cannot decode and verify the auth token. The backend "
+                             u"will not be able to retrieve user info", exc_info=True)
 
         environ[self.USER_INFO] = user_info
 
@@ -608,21 +607,21 @@ class AuthenticationMiddleware(object):
         return response
 
 
-_ACCESS_TOKEN_PARAM_NAME = "access_token"
-_BEARER_TOKEN_PREFIX = "Bearer "
+_ACCESS_TOKEN_PARAM_NAME = u"access_token"
+_BEARER_TOKEN_PREFIX = u"Bearer "
 _BEARER_TOKEN_PREFIX_LEN = len(_BEARER_TOKEN_PREFIX)
 
 
 def _extract_auth_token(environ):
     # First try to extract auth token from HTTP authorization header.
-    auth_header = environ.get("HTTP_AUTHORIZATION")
+    auth_header = environ.get(u"HTTP_AUTHORIZATION")
     if auth_header:
         if auth_header.startswith(_BEARER_TOKEN_PREFIX):
             return auth_header[_BEARER_TOKEN_PREFIX_LEN:]
         return
 
     # Then try to read auth token from query.
-    parameters = urlparse.parse_qs(environ.get("QUERY_STRING", ""))
+    parameters = urlparse.parse_qs(environ.get(u"QUERY_STRING", u""))
     if _ACCESS_TOKEN_PARAM_NAME in parameters:
         auth_token, = parameters[_ACCESS_TOKEN_PARAM_NAME]
         return auth_token

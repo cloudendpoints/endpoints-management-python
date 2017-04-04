@@ -35,26 +35,25 @@ class IntegrationTest(unittest.TestCase):
 
     _CURRENT_TIME = int(time.time())
     _PORT = 8080
-    _ISSUER = "https://localhost:%d" % _PORT
-    _PROVIDER_ID = "localhost"
-    _INVALID_X509_PATH = "invalid-x509"
-    _JWKS_PATH = "jwks"
-    _SERVICE_NAME = "service@name.com"
-    _X509_PATH = "x509"
+    _ISSUER = u"https://localhost:%d" % _PORT
+    _PROVIDER_ID = u"localhost"
+    _INVALID_X509_PATH = u"invalid-x509"
+    _JWKS_PATH = u"jwks"
+    _SERVICE_NAME = u"service@name.com"
+    _X509_PATH = u"x509"
 
     _JWT_CLAIMS = {
-        "aud": ["https://aud1.local.host", "https://aud2.local.host"],
-        "exp": _CURRENT_TIME + 60,
-        "email": "user@local.host",
-        "iss": _ISSUER,
-        "sub": "subject-id"
-    }
+        u"aud": [u"https://aud1.local.host", u"https://aud2.local.host"],
+        u"exp": _CURRENT_TIME + 60,
+        u"email": u"user@local.host",
+        u"iss": _ISSUER,
+        u"sub": u"subject-id"}
 
-    _ec_jwk = jwk.ECKey(use="sig").load_key(ecc.P256)
-    _rsa_key = jwk.RSAKey(use="sig").load_key(PublicKey.RSA.generate(1024))
+    _ec_jwk = jwk.ECKey(use=u"sig").load_key(ecc.P256)
+    _rsa_key = jwk.RSAKey(use=u"sig").load_key(PublicKey.RSA.generate(1024))
 
-    _ec_jwk.kid = "ec-key-id"
-    _rsa_key.kid = "rsa-key-id"
+    _ec_jwk.kid = u"ec-key-id"
+    _rsa_key.kid = u"rsa-key-id"
 
     _mock_timer = mock.MagicMock()
 
@@ -63,15 +62,15 @@ class IntegrationTest(unittest.TestCase):
     _jwks._keys.append(_rsa_key)
 
     _AUTH_TOKEN = token_utils.generate_auth_token(_JWT_CLAIMS, _jwks._keys,
-                                                  alg="RS256", kid=_rsa_key.kid)
+                                                  alg=u"RS256", kid=_rsa_key.kid)
 
 
     @classmethod
     def setUpClass(cls):
         dirname = os.path.dirname(os.path.realpath(__file__))
-        cls._cert_file = os.path.join(dirname, "ssl.cert")
-        cls._key_file = os.path.join(dirname, "ssl.key")
-        os.environ["REQUESTS_CA_BUNDLE"] = cls._cert_file
+        cls._cert_file = os.path.join(dirname, u"ssl.cert")
+        cls._key_file = os.path.join(dirname, u"ssl.key")
+        os.environ[u"REQUESTS_CA_BUNDLE"] = cls._cert_file
 
         rest_server = cls._RestServer()
         rest_server.start()
@@ -85,8 +84,7 @@ class IntegrationTest(unittest.TestCase):
         self._auth_info = mock.MagicMock()
         self._auth_info.is_provider_allowed.return_value = True
         self._auth_info.get_allowed_audiences.return_value = [
-            "https://aud1.local.host"
-        ]
+            u"https://aud1.local.host"]
 
     def test_verify_auth_token_with_jwks(self):
         url = get_url(IntegrationTest._JWKS_PATH)
@@ -100,19 +98,19 @@ class IntegrationTest(unittest.TestCase):
                                       user_info)
 
     def test_authenticate_auth_token_with_bad_signature(self):
-        new_rsa_key = jwk.RSAKey(use="sig").load_key(PublicKey.RSA.generate(2048))
+        new_rsa_key = jwk.RSAKey(use=u"sig").load_key(PublicKey.RSA.generate(2048))
         kid = IntegrationTest._rsa_key.kid
         new_rsa_key.kid = kid
         new_jwks = jwk.KEYS()
         new_jwks._keys.append(new_rsa_key)
         auth_token = token_utils.generate_auth_token(IntegrationTest._JWT_CLAIMS,
-                                                     new_jwks._keys, alg="RS256",
+                                                     new_jwks._keys, alg=u"RS256",
                                                      kid=kid)
         url = get_url(IntegrationTest._JWKS_PATH)
         self._provider_ids[self._ISSUER] = self._PROVIDER_ID
         self._configs[IntegrationTest._ISSUER] = suppliers.IssuerUriConfig(False,
                                                                            url)
-        message = "Signature verification failed"
+        message = u"Signature verification failed"
         with self.assertRaisesRegexp(suppliers.UnauthenticatedException, message):
             self._authenticator.authenticate(auth_token, self._auth_info,
                                              IntegrationTest._SERVICE_NAME)
@@ -133,7 +131,7 @@ class IntegrationTest(unittest.TestCase):
         self._provider_ids[self._ISSUER] = self._PROVIDER_ID
         self._configs[IntegrationTest._ISSUER] = suppliers.IssuerUriConfig(False,
                                                                            url)
-        message = "Cannot load X.509 certificate"
+        message = u"Cannot load X.509 certificate"
         with self.assertRaisesRegexp(suppliers.UnauthenticatedException, message):
             self._authenticator.authenticate(IntegrationTest._AUTH_TOKEN,
                                              self._auth_info,
@@ -153,7 +151,7 @@ class IntegrationTest(unittest.TestCase):
         self._provider_ids[self._ISSUER] = self._PROVIDER_ID
         self._configs[IntegrationTest._ISSUER] = suppliers.IssuerUriConfig(False,
                                                                            None)
-        message = ("Cannot find the `jwks_uri` for issuer %s" %
+        message = (u"Cannot find the `jwks_uri` for issuer %s" %
                    IntegrationTest._ISSUER)
         with self.assertRaisesRegexp(suppliers.UnauthenticatedException, message):
             self._authenticator.authenticate(IntegrationTest._AUTH_TOKEN,
@@ -162,23 +160,23 @@ class IntegrationTest(unittest.TestCase):
 
     def test_authenticate_with_malformed_auth_code(self):
         with self.assertRaisesRegexp(suppliers.UnauthenticatedException,
-                                     "Cannot decode the auth token"):
-            self._authenticator.authenticate("invalid-auth-code", self._auth_info,
+                                     u"Cannot decode the auth token"):
+            self._authenticator.authenticate(u"invalid-auth-code", self._auth_info,
                                              IntegrationTest._SERVICE_NAME)
 
     def test_authenticate_with_disallowed_issuer(self):
         url = get_url(IntegrationTest._JWKS_PATH)
         self._configs[IntegrationTest._ISSUER] = suppliers.IssuerUriConfig(False,
                                                                            url)
-        message = "Unknown issuer: " + self._ISSUER
+        message = u"Unknown issuer: " + self._ISSUER
         with self.assertRaisesRegexp(suppliers.UnauthenticatedException, message):
             self._authenticator.authenticate(IntegrationTest._AUTH_TOKEN,
                                              self._auth_info,
                                              IntegrationTest._SERVICE_NAME)
 
     def test_authenticate_with_unknown_issuer(self):
-        message = ("Cannot find the `jwks_uri` for issuer %s: "
-                   "either the issuer is unknown") % IntegrationTest._ISSUER
+        message = (u"Cannot find the `jwks_uri` for issuer %s: "
+                   u"either the issuer is unknown") % IntegrationTest._ISSUER
         with self.assertRaisesRegexp(suppliers.UnauthenticatedException, message):
             self._authenticator.authenticate(IntegrationTest._AUTH_TOKEN,
                                              self._auth_info,
@@ -191,12 +189,12 @@ class IntegrationTest(unittest.TestCase):
                                                                            url)
         self._auth_info.get_allowed_audiences.return_value = []
         with self.assertRaisesRegexp(suppliers.UnauthenticatedException,
-                                     "Audiences not allowed"):
+                                     u"Audiences not allowed"):
             self._authenticator.authenticate(IntegrationTest._AUTH_TOKEN,
                                              self._auth_info,
                                              IntegrationTest._SERVICE_NAME)
 
-    @mock.patch("time.time", _mock_timer)
+    @mock.patch(u"time.time", _mock_timer)
     def test_authenticate_with_expired_auth_token(self):
         url = get_url(IntegrationTest._JWKS_PATH)
         self._provider_ids[self._ISSUER] = self._PROVIDER_ID
@@ -206,10 +204,10 @@ class IntegrationTest(unittest.TestCase):
 
         # Create an auth token that expires in 10 seconds.
         jwt_claims = copy.deepcopy(IntegrationTest._JWT_CLAIMS)
-        jwt_claims["exp"] = time.time() + 10
+        jwt_claims[u"exp"] = time.time() + 10
         auth_token = token_utils.generate_auth_token(jwt_claims,
                                                      IntegrationTest._jwks._keys,
-                                                     alg="RS256",
+                                                     alg=u"RS256",
                                                      kid=IntegrationTest._rsa_key.kid)
 
         # Verify that the auth token can be authenticated successfully.
@@ -219,33 +217,33 @@ class IntegrationTest(unittest.TestCase):
 
         # Advance the timer by 20 seconds and make sure the token is expired.
         IntegrationTest._mock_timer.return_value += 20
-        message = "The auth token has already expired"
+        message = u"The auth token has already expired"
         with self.assertRaisesRegexp(suppliers.UnauthenticatedException, message):
             self._authenticator.authenticate(auth_token, self._auth_info,
                                              IntegrationTest._SERVICE_NAME)
 
     def test_invalid_openid_discovery_url(self):
-        issuer = "https://invalid.issuer"
+        issuer = u"https://invalid.issuer"
         self._provider_ids[self._ISSUER] = self._PROVIDER_ID
         self._configs[issuer] = suppliers.IssuerUriConfig(True, None)
 
         jwt_claims = copy.deepcopy(IntegrationTest._JWT_CLAIMS)
-        jwt_claims["iss"] = issuer
+        jwt_claims[u"iss"] = issuer
         auth_token = token_utils.generate_auth_token(jwt_claims,
                                                      IntegrationTest._jwks._keys,
-                                                     alg="RS256",
+                                                     alg=u"RS256",
                                                      kid=IntegrationTest._rsa_key.kid)
-        message = "Cannot discover the jwks uri"
+        message = u"Cannot discover the jwks uri"
         with self.assertRaisesRegexp(suppliers.UnauthenticatedException, message):
             self._authenticator.authenticate(auth_token, self._auth_info,
                                              IntegrationTest._SERVICE_NAME)
 
     def test_invalid_jwks_uri(self):
-        url = "https://invalid.jwks.uri"
+        url = u"https://invalid.jwks.uri"
         self._provider_ids[self._ISSUER] = self._PROVIDER_ID
         self._configs[IntegrationTest._ISSUER] = suppliers.IssuerUriConfig(False,
                                                                            url)
-        message = "Cannot retrieve valid verification keys from the `jwks_uri`"
+        message = u"Cannot retrieve valid verification keys from the `jwks_uri`"
         with self.assertRaisesRegexp(suppliers.UnauthenticatedException, message):
             self._authenticator.authenticate(IntegrationTest._AUTH_TOKEN,
                                              self._auth_info,
@@ -261,24 +259,24 @@ class IntegrationTest(unittest.TestCase):
     class _RestServer(object):
 
         def __init__(self):
-            app = flask.Flask("integration-test-server")
+            app = flask.Flask(u"integration-test-server")
 
-            @app.route("/" + IntegrationTest._JWKS_PATH)
+            @app.route(u"/" + IntegrationTest._JWKS_PATH)
             def get_json_web_key_set():  # pylint: disable=unused-variable
                 return IntegrationTest._jwks.dump_jwks()
 
-            @app.route("/" + IntegrationTest._X509_PATH)
+            @app.route(u"/" + IntegrationTest._X509_PATH)
             def get_x509_certificates():  # pylint: disable=unused-variable
-                cert = IntegrationTest._rsa_key.key.publickey().exportKey("PEM")
-                return flask.jsonify({IntegrationTest._rsa_key.kid: cert})
+                cert = IntegrationTest._rsa_key.key.publickey().exportKey(u"PEM")
+                return flask.jsonify({IntegrationTest._rsa_key.kid: cert.decode('ascii')})
 
-            @app.route("/" + IntegrationTest._INVALID_X509_PATH)
+            @app.route(u"/" + IntegrationTest._INVALID_X509_PATH)
             def get_invalid_x509_certificates():  # pylint: disable=unused-variable
-                return flask.jsonify({IntegrationTest._rsa_key.kid: "invalid cert"})
+                return flask.jsonify({IntegrationTest._rsa_key.kid: u"invalid cert"})
 
-            @app.route("/.well-known/openid-configuration")
+            @app.route(u"/.well-known/openid-configuration")
             def get_openid_configuration():  # pylint: disable=unused-variable
-                return flask.jsonify({"jwks_uri": get_url(IntegrationTest._JWKS_PATH)})
+                return flask.jsonify({u"jwks_uri": get_url(IntegrationTest._JWKS_PATH)})
 
             self._application = app
 
@@ -294,4 +292,4 @@ class IntegrationTest(unittest.TestCase):
 
 
 def get_url(path):
-    return "https://localhost:%d/%s" % (IntegrationTest._PORT, path)
+    return u"https://localhost:%d/%s" % (IntegrationTest._PORT, path)

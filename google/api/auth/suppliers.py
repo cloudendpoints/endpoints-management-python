@@ -21,10 +21,10 @@ import requests
 import ssl
 
 
-_HTTP_PROTOCOL_PREFIX = "http://"
-_HTTPS_PROTOCOL_PREFIX = "https://"
+_HTTP_PROTOCOL_PREFIX = u"http://"
+_HTTPS_PROTOCOL_PREFIX = u"https://"
 
-_OPEN_ID_CONFIG_PATH = ".well-known/openid-configuration"
+_OPEN_ID_CONFIG_PATH = u".well-known/openid-configuration"
 
 
 class KeyUriSupplier(object):  # pylint: disable=too-few-public-methods
@@ -83,7 +83,7 @@ class JwksSupplier(object):  # pylint: disable=too-few-public-methods
         """
         self._key_uri_supplier = key_uri_supplier
         self._jwks_cache = cache.make_region().configure(
-            "dogpile.cache.memory", expiration_time=datetime.timedelta(minutes=5))
+            u"dogpile.cache.memory", expiration_time=datetime.timedelta(minutes=5))
 
     def supply(self, issuer):
         """Supplies the `Json Web Key Set` for the given issuer.
@@ -104,18 +104,18 @@ class JwksSupplier(object):  # pylint: disable=too-few-public-methods
             jwks_uri = self._key_uri_supplier.supply(issuer)
 
             if not jwks_uri:
-                raise UnauthenticatedException("Cannot find the `jwks_uri` for issuer "
-                                               "%s: either the issuer is unknown or "
-                                               "the OpenID discovery failed" % issuer)
+                raise UnauthenticatedException(u"Cannot find the `jwks_uri` for issuer "
+                                               u"%s: either the issuer is unknown or "
+                                               u"the OpenID discovery failed" % issuer)
 
             try:
                 response = requests.get(jwks_uri)
                 json_response = response.json()
             except Exception as exception:
-                message = "Cannot retrieve valid verification keys from the `jwks_uri`"
+                message = u"Cannot retrieve valid verification keys from the `jwks_uri`"
                 raise UnauthenticatedException(message, exception)
 
-            if "keys" in json_response:
+            if u"keys" in json_response:
                 # De-serialize the JSON as a JWKS object.
                 jwks_keys = jwk.KEYS()
                 jwks_keys.load_jwks(response.text)
@@ -140,7 +140,7 @@ def _extract_x509_certificates(x509_certificates):
             else:
                 key = jwk.import_rsa_key(certificate)
         except Exception as exception:
-            raise UnauthenticatedException("Cannot load X.509 certificate",
+            raise UnauthenticatedException(u"Cannot load X.509 certificate",
                                            exception)
         rsa_key = jwk.RSAKey().load_key(key)
         rsa_key.kid = kid
@@ -152,9 +152,9 @@ def _discover_jwks_uri(issuer):
     open_id_url = _construct_open_id_url(issuer)
     try:
         response = requests.get(open_id_url)
-        return response.json().get("jwks_uri")
+        return response.json().get(u"jwks_uri")
     except Exception as error:
-        raise UnauthenticatedException("Cannot discover the jwks uri", error)
+        raise UnauthenticatedException(u"Cannot discover the jwks uri", error)
 
 
 def _construct_open_id_url(issuer):
@@ -162,8 +162,8 @@ def _construct_open_id_url(issuer):
     if (not url.startswith(_HTTP_PROTOCOL_PREFIX) and
             not url.startswith(_HTTPS_PROTOCOL_PREFIX)):
         url = _HTTPS_PROTOCOL_PREFIX + url
-    if not url.endswith("/"):
-        url += "/"
+    if not url.endswith(u"/"):
+        url += u"/"
     url += _OPEN_ID_CONFIG_PATH
     return url
 

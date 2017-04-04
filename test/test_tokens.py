@@ -29,16 +29,16 @@ from google.api.auth import tokens
 
 
 class AuthenticatorTest(unittest.TestCase):
-    _ec_kid = "ec-key-id"
-    _rsa_kid = "rsa-key-id"
+    _ec_kid = u"ec-key-id"
+    _rsa_kid = u"rsa-key-id"
 
     _mock_timer = mock.MagicMock()
 
     def setUp(self):
-        ec_jwk = jwk.ECKey(use="sig").load_key(ecc.P256)
+        ec_jwk = jwk.ECKey(use=u"sig").load_key(ecc.P256)
         ec_jwk.kid = self._ec_kid
 
-        rsa_key = jwk.RSAKey(use="sig").load_key(PublicKey.RSA.generate(1024))
+        rsa_key = jwk.RSAKey(use=u"sig").load_key(PublicKey.RSA.generate(1024))
         rsa_key.kid = self._rsa_kid
 
         jwks = jwk.KEYS()
@@ -53,15 +53,14 @@ class AuthenticatorTest(unittest.TestCase):
         self._jwks_supplier.supply.return_value = self._jwks
 
         self._method_info = mock.MagicMock()
-        self._service_name = "service.name.com"
+        self._service_name = u"service.name.com"
 
         self._jwt_claims = {
-            "aud": ["first.com", "second.com"],
-            "email": "someone@email.com",
-            "exp": int(time.time()) + 10,
-            "iss": "https://issuer.com",
-            "sub": "subject-id"
-        }
+            u"aud": [u"first.com", u"second.com"],
+            u"email": u"someone@email.com",
+            u"exp": int(time.time()) + 10,
+            u"iss": u"https://issuer.com",
+            u"sub": u"subject-id"}
 
     def test_get_jwt_claims(self):
         auth_token = token_utils.generate_auth_token(self._jwt_claims,
@@ -84,15 +83,15 @@ class AuthenticatorTest(unittest.TestCase):
                                                          self._jwks._keys,
                                              kid=self._ec_kid)
             with self.assertRaisesRegexp(suppliers.UnauthenticatedException,
-                                         'Missing "%s" claim' % claim_name):
+                                         u'Missing "%s" claim' % claim_name):
                 self._authenticator.get_jwt_claims(auth_token)
 
-        assert_missing_claim_raise_exception("aud")
-        assert_missing_claim_raise_exception("exp")
-        assert_missing_claim_raise_exception("sub")
-        assert_missing_claim_raise_exception("iss")
+        assert_missing_claim_raise_exception(u"aud")
+        assert_missing_claim_raise_exception(u"exp")
+        assert_missing_claim_raise_exception(u"sub")
+        assert_missing_claim_raise_exception(u"iss")
 
-    @mock.patch("time.time", _mock_timer)
+    @mock.patch(u"time.time", _mock_timer)
     def test_get_jwt_claims_via_caching(self):
         AuthenticatorTest._mock_timer.return_value = 10
 
@@ -120,10 +119,10 @@ class AuthenticatorTest(unittest.TestCase):
     def test_auth_token_cache_capacity(self):
         authenticator = tokens.Authenticator({}, self._jwks_supplier, cache_capacity=2)
 
-        self._jwt_claims["email"] = "1@email.com"
+        self._jwt_claims[u"email"] = u"1@email.com"
         auth_token1 = token_utils.generate_auth_token(self._jwt_claims,
                                                       self._jwks._keys)
-        self._jwt_claims["email"] = "2@email.com"
+        self._jwt_claims[u"email"] = u"2@email.com"
         auth_token2 = token_utils.generate_auth_token(self._jwt_claims,
                                                       self._jwks._keys)
 
@@ -133,7 +132,7 @@ class AuthenticatorTest(unittest.TestCase):
 
         # Reset the returned JWKS so the signature verification will fail next
         # time.
-        new_ec_jwk = jwk.ECKey(use="sig").load_key(ecc.P256)
+        new_ec_jwk = jwk.ECKey(use=u"sig").load_key(ecc.P256)
         new_ec_jwk.kid = self._ec_kid
         new_jwks = jwk.KEYS()
         new_jwks._keys.append(new_ec_jwk)
@@ -145,7 +144,7 @@ class AuthenticatorTest(unittest.TestCase):
         authenticator.get_jwt_claims(auth_token2)
 
         # Populate a third auth token into the cache.
-        self._jwt_claims["email"] = "3@email.com"
+        self._jwt_claims[u"email"] = u"3@email.com"
         auth_token3 = token_utils.generate_auth_token(self._jwt_claims,
                                                       new_jwks._keys)
         authenticator.get_jwt_claims(auth_token3)
@@ -162,7 +161,7 @@ class AuthenticatorTest(unittest.TestCase):
 
         # Let the _jwks_supplier return a different key than the one we use to sign
         # the JWT.
-        new_jwk = jwk.ECKey(use="sig").load_key(ecc.P256)
+        new_jwk = jwk.ECKey(use=u"sig").load_key(ecc.P256)
         new_jwks = jwk.KEYS()
         new_jwks._keys.append(new_jwk)
         self._jwks_supplier.supply.return_value = new_jwks
@@ -174,22 +173,22 @@ class AuthenticatorTest(unittest.TestCase):
         auth_token = token_utils.generate_auth_token(self._jwt_claims,
                                                      self._jwks._keys,
                                                      kid=self._ec_kid)
-        self._method_info.get_allowed_audiences.return_value = ["first.com"]
-        self._issuers_to_provider_ids[self._jwt_claims["iss"]] = "provider-id"
+        self._method_info.get_allowed_audiences.return_value = [u"first.com"]
+        self._issuers_to_provider_ids[self._jwt_claims[u"iss"]] = u"provider-id"
         actual_user_info = self._authenticator.authenticate(auth_token,
                                                             self._method_info,
-                                                            "service.name.com")
-        self.assert_user_info(actual_user_info, self._jwt_claims["aud"],
-                              self._jwt_claims["email"], self._jwt_claims["sub"],
-                              self._jwt_claims["iss"])
+                                                            u"service.name.com")
+        self.assert_user_info(actual_user_info, self._jwt_claims[u"aud"],
+                              self._jwt_claims[u"email"], self._jwt_claims[u"sub"],
+                              self._jwt_claims[u"iss"])
 
     def test_authenticate_with_single_audience(self):
-        aud = "first.aud.com"
-        self._jwt_claims["aud"] = aud
+        aud = u"first.aud.com"
+        self._jwt_claims[u"aud"] = aud
         auth_token = token_utils.generate_auth_token(self._jwt_claims,
                                                      self._jwks._keys,
                                                      kid=self._ec_kid)
-        self._issuers_to_provider_ids[self._jwt_claims["iss"]] = "provider-id"
+        self._issuers_to_provider_ids[self._jwt_claims[u"iss"]] = u"provider-id"
         actual_user_info = self._authenticator.authenticate(auth_token,
                                                             self._method_info, aud)
         self.assertEqual([aud], actual_user_info.audiences)
@@ -200,41 +199,41 @@ class AuthenticatorTest(unittest.TestCase):
             jwt_claims[claim_name] = expiration
             auth_token = token_utils.generate_auth_token(jwt_claims,
                                                          self._jwks._keys)
-            message = 'Malformed claim: "%s" must be an integer' % claim_name
+            message = u'Malformed claim: "%s" must be an integer' % claim_name
             with self.assertRaisesRegexp(suppliers.UnauthenticatedException, message):
                 self._authenticator.authenticate(auth_token, self._method_info,
-                                                 "service.name")
+                                                 u"service.name")
 
-        assert_malformed_time_claim_raises_exception("exp", "1")
-        assert_malformed_time_claim_raises_exception("exp", 1.1)
-        assert_malformed_time_claim_raises_exception("exp", [1])
-        assert_malformed_time_claim_raises_exception("nbf", "1")
-        assert_malformed_time_claim_raises_exception("nbf", 1.1)
-        assert_malformed_time_claim_raises_exception("nbf", [1])
+        assert_malformed_time_claim_raises_exception(u"exp", u"1")
+        assert_malformed_time_claim_raises_exception(u"exp", 1.1)
+        assert_malformed_time_claim_raises_exception(u"exp", [1])
+        assert_malformed_time_claim_raises_exception(u"nbf", u"1")
+        assert_malformed_time_claim_raises_exception(u"nbf", 1.1)
+        assert_malformed_time_claim_raises_exception(u"nbf", [1])
 
     def test_authenticate_with_expired_auth_token(self):
-        self._jwt_claims["exp"] = long(time.time() - 10)
+        self._jwt_claims[u"exp"] = long(time.time() - 10)
         auth_token = token_utils.generate_auth_token(self._jwt_claims,
                                                      self._jwks._keys)
-        message = "The auth token has already expired"
+        message = u"The auth token has already expired"
         with self.assertRaisesRegexp(suppliers.UnauthenticatedException, message):
             self._authenticator.authenticate(auth_token,
                                              self._method_info,
-                                             "service.name")
+                                             u"service.name")
 
     def test_authenticate_with_nbf_claim(self):
         # Set the "nbf" claim to some time in the future.
-        self._jwt_claims["nbf"] = long(time.time() + 5)
+        self._jwt_claims[u"nbf"] = long(time.time() + 5)
         auth_token = token_utils.generate_auth_token(self._jwt_claims,
                                                      self._jwks._keys)
-        message = 'Current time is less than the "nbf" time'
+        message = u'Current time is less than the "nbf" time'
         with self.assertRaisesRegexp(suppliers.UnauthenticatedException, message):
             self._authenticator.authenticate(auth_token, self._method_info,
-                                             "service.name")
+                                             u"service.name")
 
     def test_authenticate_with_service_name_as_audience(self):
-        self._jwt_claims["aud"].append(self._service_name)
-        self._issuers_to_provider_ids[self._jwt_claims["iss"]] = "provider-id"
+        self._jwt_claims[u"aud"].append(self._service_name)
+        self._issuers_to_provider_ids[self._jwt_claims[u"iss"]] = u"provider-id"
         self._method_info.get_allowed_audiences.return_value = []
         auth_token = token_utils.generate_auth_token(self._jwt_claims,
                                                      self._jwks._keys,
@@ -242,19 +241,19 @@ class AuthenticatorTest(unittest.TestCase):
         actual_user_info = self._authenticator.authenticate(auth_token,
                                                             self._method_info,
                                                             self._service_name)
-        self.assert_user_info(actual_user_info, self._jwt_claims["aud"],
-                              self._jwt_claims["email"], self._jwt_claims["sub"],
-                              self._jwt_claims["iss"])
+        self.assert_user_info(actual_user_info, self._jwt_claims[u"aud"],
+                              self._jwt_claims[u"email"], self._jwt_claims[u"sub"],
+                              self._jwt_claims[u"iss"])
 
     def test_authenticate_with_disallowed_provider_id(self):
         auth_token = token_utils.generate_auth_token(self._jwt_claims,
                                                      self._jwks._keys,
                                          kid=self._ec_kid)
         self._method_info.is_provider_allowed.return_value = False
-        self._issuers_to_provider_ids[self._jwt_claims["iss"]] = "id"
+        self._issuers_to_provider_ids[self._jwt_claims[u"iss"]] = u"id"
         with self.assertRaisesRegexp(suppliers.UnauthenticatedException,
-                                     "The requested method does not allow provider "
-                                     "id: id"):
+                                     u"The requested method does not allow provider "
+                                     u"id: id"):
             self._authenticator.authenticate(auth_token, self._method_info,
                                              self._service_name)
 
@@ -263,16 +262,16 @@ class AuthenticatorTest(unittest.TestCase):
                                                      self._jwks._keys,
                                                      kid=self._ec_kid)
         self._method_info.get_allowed_audiences.return_value = []
-        self._issuers_to_provider_ids[self._jwt_claims["iss"]] = "project-id"
+        self._issuers_to_provider_ids[self._jwt_claims[u"iss"]] = u"project-id"
         with self.assertRaisesRegexp(suppliers.UnauthenticatedException,
-                                     "Audiences not allowed"):
+                                     u"Audiences not allowed"):
             self._authenticator.authenticate(auth_token, self._method_info,
                                              self._service_name)
 
     def test_unicode_decode_error(self):
-        auth_token = "ya29.CjA8A3Hrca1hCCvRg69U3Tg85CG5pRqZj7gOJUsicpRafWAW63zvg6a0ZM6wZ5mJwM0"
+        auth_token = u"ya29.CjA8A3Hrca1hCCvRg69U3Tg85CG5pRqZj7gOJUsicpRafWAW63zvg6a0ZM6wZ5mJwM0"
         with self.assertRaisesRegexp(suppliers.UnauthenticatedException,
-                                     "Cannot decode the auth token"):
+                                     u"Cannot decode the auth token"):
             self._authenticator.authenticate(auth_token, None, None)
 
     def assert_user_info(self, actual_user_info, audiences, email, subject_id,

@@ -22,23 +22,23 @@ from ply import lex, yacc
 _BINDING = 1
 _END_BINDING = 2
 _TERMINAL = 3
-_Segment = namedtuple('_Segment', ['kind', 'literal'])
+_Segment = namedtuple(u'_Segment', [u'kind', u'literal'])
 
 
 def _format(segments):
-    template = ''
+    template = u''
     slash = True
     for segment in segments:
         if segment.kind == _TERMINAL:
             if slash:
-                template += '/'
+                template += u'/'
             template += segment.literal
         slash = True
         if segment.kind == _BINDING:
-            template += '/{%s=' % segment.literal
+            template += u'/{%s=' % segment.literal
             slash = False
         if segment.kind == _END_BINDING:
-            template += '%s}' % segment.literal
+            template += u'%s}' % segment.literal
     return template[1:]  # Remove the leading /
 
 
@@ -84,8 +84,8 @@ class PathTemplate(object):
             if segment.kind == _BINDING:
                 if segment.literal not in bindings:
                     raise ValidationException(
-                        ('rendering error: value for key \'{}\' '
-                         'not provided').format(segment.literal))
+                        (u'rendering error: value for key \'{}\' '
+                         u'not provided').format(segment.literal))
                 out.extend(PathTemplate(bindings[segment.literal]).segments)
                 binding = True
             elif segment.kind == _END_BINDING:
@@ -111,7 +111,7 @@ class PathTemplate(object):
             ValidationException: If path can't be matched to the template.
         """
         this = self.segments
-        that = path.split('/')
+        that = path.split(u'/')
         current_var = None
         bindings = {}
         segment_count = self.segment_count
@@ -120,17 +120,17 @@ class PathTemplate(object):
             if j >= len(that):
                 break
             if this[i].kind == _TERMINAL:
-                if this[i].literal == '*':
+                if this[i].literal == u'*':
                     bindings[current_var] = that[j]
                     j += 1
-                elif this[i].literal == '**':
+                elif this[i].literal == u'**':
                     until = j + len(that) - segment_count + 1
                     segment_count += len(that) - segment_count
-                    bindings[current_var] = '/'.join(that[j:until])
+                    bindings[current_var] = u'/'.join(that[j:until])
                     j = until
                 elif this[i].literal != that[j]:
                     raise ValidationException(
-                        'mismatched literal: \'%s\' != \'%s\'' % (
+                        u'mismatched literal: \'%s\' != \'%s\'' % (
                             this[i].literal, that[j]))
                 else:
                     j += 1
@@ -138,8 +138,7 @@ class PathTemplate(object):
                 current_var = this[i].literal
         if j != len(that) or j != segment_count:
             raise ValidationException(
-                'match error: could not render from the path template: {}'
-                .format(path))
+                u'match error: could not render from the path template: {}'.format(path))
         return bindings
 
 
@@ -147,13 +146,13 @@ class PathTemplate(object):
 # pylint: disable=R0201
 class _Parser(object):
     tokens = (
-        'FORWARD_SLASH',
-        'LEFT_BRACE',
-        'RIGHT_BRACE',
-        'EQUALS',
-        'WILDCARD',
-        'PATH_WILDCARD',
-        'LITERAL',
+        u'FORWARD_SLASH',
+        u'LEFT_BRACE',
+        u'RIGHT_BRACE',
+        u'EQUALS',
+        u'WILDCARD',
+        u'PATH_WILDCARD',
+        u'LITERAL',
     )
 
     t_FORWARD_SLASH = r'/'
@@ -164,12 +163,12 @@ class _Parser(object):
     t_PATH_WILDCARD = r'\*\*'
     t_LITERAL = r'[^*=}{\/]+'
 
-    t_ignore = ' \t'
+    t_ignore = u' \t'
 
     def __init__(self):
         self.lexer = lex.lex(module=self)
         self.parser = yacc.yacc(module=self, debug=False, write_tables=False)
-        self.verb = ''
+        self.verb = u''
         self.binding_var_count = 0
         self.segment_count = 0
 
@@ -188,15 +187,15 @@ class _Parser(object):
         # Validation step: checks that there are no nested bindings.
         path_wildcard = False
         for segment in segments:
-            if segment.kind == _TERMINAL and segment.literal == '**':
+            if segment.kind == _TERMINAL and segment.literal == u'**':
                 if path_wildcard:
                     raise ValidationException(
-                        'validation error: path template cannot contain more '
-                        'than one path wildcard')
+                        u'validation error: path template cannot contain more '
+                        u'than one path wildcard')
                 path_wildcard = True
         if segments and segments[-1].kind == _TERMINAL:
             final_term = segments[-1].literal
-            last_colon_pos = final_term.rfind(':')
+            last_colon_pos = final_term.rfind(u':')
             if last_colon_pos != -1:
                 self.verb = final_term[last_colon_pos + 1:]
                 segments[-1] = _Segment(_TERMINAL, final_term[:last_colon_pos])
@@ -237,10 +236,10 @@ class _Parser(object):
 
     def p_bound_terminal(self, p):
         """bound_terminal : unbound_terminal"""
-        if p[1][0].literal in ['*', '**']:
-            p[0] = [_Segment(_BINDING, '$%d' % self.binding_var_count),
+        if p[1][0].literal in [u'*', u'**']:
+            p[0] = [_Segment(_BINDING, u'$%d' % self.binding_var_count),
                     p[1][0],
-                    _Segment(_END_BINDING, '')]
+                    _Segment(_END_BINDING, u'')]
             self.binding_var_count += 1
         else:
             p[0] = p[1]
@@ -252,19 +251,19 @@ class _Parser(object):
         if len(p) > 4:
             p[0].extend(p[4])
         else:
-            p[0].append(_Segment(_TERMINAL, '*'))
+            p[0].append(_Segment(_TERMINAL, u'*'))
             self.segment_count += 1
-        p[0].append(_Segment(_END_BINDING, ''))
+        p[0].append(_Segment(_END_BINDING, u''))
 
     def p_error(self, p):
         """Raises a parser error."""
         if p:
             raise ValidationException(
-                'parser error: unexpected token \'%s\'' % p.type)
+                u'parser error: unexpected token \'%s\'' % p.type)
         else:
-            raise ValidationException('parser error: unexpected EOF')
+            raise ValidationException(u'parser error: unexpected EOF')
 
     def t_error(self, t):
         """Raises a lexer error."""
         raise ValidationException(
-            'lexer error: illegal character \'%s\'' % t.value[0])
+            u'lexer error: illegal character \'%s\'' % t.value[0])

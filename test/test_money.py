@@ -22,16 +22,16 @@ from google.api.control import money, messages
 
 
 class TestCheckValid(unittest2.TestCase):
-    _BAD_CURRENCY = messages.Money(currencyCode='this-is-bad')
+    _BAD_CURRENCY = messages.Money(currencyCode=u'this-is-bad')
     _MISMATCHED_UNITS = (
-        messages.Money(currencyCode='JPY', units=-1, nanos=1),
-        messages.Money(currencyCode='JPY', units=1, nanos=-1),
+        messages.Money(currencyCode=u'JPY', units=-1, nanos=1),
+        messages.Money(currencyCode=u'JPY', units=1, nanos=-1),
     )
-    _NANOS_OOB = messages.Money(currencyCode='EUR', units=0, nanos=9999999999)
+    _NANOS_OOB = messages.Money(currencyCode=u'EUR', units=0, nanos=9999999999)
     _OK = (
-        messages.Money(currencyCode='JPY', units=1, nanos=1),
-        messages.Money(currencyCode='JPY', units=-1, nanos=-1),
-        messages.Money(currencyCode='EUR', units=0, nanos=money.MAX_NANOS),
+        messages.Money(currencyCode=u'JPY', units=1, nanos=1),
+        messages.Money(currencyCode=u'JPY', units=-1, nanos=-1),
+        messages.Money(currencyCode=u'EUR', units=0, nanos=money.MAX_NANOS),
     )
 
     def test_should_fail_if_not_really_money(self):
@@ -60,14 +60,14 @@ class TestCheckValid(unittest2.TestCase):
 
 
 class TestAdd(unittest2.TestCase):
-    _SOME_YEN = messages.Money(currencyCode='JPY', units=3, nanos=0)
-    _SOME_YEN_DEBT = messages.Money(currencyCode='JPY', units=-2, nanos=-1)
-    _SOME_MORE_YEN = messages.Money(currencyCode='JPY', units=1, nanos=3)
-    _SOME_USD = messages.Money(currencyCode='USD', units=1, nanos=0)
+    _SOME_YEN = messages.Money(currencyCode=u'JPY', units=3, nanos=0)
+    _SOME_YEN_DEBT = messages.Money(currencyCode=u'JPY', units=-2, nanos=-1)
+    _SOME_MORE_YEN = messages.Money(currencyCode=u'JPY', units=1, nanos=3)
+    _SOME_USD = messages.Money(currencyCode=u'USD', units=1, nanos=0)
     _INT64_MAX = sys.maxint
     _INT64_MIN = -sys.maxint - 1
-    _LARGE_YEN = messages.Money(currencyCode='JPY', units=_INT64_MAX -1, nanos=0)
-    _LARGE_YEN_DEBT = messages.Money(currencyCode='JPY', units=-_INT64_MAX + 1, nanos=0)
+    _LARGE_YEN = messages.Money(currencyCode=u'JPY', units=_INT64_MAX -1, nanos=0)
+    _LARGE_YEN_DEBT = messages.Money(currencyCode=u'JPY', units=-_INT64_MAX + 1, nanos=0)
 
     def test_should_fail_if_non_money_is_used(self):
         testfs = [

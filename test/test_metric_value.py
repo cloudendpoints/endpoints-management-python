@@ -38,7 +38,7 @@ class TestUpdateHash(unittest2.TestCase):
             equal(self.NOTHING_ADDED))
 
     def test_should_add_matching_hashes_for_matching_labels(self):
-        a_dict = {'test': 'dict'}
+        a_dict = {u'test': u'dict'}
         mv1 = metric_value.create(labels=a_dict)
         mv2 = metric_value.create(labels=a_dict)
         want = self.make_hash(mv1)
@@ -46,10 +46,10 @@ class TestUpdateHash(unittest2.TestCase):
         expect(got).to(equal(want))
 
     def test_should_update_hash_for_when_currency_is_added(self):
-        a_dict = {'test': 'dict'}
+        a_dict = {u'test': u'dict'}
         mv1 = metric_value.create(labels=a_dict)
         mv2 = metric_value.create(labels=a_dict)
-        mv2.moneyValue = messages.Money(currencyCode='JPY')
+        mv2.moneyValue = messages.Money(currencyCode=u'JPY')
         want = self.make_hash(mv1)
         got = self.make_hash(mv2)
         expect(got).to_not(equal(want))
@@ -66,8 +66,8 @@ class TestMerge(unittest2.TestCase):
     EARLY = timestamp.to_rfc3339(datetime.datetime(1970, 1, 1, 10, 0, 0))
     LATER = timestamp.to_rfc3339(datetime.datetime(1990, 1, 1, 10, 0, 0))
     TEST_LABELS = {
-        'key1': 'value1',
-        'key2': 'value2',
+        u'key1': u'value1',
+        u'key2': u'value2',
     }
 
     def setUp(self):
@@ -84,7 +84,7 @@ class TestMerge(unittest2.TestCase):
             endTime=self.LATER)
         self.test_value_with_money = metric_value.create(
             labels=self.TEST_LABELS,
-            moneyValue=messages.Money(currencyCode='JPY', units=100, nanos=0))
+            moneyValue=messages.Money(currencyCode=u'JPY', units=100, nanos=0))
 
     def test_should_fail_for_metric_values_with_different_types(self):
         changed = metric_value.create(labels=self.TEST_LABELS, int64Value=1)
@@ -101,7 +101,7 @@ class TestMerge(unittest2.TestCase):
     def test_should_fail_for_delta_metrics_with_unmergable_types(self):
         no_init = metric_value.create()
         unmergeables = [
-            metric_value.create(stringValue='a test string'),
+            metric_value.create(stringValue=u'a test string'),
             metric_value.create(boolValue=False),
         ]
         for mv in unmergeables:

@@ -30,7 +30,7 @@ def _dummy_start_response(content, dummy_response_headers):
     pass
 
 
-_DUMMY_RESPONSE = ('All must answer "here!"',)
+_DUMMY_RESPONSE = (b'All must answer "here!"',)
 
 
 class _DummyWsgiApp(object):
@@ -48,10 +48,9 @@ class TestEnvironmentMiddleware(unittest2.TestCase):
         wrapped = cls(wrappee, wanted_service)
 
         given = {
-            'wsgi.url_scheme': 'http',
-            'HTTP_HOST': 'localhost',
-            'REQUEST_METHOD': 'GET'
-        }
+            u'wsgi.url_scheme': u'http',
+            u'HTTP_HOST': u'localhost',
+            u'REQUEST_METHOD': u'GET'}
         wrapped(given, _dummy_start_response)
         expect(given.get(cls.SERVICE)).to(equal(wanted_service))
         expect(given.get(cls.SERVICE_NAME)).to(equal(wanted_service.name))
@@ -61,21 +60,20 @@ class TestEnvironmentMiddleware(unittest2.TestCase):
 
 
 class TestMiddleware(unittest2.TestCase):
-    PROJECT_ID = 'middleware'
+    PROJECT_ID = u'middleware'
 
     def test_should_not_send_requests_if_there_is_no_service(self):
         wrappee = _DummyWsgiApp()
         control_client = mock.MagicMock(spec=client.Client)
 
         given = {
-            'wsgi.url_scheme': 'http',
-            'PATH_INFO': '/any/method',
-            'REMOTE_ADDR': '192.168.0.3',
-            'HTTP_HOST': 'localhost',
-            'HTTP_REFERER': 'example.myreferer.com',
-            'REQUEST_METHOD': 'GET'
-        }
-        dummy_response = messages.CheckResponse(operationId='fake_operation_id')
+            u'wsgi.url_scheme': u'http',
+            u'PATH_INFO': u'/any/method',
+            u'REMOTE_ADDR': u'192.168.0.3',
+            u'HTTP_HOST': u'localhost',
+            u'HTTP_REFERER': u'example.myreferer.com',
+            u'REQUEST_METHOD': u'GET'}
+        dummy_response = messages.CheckResponse(operationId=u'fake_operation_id')
         wrapped = wsgi.Middleware(wrappee, self.PROJECT_ID, control_client)
         wrapped(given, _dummy_start_response)
         expect(control_client.check.called).to(be_false)
@@ -86,14 +84,13 @@ class TestMiddleware(unittest2.TestCase):
         control_client = mock.MagicMock(spec=client.Client)
 
         given = {
-            'wsgi.url_scheme': 'http',
-            'PATH_INFO': '/any/method',
-            'REMOTE_ADDR': '192.168.0.3',
-            'HTTP_HOST': 'localhost',
-            'HTTP_REFERER': 'example.myreferer.com',
-            'REQUEST_METHOD': 'GET'
-        }
-        dummy_response = messages.CheckResponse(operationId='fake_operation_id')
+            u'wsgi.url_scheme': u'http',
+            u'PATH_INFO': u'/any/method',
+            u'REMOTE_ADDR': u'192.168.0.3',
+            u'HTTP_HOST': u'localhost',
+            u'HTTP_REFERER': u'example.myreferer.com',
+            u'REQUEST_METHOD': u'GET'}
+        dummy_response = messages.CheckResponse(operationId=u'fake_operation_id')
         with_control = wsgi.Middleware(wrappee, self.PROJECT_ID, control_client)
         wrapped = wsgi.EnvironmentMiddleware(with_control,
                                              service.Loaders.SIMPLE.load())
@@ -106,15 +103,14 @@ class TestMiddleware(unittest2.TestCase):
         wrappee = _DummyWsgiApp()
         control_client = mock.MagicMock(spec=client.Client)
         given = {
-            'wsgi.url_scheme': 'http',
-            'PATH_INFO': '/any/method',
-            'REMOTE_ADDR': '192.168.0.3',
-            'HTTP_HOST': 'localhost',
-            'HTTP_REFERER': 'example.myreferer.com',
-            'REQUEST_METHOD': 'GET'
-        }
+            u'wsgi.url_scheme': u'http',
+            u'PATH_INFO': u'/any/method',
+            u'REMOTE_ADDR': u'192.168.0.3',
+            u'HTTP_HOST': u'localhost',
+            u'HTTP_REFERER': u'example.myreferer.com',
+            u'REQUEST_METHOD': u'GET'}
         dummy_response = messages.CheckResponse(
-            operationId = 'fake_operation_id',
+            operationId = u'fake_operation_id',
             checkErrors = [
                 messages.CheckError(
                     code=messages.CheckError.CodeValueValuesEnum.PROJECT_DELETED)
@@ -131,14 +127,14 @@ class TestMiddleware(unittest2.TestCase):
 
     def test_load_service_failed(self):
         loader = mock.MagicMock(load=lambda: None)
-        with self.assertRaisesRegex(ValueError, "Failed to load service config"):
+        with self.assertRaisesRegex(ValueError, u"Failed to load service config"):
             wsgi.add_all(_DummyWsgiApp(),
                          self.PROJECT_ID,
                          mock.MagicMock(spec=client.Client),
                          loader=loader)
 
 
-_SYSTEM_PARAMETER_CONFIG_TEST = """
+_SYSTEM_PARAMETER_CONFIG_TEST = b"""
 {
     "name": "system-parameter-config",
     "systemParameters": {
@@ -197,7 +193,7 @@ _SYSTEM_PARAMETER_CONFIG_TEST = """
 """
 
 class TestMiddlewareWithParams(unittest2.TestCase):
-    PROJECT_ID = 'middleware-with-params'
+    PROJECT_ID = u'middleware-with-params'
 
     def setUp(self):
         _config_fd = tempfile.NamedTemporaryFile(delete=False)
@@ -214,14 +210,13 @@ class TestMiddlewareWithParams(unittest2.TestCase):
         wrappee = _DummyWsgiApp()
         control_client = mock.MagicMock(spec=client.Client)
         given = {
-            'wsgi.url_scheme': 'http',
-            'PATH_INFO': '/uvw/method1/with_no_param',
-            'REMOTE_ADDR': '192.168.0.3',
-            'HTTP_HOST': 'localhost',
-            'HTTP_REFERER': 'example.myreferer.com',
-            'REQUEST_METHOD': 'GET'
-        }
-        dummy_response = messages.CheckResponse(operationId='fake_operation_id')
+            u'wsgi.url_scheme': u'http',
+            u'PATH_INFO': u'/uvw/method1/with_no_param',
+            u'REMOTE_ADDR': u'192.168.0.3',
+            u'HTTP_HOST': u'localhost',
+            u'HTTP_REFERER': u'example.myreferer.com',
+            u'REQUEST_METHOD': u'GET'}
+        dummy_response = messages.CheckResponse(operationId=u'fake_operation_id')
         wrapped = wsgi.add_all(wrappee,
                                self.PROJECT_ID,
                                control_client,
@@ -231,22 +226,21 @@ class TestMiddlewareWithParams(unittest2.TestCase):
         expect(control_client.check.called).to(be_true)
         req = control_client.check.call_args[0][0]
         expect(req.checkRequest.operation.consumerId).to(
-            equal('project:middleware-with-params'))
+            equal(u'project:middleware-with-params'))
         expect(control_client.report.called).to(be_true)
 
     def test_should_send_requests_with_configured_query_param_api_key(self):
         wrappee = _DummyWsgiApp()
         control_client = mock.MagicMock(spec=client.Client)
         given = {
-            'wsgi.url_scheme': 'http',
-            'QUERY_STRING': 'ApiKeyParam=my-query-value',
-            'PATH_INFO': '/uvw/method1/with_query_param',
-            'REMOTE_ADDR': '192.168.0.3',
-            'HTTP_HOST': 'localhost',
-            'HTTP_REFERER': 'example.myreferer.com',
-            'REQUEST_METHOD': 'GET'
-        }
-        dummy_response = messages.CheckResponse(operationId='fake_operation_id')
+            u'wsgi.url_scheme': u'http',
+            u'QUERY_STRING': u'ApiKeyParam=my-query-value',
+            u'PATH_INFO': u'/uvw/method1/with_query_param',
+            u'REMOTE_ADDR': u'192.168.0.3',
+            u'HTTP_HOST': u'localhost',
+            u'HTTP_REFERER': u'example.myreferer.com',
+            u'REQUEST_METHOD': u'GET'}
+        dummy_response = messages.CheckResponse(operationId=u'fake_operation_id')
         wrapped = wsgi.add_all(wrappee,
                                self.PROJECT_ID,
                                control_client,
@@ -256,25 +250,24 @@ class TestMiddlewareWithParams(unittest2.TestCase):
         expect(control_client.check.called).to(be_true)
         check_req = control_client.check.call_args[0][0]
         expect(check_req.checkRequest.operation.consumerId).to(
-            equal('api_key:my-query-value'))
+            equal(u'api_key:my-query-value'))
         expect(control_client.report.called).to(be_true)
         report_req = control_client.report.call_args[0][0]
         expect(report_req.reportRequest.operations[0].consumerId).to(
-            equal('api_key:my-query-value'))
+            equal(u'api_key:my-query-value'))
 
     def test_should_send_requests_with_configured_header_api_key(self):
         wrappee = _DummyWsgiApp()
         control_client = mock.MagicMock(spec=client.Client)
         given = {
-            'wsgi.url_scheme': 'http',
-            'PATH_INFO': '/uvw/method1/with_query_param',
-            'REMOTE_ADDR': '192.168.0.3',
-            'HTTP_HOST': 'localhost',
-            'HTTP_APIKEYHEADER': 'my-header-value',
-            'HTTP_REFERER': 'example.myreferer.com',
-            'REQUEST_METHOD': 'GET'
-        }
-        dummy_response = messages.CheckResponse(operationId='fake_operation_id')
+            u'wsgi.url_scheme': u'http',
+            u'PATH_INFO': u'/uvw/method1/with_query_param',
+            u'REMOTE_ADDR': u'192.168.0.3',
+            u'HTTP_HOST': u'localhost',
+            u'HTTP_APIKEYHEADER': u'my-header-value',
+            u'HTTP_REFERER': u'example.myreferer.com',
+            u'REQUEST_METHOD': u'GET'}
+        dummy_response = messages.CheckResponse(operationId=u'fake_operation_id')
         wrapped = wsgi.add_all(wrappee,
                                self.PROJECT_ID,
                                control_client,
@@ -285,26 +278,25 @@ class TestMiddlewareWithParams(unittest2.TestCase):
         check_request = control_client.check.call_args_list[0].checkRequest
         check_req = control_client.check.call_args[0][0]
         expect(check_req.checkRequest.operation.consumerId).to(
-            equal('api_key:my-header-value'))
+            equal(u'api_key:my-header-value'))
         expect(control_client.report.called).to(be_true)
         report_req = control_client.report.call_args[0][0]
         expect(report_req.reportRequest.operations[0].consumerId).to(
-            equal('api_key:my-header-value'))
+            equal(u'api_key:my-header-value'))
 
     def test_should_send_requests_with_default_query_param_api_key(self):
-        for default_key in ('key', 'api_key'):
+        for default_key in (u'key', u'api_key'):
             wrappee = _DummyWsgiApp()
             control_client = mock.MagicMock(spec=client.Client)
             given = {
-                'wsgi.url_scheme': 'http',
-                'QUERY_STRING': '%s=my-default-api-key-value' % (default_key,),
-                'PATH_INFO': '/uvw/method_needs_api_key/with_query_param',
-                'REMOTE_ADDR': '192.168.0.3',
-                'HTTP_HOST': 'localhost',
-                'HTTP_REFERER': 'example.myreferer.com',
-                'REQUEST_METHOD': 'GET'
-            }
-            dummy_response = messages.CheckResponse(operationId='fake_operation_id')
+                u'wsgi.url_scheme': u'http',
+                u'QUERY_STRING': u'%s=my-default-api-key-value' % (default_key,),
+                u'PATH_INFO': u'/uvw/method_needs_api_key/with_query_param',
+                u'REMOTE_ADDR': u'192.168.0.3',
+                u'HTTP_HOST': u'localhost',
+                u'HTTP_REFERER': u'example.myreferer.com',
+                u'REQUEST_METHOD': u'GET'}
+            dummy_response = messages.CheckResponse(operationId=u'fake_operation_id')
             wrapped = wsgi.add_all(wrappee,
                                    self.PROJECT_ID,
                                    control_client,
@@ -315,24 +307,23 @@ class TestMiddlewareWithParams(unittest2.TestCase):
             check_request = control_client.check.call_args_list[0].checkRequest
             check_req = control_client.check.call_args[0][0]
             expect(check_req.checkRequest.operation.consumerId).to(
-                equal('api_key:my-default-api-key-value'))
+                equal(u'api_key:my-default-api-key-value'))
             expect(control_client.report.called).to(be_true)
             report_req = control_client.report.call_args[0][0]
             expect(report_req.reportRequest.operations[0].consumerId).to(
-                equal('api_key:my-default-api-key-value'))
+                equal(u'api_key:my-default-api-key-value'))
 
     def test_should_not_perform_check_if_needed_api_key_is_missing(self):
         wrappee = _DummyWsgiApp()
         control_client = mock.MagicMock(spec=client.Client)
         given = {
-            'wsgi.url_scheme': 'http',
-            'PATH_INFO': '/uvw/method_needs_api_key/more_stuff',
-            'REMOTE_ADDR': '192.168.0.3',
-            'HTTP_HOST': 'localhost',
-            'HTTP_REFERER': 'example.myreferer.com',
-            'REQUEST_METHOD': 'GET'
-        }
-        dummy_response = messages.CheckResponse(operationId='fake_operation_id')
+            u'wsgi.url_scheme': u'http',
+            u'PATH_INFO': u'/uvw/method_needs_api_key/more_stuff',
+            u'REMOTE_ADDR': u'192.168.0.3',
+            u'HTTP_HOST': u'localhost',
+            u'HTTP_REFERER': u'example.myreferer.com',
+            u'REQUEST_METHOD': u'GET'}
+        dummy_response = messages.CheckResponse(operationId=u'fake_operation_id')
         wrapped = wsgi.add_all(wrappee,
                                self.PROJECT_ID,
                                control_client,
@@ -343,7 +334,7 @@ class TestMiddlewareWithParams(unittest2.TestCase):
         expect(control_client.report.called).to(be_true)
         report_req = control_client.report.call_args[0][0]
         expect(report_req.reportRequest.operations[0].consumerId).to(
-            equal('project:middleware-with-params'))
+            equal(u'project:middleware-with-params'))
 
 AuthMiddleware = wsgi.AuthenticationMiddleware
 
@@ -357,7 +348,7 @@ class TestAuthenticationMiddleware(unittest2.TestCase):
                                           self._mock_authenticator)
 
     def test_no_authentication(self):
-        with self.assertRaisesRegex(ValueError, "Invalid authenticator"):
+        with self.assertRaisesRegex(ValueError, u"Invalid authenticator"):
             AuthMiddleware(self._mock_application, None)
 
     def test_no_method_info(self):
@@ -377,21 +368,20 @@ class TestAuthenticationMiddleware(unittest2.TestCase):
     def test_malformed_authorization_header(self):
         auth_app = AuthMiddleware(self.UserInfoWsgiApp(), self._mock_authenticator)
         environ = {
-            "HTTP_AUTHORIZATION": "malformed-auth-token",
+            u"HTTP_AUTHORIZATION": u"malformed-auth-token",
             wsgi.EnvironmentMiddleware.METHOD_INFO: mock.MagicMock(),
-            wsgi.EnvironmentMiddleware.SERVICE_NAME: "service-name"
-        }
+            wsgi.EnvironmentMiddleware.SERVICE_NAME: u"service-name"}
         self._mock_authenticator.authenticate.side_effect = suppliers.UnauthenticatedException()
         self.assertIsNone(auth_app(environ, _dummy_start_response))
 
     def test_successful_authentication(self):
-        auth_token = "Bearer test-bearer-token"
+        auth_token = u"Bearer test-bearer-token"
         auth_info = mock.MagicMock()
-        service_name = "test-service-name"
+        service_name = u"test-service-name"
         method_info = mock.MagicMock()
         method_info.auth_info = auth_info
         environ = {
-            "HTTP_AUTHORIZATION": auth_token,
+            u"HTTP_AUTHORIZATION": auth_token,
             wsgi.EnvironmentMiddleware.METHOD_INFO: method_info,
             wsgi.EnvironmentMiddleware.SERVICE_NAME: service_name
         }
@@ -401,17 +391,17 @@ class TestAuthenticationMiddleware(unittest2.TestCase):
         self._middleware(environ, _dummy_start_response)
         self.assertEqual(user_info, environ.get(AuthMiddleware.USER_INFO))
         authenticate_mock = self._mock_authenticator.authenticate
-        authenticate_mock.assert_called_once_with("test-bearer-token", auth_info,
+        authenticate_mock.assert_called_once_with(u"test-bearer-token", auth_info,
                                                   service_name)
 
     def test_auth_token_in_query(self):
-        auth_token = "test-bearer-token"
+        auth_token = u"test-bearer-token"
         auth_info = mock.MagicMock()
-        service_name = "test-service-name"
+        service_name = u"test-service-name"
         method_info = mock.MagicMock()
         method_info.auth_info = auth_info
         environ = {
-            "QUERY_STRING": "access_token=" + auth_token,
+            u"QUERY_STRING": u"access_token=" + auth_token,
             wsgi.EnvironmentMiddleware.METHOD_INFO: method_info,
             wsgi.EnvironmentMiddleware.SERVICE_NAME: service_name
         }
@@ -421,17 +411,16 @@ class TestAuthenticationMiddleware(unittest2.TestCase):
         self._middleware(environ, _dummy_start_response)
         self.assertEqual(user_info, environ.get(AuthMiddleware.USER_INFO))
         authenticate_mock = self._mock_authenticator.authenticate
-        authenticate_mock.assert_called_once_with("test-bearer-token", auth_info,
+        authenticate_mock.assert_called_once_with(u"test-bearer-token", auth_info,
                                                   service_name)
 
     patched_environ = {}
-    @mock.patch("os.environ", patched_environ)
+    @mock.patch(u"os.environ", patched_environ)
     def test_set_user_info(self):
         environ = {
-            "QUERY_STRING": "access_token=test-token",
+            u"QUERY_STRING": u"access_token=test-token",
             wsgi.EnvironmentMiddleware.METHOD_INFO: mock.MagicMock(),
-            wsgi.EnvironmentMiddleware.SERVICE_NAME: "test-service-name"
-        }
+            wsgi.EnvironmentMiddleware.SERVICE_NAME: u"test-service-name"}
         application = self.UserInfoWsgiApp()
         auth_middleware = AuthMiddleware(application, self._mock_authenticator)
         user_info = mock.MagicMock()
@@ -451,7 +440,7 @@ class TestCreateAuthenticator(unittest2.TestCase):
             wsgi._create_authenticator(None)
 
     def test_load_service_without_auth(self):
-        service = _read_service_from_json("{}")
+        service = _read_service_from_json(u"{}")
         self.assertIsNone(wsgi._create_authenticator(service))
 
     def test_load_service(self):
@@ -467,37 +456,37 @@ class TestCreateAuthenticator(unittest2.TestCase):
 
 
 patched_platform_environ = {}
-@mock.patch.dict('os.environ', patched_platform_environ, clear=True)
+@mock.patch.dict(u'os.environ', patched_platform_environ, clear=True)
 class TestPlatformDetection(unittest2.TestCase):
 
     def test_development(self):
-        os.environ['SERVER_SOFTWARE'] = 'Development/2.0.0'
+        os.environ[u'SERVER_SOFTWARE'] = u'Development/2.0.0'
         self.assertEqual(report_request.ReportedPlatforms.DEVELOPMENT,
                          wsgi._get_platform())
 
     def test_gke(self):
-        os.environ['KUBERNETES_SERVICE_HOST'] = 'hostname'
+        os.environ[u'KUBERNETES_SERVICE_HOST'] = u'hostname'
         self.assertEqual(report_request.ReportedPlatforms.GKE,
                          wsgi._get_platform())
 
-    @mock.patch.object(wsgi, '_running_on_gce', return_value=True)
+    @mock.patch.object(wsgi, u'_running_on_gce', return_value=True)
     def test_gae_flex(self, _running_on_gce):
-        os.environ['GAE_MODULE_NAME'] = 'gae_module'
+        os.environ[u'GAE_MODULE_NAME'] = u'gae_module'
         self.assertEqual(report_request.ReportedPlatforms.GAE_FLEX,
                          wsgi._get_platform())
 
-    @mock.patch.object(wsgi, '_running_on_gce', return_value=True)
+    @mock.patch.object(wsgi, u'_running_on_gce', return_value=True)
     def test_gce(self, _running_on_gce):
         self.assertEqual(report_request.ReportedPlatforms.GCE,
                          wsgi._get_platform())
 
-    @mock.patch.object(wsgi, '_running_on_gce', return_value=False)
+    @mock.patch.object(wsgi, u'_running_on_gce', return_value=False)
     def test_gae_standard(self, _running_on_gce):
-        os.environ['SERVER_SOFTWARE'] = 'Google App Engine/1.2.3'
+        os.environ[u'SERVER_SOFTWARE'] = u'Google App Engine/1.2.3'
         self.assertEqual(report_request.ReportedPlatforms.GAE_STANDARD,
                          wsgi._get_platform())
 
-    @mock.patch.object(wsgi, '_running_on_gce', return_value=False)
+    @mock.patch.object(wsgi, u'_running_on_gce', return_value=False)
     def test_unknown(self, _running_on_gce):
         self.assertEqual(report_request.ReportedPlatforms.UNKNOWN,
                          wsgi._get_platform())

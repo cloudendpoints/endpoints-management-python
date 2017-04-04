@@ -104,92 +104,92 @@ class KnownMetrics(Enum):
     """Enumerates the known metrics."""
 
     CONSUMER_REQUEST_COUNT = (
-        'serviceruntime.googleapis.com/api/consumer/request_count',
+        u'serviceruntime.googleapis.com/api/consumer/request_count',
         MetricKind.DELTA,
         ValueType.INT64,
         _set_int64_metric_to_constant_1,
         Mark.CONSUMER,
     )
     PRODUCER_REQUEST_COUNT = (
-        'serviceruntime.googleapis.com/api/producer/request_count',
+        u'serviceruntime.googleapis.com/api/producer/request_count',
         MetricKind.DELTA,
         ValueType.INT64,
         _set_int64_metric_to_constant_1,
     )
     CONSUMER_REQUEST_SIZES = (
-        'serviceruntime.googleapis.com/api/consumer/request_sizes',
+        u'serviceruntime.googleapis.com/api/consumer/request_sizes',
         MetricKind.DELTA,
         ValueType.DISTRIBUTION,
         _set_distribution_metric_to_request_size,
         Mark.CONSUMER,
     )
     PRODUCER_REQUEST_SIZES = (
-        'serviceruntime.googleapis.com/api/producer/request_sizes',
+        u'serviceruntime.googleapis.com/api/producer/request_sizes',
         MetricKind.DELTA,
         ValueType.DISTRIBUTION,
         _set_distribution_metric_to_request_size,
     )
     CONSUMER_RESPONSE_SIZES = (
-        'serviceruntime.googleapis.com/api/consumer/response_sizes',
+        u'serviceruntime.googleapis.com/api/consumer/response_sizes',
         MetricKind.DELTA,
         ValueType.DISTRIBUTION,
         _set_distribution_metric_to_response_size,
         Mark.CONSUMER,
     )
     PRODUCER_RESPONSE_SIZES = (
-        'serviceruntime.googleapis.com/api/producer/response_sizes',
+        u'serviceruntime.googleapis.com/api/producer/response_sizes',
         MetricKind.DELTA,
         ValueType.DISTRIBUTION,
         _set_distribution_metric_to_response_size,
     )
     CONSUMER_ERROR_COUNT = (
-        'serviceruntime.googleapis.com/api/consumer/error_count',
+        u'serviceruntime.googleapis.com/api/consumer/error_count',
         MetricKind.DELTA,
         ValueType.INT64,
         _set_int64_metric_to_constant_1_if_http_error,
         Mark.CONSUMER,
     )
     PRODUCER_ERROR_COUNT = (
-        'serviceruntime.googleapis.com/api/producer/error_count',
+        u'serviceruntime.googleapis.com/api/producer/error_count',
         MetricKind.DELTA,
         ValueType.INT64,
         _set_int64_metric_to_constant_1_if_http_error,
     )
     CONSUMER_TOTAL_LATENCIES = (
-        'serviceruntime.googleapis.com/api/consumer/total_latencies',
+        u'serviceruntime.googleapis.com/api/consumer/total_latencies',
         MetricKind.DELTA,
         ValueType.DISTRIBUTION,
         _set_distribution_metric_to_request_time,
         Mark.CONSUMER,
     )
     PRODUCER_TOTAL_LATENCIES = (
-        'serviceruntime.googleapis.com/api/producer/total_latencies',
+        u'serviceruntime.googleapis.com/api/producer/total_latencies',
         MetricKind.DELTA,
         ValueType.DISTRIBUTION,
         _set_distribution_metric_to_request_time,
     )
     CONSUMER_BACKEND_LATENCIES = (
-        'serviceruntime.googleapis.com/api/consumer/backend_latencies',
+        u'serviceruntime.googleapis.com/api/consumer/backend_latencies',
         MetricKind.DELTA,
         ValueType.DISTRIBUTION,
         _set_distribution_metric_to_backend_time,
         Mark.CONSUMER,
     )
     PRODUCER_BACKEND_LATENCIES = (
-        'serviceruntime.googleapis.com/api/producer/backend_latencies',
+        u'serviceruntime.googleapis.com/api/producer/backend_latencies',
         MetricKind.DELTA,
         ValueType.DISTRIBUTION,
         _set_distribution_metric_to_backend_time,
     )
     CONSUMER_REQUEST_OVERHEAD_LATENCIES = (
-        'serviceruntime.googleapis.com/api/consumer/request_overhead_latencies',
+        u'serviceruntime.googleapis.com/api/consumer/request_overhead_latencies',
         MetricKind.DELTA,
         ValueType.DISTRIBUTION,
         _set_distribution_metric_to_overhead_time,
         Mark.CONSUMER,
     )
     PRODUCER_REQUEST_OVERHEAD_LATENCIES = (
-        'serviceruntime.googleapis.com/api/producer/request_overhead_latencies',
+        u'serviceruntime.googleapis.com/api/producer/request_overhead_latencies',
         MetricKind.DELTA,
         ValueType.DISTRIBUTION,
         _set_distribution_metric_to_overhead_time,

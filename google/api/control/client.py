@@ -56,35 +56,35 @@ from google.api.control.vendor.py3 import sched
 logger = logging.getLogger(__name__)
 
 
-CONFIG_VAR = 'ENDPOINTS_SERVER_CONFIG_FILE'
+CONFIG_VAR = u'ENDPOINTS_SERVER_CONFIG_FILE'
 
 
 def _load_from_well_known_env():
     if CONFIG_VAR not in os.environ:
-        logger.info('did not load server config; no environ var %s', CONFIG_VAR)
+        logger.info(u'did not load server config; no environ var %s', CONFIG_VAR)
         return _load_default()
     json_file = os.environ[CONFIG_VAR]
     if not os.path.exists(json_file):
-        logger.warn('did not load service; missing config file %s', json_file)
+        logger.warn(u'did not load service; missing config file %s', json_file)
         return _load_default()
     try:
         with open(json_file) as f:
             json_dict = json.load(f)
-            check_json = json_dict['checkAggregatorConfig']
-            report_json = json_dict['reportAggregatorConfig']
+            check_json = json_dict[u'checkAggregatorConfig']
+            report_json = json_dict[u'reportAggregatorConfig']
             check_options = CheckOptions(
-                num_entries=check_json['cacheEntries'],
+                num_entries=check_json[u'cacheEntries'],
                 expiration=timedelta(
-                    milliseconds=check_json['responseExpirationMs']),
+                    milliseconds=check_json[u'responseExpirationMs']),
                 flush_interval=timedelta(
-                    milliseconds=check_json['flushIntervalMs']))
+                    milliseconds=check_json[u'flushIntervalMs']))
             report_options = ReportOptions(
-                num_entries=report_json['cacheEntries'],
+                num_entries=report_json[u'cacheEntries'],
                 flush_interval=timedelta(
-                    milliseconds=report_json['flushIntervalMs']))
+                    milliseconds=report_json[u'flushIntervalMs']))
             return check_options, report_options
     except (KeyError, ValueError):
-        logger.warn('did not load service; bad json config file %s',
+        logger.warn(u'did not load service; bad json config file %s',
                     json_file,
                     exc_info=True)
         return _load_default()
@@ -122,7 +122,7 @@ _THREAD_CLASS = threading.Thread
 
 
 def _create_http_transport():
-    additional_http_headers = {"user-agent": USER_AGENT}
+    additional_http_headers = {u"user-agent": USER_AGENT}
     do_logging = logger.level <= logging.DEBUG
     return api_client.ServicecontrolV1(
         additional_http_headers=additional_http_headers,
@@ -134,7 +134,7 @@ def _thread_local_http_transport_func():
     local = threading.local()
 
     def create_transport():
-        if not getattr(local, "transport", None):
+        if not getattr(local, u"transport", None):
             local.transport = _create_http_transport()
         return local.transport
 
@@ -213,19 +213,19 @@ class Client(object):
         """
         with self._lock:
             if self._running:
-                logger.info('%s is already started', self)
+                logger.info(u'%s is already started', self)
                 return
 
             self._stopped = False
             self._running = True
-            logger.info('starting thread of type %s to run the scheduler',
+            logger.info(u'starting thread of type %s to run the scheduler',
                         _THREAD_CLASS)
             self._thread = _THREAD_CLASS(target=self._schedule_flushes)
             try:
                 self._thread.start()
             except Exception:  # pylint: disable=broad-except
                 logger.warn(
-                    'no scheduler thread, scheduler.run() will be invoked by report(...)',
+                    u'no scheduler thread, scheduler.run() will be invoked by report(...)',
                     exc_info=True)
                 self._thread = None
                 self._initialize_flushing()
@@ -239,7 +239,7 @@ class Client(object):
         """
         with self._lock:
             if self._stopped:
-                logger.info('%s is already stopped', self)
+                logger.info(u'%s is already stopped', self)
                 return
 
             self._flush_all_reports()
@@ -276,7 +276,7 @@ class Client(object):
         self._assert_is_running()
         res = self._check_aggregator.check(check_req)
         if res:
-            logger.debug('using cached check response for %s: %s',
+            logger.debug(u'using cached check response for %s: %s',
                          check_request, res)
             return res
 
@@ -289,7 +289,7 @@ class Client(object):
             self._check_aggregator.add_response(check_req, resp)
             return resp
         except Exception:  # pylint: disable=broad-except
-            logger.error('direct send of check request failed %s',
+            logger.error(u'direct send of check request failed %s',
                          check_request, exc_info=True)
             return None
 
@@ -307,12 +307,12 @@ class Client(object):
             self._scheduler.run(blocking=False)
 
         if not self._report_aggregator.report(report_req):
-            logger.info('need to send a report request directly')
+            logger.info(u'need to send a report request directly')
             try:
                 transport = self._create_transport()
                 transport.services.report(report_req)
             except Exception:  # pylint: disable=broad-except
-                logger.error('direct send for report request failed',
+                logger.error(u'direct send for report request failed',
                              exc_info=True)
 
     @property
@@ -320,14 +320,14 @@ class Client(object):
         return self._running and self._thread is None
 
     def _assert_is_running(self):
-        assert self._running, '%s needs to be running' % (self,)
+        assert self._running, u'%s needs to be running' % (self,)
 
     def _initialize_flushing(self):
         with self._lock:
-            logger.info('created a scheduler to control flushing')
+            logger.info(u'created a scheduler to control flushing')
             self._scheduler = sched.scheduler(to_cache_timer(self._timer),
                                               time.sleep)
-            logger.info('scheduling initial check and flush')
+            logger.info(u'scheduling initial check and flush')
             self._flush_schedule_check_aggregator()
             self._flush_schedule_report_aggregator()
 
@@ -335,7 +335,7 @@ class Client(object):
         # the method expects to be run in the thread created in start()
         self._initialize_flushing()
         self._scheduler.run()  # should block until self._stopped is set
-        logger.info('scheduler.run completed, %s will exit', threading.current_thread())
+        logger.info(u'scheduler.run completed, %s will exit', threading.current_thread())
 
     def _cleanup_if_stopped(self):
         if not self._stopped:
@@ -348,26 +348,26 @@ class Client(object):
 
     def _flush_schedule_check_aggregator(self):
         if self._cleanup_if_stopped():
-            logger.info('did not schedule check flush: client is stopped')
+            logger.info(u'did not schedule check flush: client is stopped')
             return
 
         flush_interval = self._check_aggregator.flush_interval
         if not flush_interval or flush_interval.total_seconds() < 0:
-            logger.debug('did not schedule check flush: caching is disabled')
+            logger.debug(u'did not schedule check flush: caching is disabled')
             return
 
         if self._run_scheduler_directly:
-            logger.debug('did not schedule check flush: no scheduler thread')
+            logger.debug(u'did not schedule check flush: no scheduler thread')
             return
 
-        logger.debug('flushing the check aggregator')
+        logger.debug(u'flushing the check aggregator')
         transport = self._create_transport()
         for req in self._check_aggregator.flush():
             try:
                 resp = transport.services.check(req)
                 self._check_aggregator.add_response(req, resp)
             except Exception:  # pylint: disable=broad-except
-                logger.error('failed to flush check_req %s', req, exc_info=True)
+                logger.error(u'failed to flush check_req %s', req, exc_info=True)
 
         # schedule a repeat of this method
         self._scheduler.enter(
@@ -379,23 +379,23 @@ class Client(object):
 
     def _flush_schedule_report_aggregator(self):
         if self._cleanup_if_stopped():
-            logger.info('did not schedule report flush: client is stopped')
+            logger.info(u'did not schedule report flush: client is stopped')
             return
 
         flush_interval = self._report_aggregator.flush_interval
         if not flush_interval or flush_interval.total_seconds() < 0:
-            logger.debug('did not schedule report flush: caching is disabled')
+            logger.debug(u'did not schedule report flush: caching is disabled')
             return
 
         # flush reports and schedule a repeat of this method
         transport = self._create_transport()
         reqs = self._report_aggregator.flush()
-        logger.debug("will flush %d report requests", len(reqs))
+        logger.debug(u"will flush %d report requests", len(reqs))
         for req in reqs:
             try:
                 transport.services.report(req)
             except Exception:  # pylint: disable=broad-except
-                logger.error('failed to flush report_req %s', req, exc_info=True)
+                logger.error(u'failed to flush report_req %s', req, exc_info=True)
 
         self._scheduler.enter(
             flush_interval.total_seconds(),
@@ -406,13 +406,13 @@ class Client(object):
 
     def _flush_all_reports(self):
         all_requests = self._report_aggregator.clear()
-        logger.info('flushing all reports (count=%d)', len(all_requests))
+        logger.info(u'flushing all reports (count=%d)', len(all_requests))
         transport = self._create_transport()
         for req in all_requests:
             try:
                 transport.services.report(req)
             except Exception:  # pylint: disable=broad-except
-                logger.error('failed to flush report_req %s', req, exc_info=True)
+                logger.error(u'failed to flush report_req %s', req, exc_info=True)
 
 
 def use_default_thread():
@@ -429,6 +429,5 @@ def use_gae_thread():
         _THREAD_CLASS = background_thread.BackgroundThread
     except ImportError:
         logger.error(
-            'Could not install appengine background threads!'
-            ' Please install the python AppEngine SDK and use this from there'
-        )
+            u'Could not install appengine background threads!'
+            u' Please install the python AppEngine SDK and use this from there')

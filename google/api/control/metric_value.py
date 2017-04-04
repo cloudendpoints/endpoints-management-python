@@ -51,8 +51,8 @@ def create(labels=None, **kw):
 
     """
     if labels is not None:
-        kw['labels'] = encoding.PyValueToMessage(MetricValue.LabelsValue,
-                                                 labels)
+        kw[u'labels'] = encoding.PyValueToMessage(MetricValue.LabelsValue,
+                                                  labels)
     return MetricValue(**kw)
 
 
@@ -68,13 +68,13 @@ def merge(metric_kind, prior, latest):
     prior_type, _ = _detect_value(prior)
     latest_type, _ = _detect_value(latest)
     if prior_type != latest_type:
-        logger.warn('Metric values are not compatible: %s, %s',
+        logger.warn(u'Metric values are not compatible: %s, %s',
                     prior, latest)
-        raise ValueError('Incompatible delta metric values')
+        raise ValueError(u'Incompatible delta metric values')
     if prior_type is None:
-        logger.warn('Bad metric values, types not known for : %s, %s',
+        logger.warn(u'Bad metric values, types not known for : %s, %s',
                     prior, latest)
-        raise ValueError('Unsupported delta metric types')
+        raise ValueError(u'Unsupported delta metric types')
 
     if metric_kind == MetricKind.DELTA:
         return _merge_delta_metric(prior, latest)
@@ -92,10 +92,10 @@ def update_hash(a_hash, mv):
     """
     if mv.labels:
         signing.add_dict_to_hash(a_hash, encoding.MessageToPyValue(mv.labels))
-    money_value = mv.get_assigned_value('moneyValue')
+    money_value = mv.get_assigned_value(u'moneyValue')
     if money_value is not None:
-        a_hash.update('\x00')
-        a_hash.update(money_value.currencyCode)
+        a_hash.update(b'\x00')
+        a_hash.update(money_value.currencyCode.encode('utf-8'))
 
 
 def sign(mv):
@@ -133,8 +133,8 @@ def _merge_delta_metric(prior, latest):
 # field in google/api/servicecontrol/v1/metric_value.proto, and should be kept
 # in sync with that
 _METRIC_VALUE_ONEOF_FIELDS = (
-    'boolValue', 'distributionValue', 'doubleValue', 'int64Value',
-    'moneyValue', 'stringValue')
+    u'boolValue', u'distributionValue', u'doubleValue', u'int64Value',
+    u'moneyValue', u'stringValue')
 
 
 def _detect_value(metric_value):
@@ -161,13 +161,13 @@ def _merge_delta_timestamps(prior, latest):
 
 
 def _combine_delta_values(value_type, prior, latest):
-    if value_type in ('int64Value', 'doubleValue'):
+    if value_type in (u'int64Value', u'doubleValue'):
         return prior + latest
-    elif value_type == 'moneyValue':
+    elif value_type == u'moneyValue':
         return money.add(prior, latest, allow_overflow=True)
-    elif value_type == 'distributionValue':
+    elif value_type == u'distributionValue':
         distribution.merge(prior, latest)
         return latest
     else:
-        logger.error('Unmergeable metric type %s', value_type)
-        raise ValueError('Could not merge unmergeable metric type')
+        logger.error(u'Unmergeable metric type %s', value_type)
+        raise ValueError(u'Could not merge unmergeable metric type')

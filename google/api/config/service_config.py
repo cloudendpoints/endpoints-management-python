@@ -29,13 +29,13 @@ from urllib3.contrib import appengine
 
 logger = logging.getLogger(__name__)
 
-_GOOGLE_API_SCOPE = "https://www.googleapis.com/auth/cloud-platform"
+_GOOGLE_API_SCOPE = u"https://www.googleapis.com/auth/cloud-platform"
 
-_SERVICE_MGMT_URL_TEMPLATE = ("https://servicemanagement.googleapis.com"
-                              "/v1/services/{}/configs/{}")
+_SERVICE_MGMT_URL_TEMPLATE = (u"https://servicemanagement.googleapis.com"
+                              u"/v1/services/{}/configs/{}")
 
-_SERVICE_NAME_ENV_KEY = "ENDPOINTS_SERVICE_NAME"
-_SERVICE_VERSION_ENV_KEY = "ENDPOINTS_SERVICE_VERSION"
+_SERVICE_NAME_ENV_KEY = u"ENDPOINTS_SERVICE_NAME"
+_SERVICE_VERSION_ENV_KEY = u"ENDPOINTS_SERVICE_VERSION"
 
 
 def fetch_service_config(service_name=None, service_version=None):
@@ -67,17 +67,17 @@ def fetch_service_config(service_name=None, service_version=None):
                                                          service_version)
 
     access_token = _get_access_token()
-    headers = {"Authorization": "Bearer {}".format(access_token)}
+    headers = {u"Authorization": u"Bearer {}".format(access_token)}
 
     http_client = _get_http_client()
-    response = http_client.request("GET", service_mgmt_url, headers=headers)
+    response = http_client.request(u"GET", service_mgmt_url, headers=headers)
 
     status_code = response.status
     if status_code != 200:
-        message_template = "Fetching service config failed (status code {})"
+        message_template = u"Fetching service config failed (status code {})"
         _log_and_raise(Exception, message_template.format(status_code))
 
-    logger.debug('obtained service json from the management api:\n%s', response.data)
+    logger.debug(u'obtained service json from the management api:\n%s', response.data)
     service = encoding.JsonToMessage(messages.Service, response.data)
     _validate_service_config(service, service_name, service_version)
     return service
@@ -99,7 +99,7 @@ def _get_http_client():
 
 def _get_env_var_or_raise(env_variable_name):
     if env_variable_name not in os.environ:
-        message_template = 'The "{}" environment variable is not set'
+        message_template = u'The "{}" environment variable is not set'
         _log_and_raise(ValueError, message_template.format(env_variable_name))
     return os.environ[env_variable_name]
 
@@ -108,16 +108,16 @@ def _validate_service_config(service, expected_service_name,
                              expected_service_version):
     service_name = service.name
     if not service_name:
-        _log_and_raise(ValueError, "No service name in the service config")
+        _log_and_raise(ValueError, u"No service name in the service config")
     if service_name != expected_service_name:
-        message_template = "Unexpected service name in service config: {}"
+        message_template = u"Unexpected service name in service config: {}"
         _log_and_raise(ValueError, message_template.format(service_name))
 
     service_version = service.id
     if not service_version:
-        _log_and_raise(ValueError, "No service version in the service config")
+        _log_and_raise(ValueError, u"No service version in the service config")
     if service_version != expected_service_version:
-        message_template = "Unexpected service version in service config: {}"
+        message_template = u"Unexpected service version in service config: {}"
         _log_and_raise(ValueError, message_template.format(service_version))
 
 

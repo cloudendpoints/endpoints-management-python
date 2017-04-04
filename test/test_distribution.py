@@ -93,20 +93,20 @@ _OVERFLOW_SAMPLE = 1e5
 
 _TEST_SAMPLES_AND_BUCKETS = [
     {
-        'samples': [_UNDERFLOW_SAMPLE],
-        'want': [1, 0, 0, 0, 0]
+        u'samples': [_UNDERFLOW_SAMPLE],
+        u'want': [1, 0, 0, 0, 0]
     },
     {
-        'samples': [_LOW_SAMPLE] * 2,
-        'want': [0, 2, 0, 0, 0]
+        u'samples': [_LOW_SAMPLE] * 2,
+        u'want': [0, 2, 0, 0, 0]
     },
     {
-        'samples': [_LOW_SAMPLE, _HIGH_SAMPLE, _HIGH_SAMPLE],
-        'want': [0, 1, 0, 2, 0]
+        u'samples': [_LOW_SAMPLE, _HIGH_SAMPLE, _HIGH_SAMPLE],
+        u'want': [0, 1, 0, 2, 0]
     },
     {
-        'samples': [_OVERFLOW_SAMPLE],
-        'want': [0, 0, 0, 0, 1]
+        u'samples': [_OVERFLOW_SAMPLE],
+        u'want': [0, 0, 0, 0, 1]
     },
 ]
 
@@ -131,10 +131,10 @@ class TestAddSample(unittest2.TestCase):
     def expect_adds_test_samples_ok(self, make_dist_func):
         for t in _TEST_SAMPLES_AND_BUCKETS:
             d = make_dist_func()
-            samples = t['samples']
+            samples = t[u'samples']
             for s in samples:
                 distribution.add_sample(s, d)
-            expect(d.bucketCounts).to(equal(t['want']))
+            expect(d.bucketCounts).to(equal(t[u'want']))
             _expect_stats_eq_direct_calc_from_samples(d, samples)
 
     def test_update_explict_buckets_ok(self):

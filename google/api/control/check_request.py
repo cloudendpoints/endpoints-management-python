@@ -43,75 +43,75 @@ logger = logging.getLogger(__name__)
 
 # alias for brevity
 _CheckErrors = messages.CheckError.CodeValueValuesEnum
-_IS_OK = (httplib.OK, '', True)
+_IS_OK = (httplib.OK, u'', True)
 _IS_UNKNOWN = (
     httplib.INTERNAL_SERVER_ERROR,
-    'Request blocked due to unsupported block reason {detail}',
+    u'Request blocked due to unsupported block reason {detail}',
     False)
 _CHECK_ERROR_CONVERSION = {
     _CheckErrors.NOT_FOUND: (
         httplib.BAD_REQUEST,
-        'Client project not found. Please pass a valid project',
+        u'Client project not found. Please pass a valid project',
         False,
     ),
     _CheckErrors.API_KEY_NOT_FOUND: (
         httplib.BAD_REQUEST,
-        'API key not found. Please pass a valid API key',
+        u'API key not found. Please pass a valid API key',
         True,
     ),
     _CheckErrors.API_KEY_EXPIRED: (
         httplib.BAD_REQUEST,
-        'API key expired. Please renew the API key',
+        u'API key expired. Please renew the API key',
         True,
     ),
     _CheckErrors.API_KEY_INVALID: (
         httplib.BAD_REQUEST,
-        'API not valid. Please pass a valid API key',
+        u'API not valid. Please pass a valid API key',
         True,
     ),
     _CheckErrors.SERVICE_NOT_ACTIVATED: (
         httplib.FORBIDDEN,
-        '{detail} Please enable the project for {project_id}',
+        u'{detail} Please enable the project for {project_id}',
         False,
     ),
     _CheckErrors.PERMISSION_DENIED: (
         httplib.FORBIDDEN,
-        'Permission denied: {detail}',
+        u'Permission denied: {detail}',
         False,
     ),
     _CheckErrors.IP_ADDRESS_BLOCKED: (
         httplib.FORBIDDEN,
-        '{detail}',
+        u'{detail}',
         False,
     ),
     _CheckErrors.REFERER_BLOCKED: (
         httplib.FORBIDDEN,
-        '{detail}',
+        u'{detail}',
         False,
     ),
     _CheckErrors.CLIENT_APP_BLOCKED: (
         httplib.FORBIDDEN,
-        '{detail}',
+        u'{detail}',
         False,
     ),
     _CheckErrors.PROJECT_DELETED: (
         httplib.FORBIDDEN,
-        'Project {project_id} has been deleted',
+        u'Project {project_id} has been deleted',
         False,
     ),
     _CheckErrors.PROJECT_INVALID: (
         httplib.BAD_REQUEST,
-        'Client Project is not valid.  Please pass a valid project',
+        u'Client Project is not valid.  Please pass a valid project',
         False,
     ),
     _CheckErrors.VISIBILITY_DENIED: (
         httplib.FORBIDDEN,
-        'Project {project_id} has no visibility access to the service',
+        u'Project {project_id} has no visibility access to the service',
         False,
     ),
     _CheckErrors.BILLING_DISABLED: (
         httplib.FORBIDDEN,
-        'Project {project_id} has billing disabled. Please enable it',
+        u'Project {project_id} has billing disabled. Please enable it',
         False,
     ),
 
@@ -145,11 +145,11 @@ def convert_response(check_response, project_id):
     # only check the first error for now, as per ESP
     theError = check_response.checkErrors[0]
     error_tuple = _CHECK_ERROR_CONVERSION.get(theError.code, _IS_UNKNOWN)
-    if error_tuple[1].find('{') == -1:  # no replacements needed:
+    if error_tuple[1].find(u'{') == -1:  # no replacements needed:
         return error_tuple
 
-    updated_msg = error_tuple[1].replace('{project_id}', project_id)
-    updated_msg = updated_msg.replace('{detail}', theError.detail or '')
+    updated_msg = error_tuple[1].replace(u'{project_id}', project_id)
+    updated_msg = updated_msg.replace(u'{detail}', theError.detail or u'')
     error_tuple = (error_tuple[0], updated_msg, error_tuple[2])
     return error_tuple
 
@@ -165,39 +165,39 @@ def sign(check_request):
        string: a secure hash generated from the operation
     """
     if not isinstance(check_request, messages.CheckRequest):
-        raise ValueError('Invalid request')
+        raise ValueError(u'Invalid request')
     op = check_request.operation
     if op is None or op.operationName is None or op.consumerId is None:
-        logging.error('Bad %s: not initialized => not signed', check_request)
-        raise ValueError('check request must be initialized with an operation')
+        logging.error(u'Bad %s: not initialized => not signed', check_request)
+        raise ValueError(u'check request must be initialized with an operation')
     md5 = hashlib.md5()
-    md5.update(op.operationName)
-    md5.update('\x00')
-    md5.update(op.consumerId)
+    md5.update(op.operationName.encode('utf-8'))
+    md5.update(b'\x00')
+    md5.update(op.consumerId.encode('utf-8'))
     if op.labels:
         signing.add_dict_to_hash(md5, encoding.MessageToPyValue(op.labels))
     for value_set in op.metricValueSets:
-        md5.update('\x00')
-        md5.update(value_set.metricName)
+        md5.update(b'\x00')
+        md5.update(value_set.metricName.encode('utf-8'))
         for mv in value_set.metricValues:
             metric_value.update_hash(md5, mv)
 
-    md5.update('\x00')
+    md5.update(b'\x00')
     if op.quotaProperties:
         # N.B: this differs form cxx implementation, which serializes the
         # protobuf. This should be OK as the exact hash used does not need to
         # match across implementations.
-        md5.update(repr(op.quotaProperties))
+        md5.update(repr(op.quotaProperties).encode('utf-8'))
 
-    md5.update('\x00')
+    md5.update(b'\x00')
     return md5.digest()
 
 
 _KNOWN_LABELS = label_descriptor.KnownLabels
 
 
-class Info(collections.namedtuple('Info',
-                                  ('client_ip',) + operation.Info._fields),
+class Info(collections.namedtuple(u'Info',
+                                  (u'client_ip',) + operation.Info._fields),
            operation.Info):
     """Holds the information necessary to fill in CheckRequest.
 
@@ -207,7 +207,7 @@ class Info(collections.namedtuple('Info',
        client_ip: the client IP address
 
     """
-    def __new__(cls, client_ip='', **kw):
+    def __new__(cls, client_ip=u'', **kw):
         """Invokes the base constructor with default values."""
         op_info = operation.Info(**kw)
         return super(Info, cls).__new__(cls, client_ip, **op_info._asdict())
@@ -224,11 +224,11 @@ class Info(collections.namedtuple('Info',
 
         """
         if not self.service_name:
-            raise ValueError('the service name must be set')
+            raise ValueError(u'the service name must be set')
         if not self.operation_id:
-            raise ValueError('the operation id must be set')
+            raise ValueError(u'the operation id must be set')
         if not self.operation_name:
-            raise ValueError('the operation name must be set')
+            raise ValueError(u'the operation name must be set')
         op = super(Info, self).as_operation(timer=timer)
         labels = {}
         if self.android_cert_fingerprint:
@@ -443,25 +443,25 @@ class Aggregator(object):
         if self._cache is None:
             return None  # no cache, send request now
         if not isinstance(req, messages.ServicecontrolServicesCheckRequest):
-            raise ValueError('Invalid request')
+            raise ValueError(u'Invalid request')
         if req.serviceName != self.service_name:
-            logger.error('bad check(): service_name %s does not match ours %s',
+            logger.error(u'bad check(): service_name %s does not match ours %s',
                          req.serviceName, self.service_name)
-            raise ValueError('Service name mismatch')
+            raise ValueError(u'Service name mismatch')
         check_request = req.checkRequest
         if check_request is None:
-            logger.error('bad check(): no check_request in %s', req)
-            raise ValueError('Expected operation not set')
+            logger.error(u'bad check(): no check_request in %s', req)
+            raise ValueError(u'Expected operation not set')
         op = check_request.operation
         if op is None:
-            logger.error('bad check(): no operation in %s', req)
-            raise ValueError('Expected operation not set')
+            logger.error(u'bad check(): no operation in %s', req)
+            raise ValueError(u'Expected operation not set')
         if op.importance != messages.Operation.ImportanceValueValuesEnum.LOW:
             return None  # op is important, send request now
 
         signature = sign(check_request)
         with self._cache as cache:
-            logger.debug('checking the cache for %s\n%s', signature, cache)
+            logger.debug(u'checking the cache for %s\n%s', signature, cache)
             item = cache.get(signature)
             if item is None:
                 return None  # signal to caller to send req
@@ -483,7 +483,7 @@ class Aggregator(object):
                     return item.response
 
                 if (item.is_flushing):
-                    logger.warn('last refresh request did not complete')
+                    logger.warn(u'last refresh request did not complete')
 
                 item.is_flushing = True
                 item.last_check_time = self._timer()

@@ -19,6 +19,6 @@ import json
 from jwkest import jws
 
 
-def generate_auth_token(payload, keys, alg="ES256", kid=None):
+def generate_auth_token(payload, keys, alg=u"ES256", kid=None):
     json_web_signature = jws.JWS(json.dumps(payload), alg=alg, kid=kid)
     return json_web_signature.sign_compact(keys=keys)

@@ -38,17 +38,17 @@ logger = logging.getLogger(__name__)
 
 class Info(
         collections.namedtuple(
-            'Info', [
-                'android_cert_fingerprint',
-                'android_package_name',
-                'api_key',
-                'api_key_valid',
-                'consumer_project_id',
-                'ios_bundle_id',
-                'operation_id',
-                'operation_name',
-                'referer',
-                'service_name',
+            u'Info', [
+                u'android_cert_fingerprint',
+                u'android_package_name',
+                u'api_key',
+                u'api_key_valid',
+                u'consumer_project_id',
+                u'ios_bundle_id',
+                u'operation_id',
+                u'operation_name',
+                u'referer',
+                u'service_name',
             ])):
     """Holds basic information about an api call.
 
@@ -80,16 +80,16 @@ class Info(
     # pylint: disable=too-many-arguments
 
     def __new__(cls,
-                android_cert_fingerprint='',
-                android_package_name='',
-                api_key='',
+                android_cert_fingerprint=u'',
+                android_package_name=u'',
+                api_key=u'',
                 api_key_valid=False,
-                consumer_project_id='',
-                ios_bundle_id = '',
-                operation_id='',
-                operation_name='',
-                referer='',
-                service_name=''):
+                consumer_project_id=u'',
+                ios_bundle_id=u'',
+                operation_id=u'',
+                operation_name=u'',
+                referer=u'',
+                service_name=u''):
         """Invokes the base constructor with default values."""
         return super(cls, Info).__new__(
             cls,
@@ -121,9 +121,9 @@ class Info(
         if self.operation_name:
             op.operationName = self.operation_name
         if self.api_key and self.api_key_valid:
-            op.consumerId = 'api_key:' + self.api_key
+            op.consumerId = u'api_key:' + self.api_key
         elif self.consumer_project_id:
-            op.consumerId = 'project:' + self.consumer_project_id
+            op.consumerId = u'project:' + self.consumer_project_id
         return op
 
 
