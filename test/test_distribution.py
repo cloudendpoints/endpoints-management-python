@@ -21,7 +21,7 @@ import sys
 import unittest2
 from expects import expect, equal, raise_error
 
-from google.api.control import distribution, messages
+from endpoints_management.control import distribution, messages
 
 
 class TestCreateExponential(unittest2.TestCase):

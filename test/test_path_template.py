@@ -19,7 +19,7 @@ from __future__ import absolute_import
 from builtins import str
 import unittest2
 
-from google.api.control.path_template import PathTemplate, ValidationException
+from endpoints_management.control.path_template import PathTemplate, ValidationException
 
 
 class TestPathTemplate(unittest2.TestCase):

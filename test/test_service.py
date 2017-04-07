@@ -24,7 +24,7 @@ import unittest2
 from apitools.base.py import encoding
 from expects import be_false, be_none, be_true, expect, equal, raise_error
 
-from google.api.control import messages, service
+from endpoints_management.control import messages, service
 
 
 _LOGGING_DESTINATIONS_INPUT = u"""

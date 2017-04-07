@@ -24,8 +24,8 @@ from expects import be_none, equal, expect, raise_error
 
 from apitools.base.py import encoding
 
-from google.api.control import caches, label_descriptor, timestamp
-from google.api.control import check_request, messages, metric_value
+from endpoints_management.control import caches, label_descriptor, timestamp
+from endpoints_management.control import check_request, messages, metric_value
 
 # This import should be above project-level imports, but flake8 doesn't like
 # it when the if block is above unadorned imports.

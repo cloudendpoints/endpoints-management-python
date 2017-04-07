@@ -21,8 +21,8 @@ import sys
 import unittest
 
 from apitools.base.py import encoding
-from google.api.config import service_config
-from google.api.control import messages
+from endpoints_management.config import service_config
+from endpoints_management.control import messages
 from oauth2client import client
 
 class ServiceConfigFetchTest(unittest.TestCase):
@@ -57,9 +57,9 @@ class ServiceConfigFetchTest(unittest.TestCase):
         with self.assertRaisesRegexp(ValueError, message):
             service_config.fetch_service_config()
 
-    @mock.patch(u"google.api.config.service_config.client.GoogleCredentials",
+    @mock.patch(u"endpoints_management.config.service_config.client.GoogleCredentials",
                 _credentials)
-    @mock.patch(u"google.api.config.service_config._get_http_client", _get_http_client)
+    @mock.patch(u"endpoints_management.config.service_config._get_http_client", _get_http_client)
     def test_fetch_service_config(self):
         mock_response = mock.MagicMock()
         mock_response.status = 200
@@ -79,9 +79,9 @@ class ServiceConfigFetchTest(unittest.TestCase):
         mock_http_client.request.assert_called_once_with(u"GET", url,
                                                          headers=headers)
 
-    @mock.patch(u"google.api.config.service_config.client.GoogleCredentials",
+    @mock.patch(u"endpoints_management.config.service_config.client.GoogleCredentials",
                 _credentials)
-    @mock.patch(u"google.api.config.service_config._get_http_client", _get_http_client)
+    @mock.patch(u"endpoints_management.config.service_config._get_http_client", _get_http_client)
     def test_fetch_service_config_failed(self):
         mock_response = mock.MagicMock()
         mock_response.status = 403
@@ -91,9 +91,9 @@ class ServiceConfigFetchTest(unittest.TestCase):
         with self.assertRaisesRegexp(Exception, u"status code 403"):
             service_config.fetch_service_config()
 
-    @mock.patch(u"google.api.config.service_config.client.GoogleCredentials",
+    @mock.patch(u"endpoints_management.config.service_config.client.GoogleCredentials",
                 _credentials)
-    @mock.patch(u"google.api.config.service_config._get_http_client", _get_http_client)
+    @mock.patch(u"endpoints_management.config.service_config._get_http_client", _get_http_client)
     def test_fetch_service_config_with_wrong_service_name(self):
         mock_response = mock.MagicMock()
         mock_response.status = 200
@@ -109,9 +109,9 @@ class ServiceConfigFetchTest(unittest.TestCase):
         with self.assertRaisesRegexp(ValueError, message):
             service_config.fetch_service_config()
 
-    @mock.patch(u"google.api.config.service_config.client.GoogleCredentials",
+    @mock.patch(u"endpoints_management.config.service_config.client.GoogleCredentials",
                 _credentials)
-    @mock.patch(u"google.api.config.service_config._get_http_client", _get_http_client)
+    @mock.patch(u"endpoints_management.config.service_config._get_http_client", _get_http_client)
     def test_fetch_service_config_with_wrong_service_version(self):
         mock_response = mock.MagicMock()
         mock_response.status = 200

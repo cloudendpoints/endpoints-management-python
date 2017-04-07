@@ -19,7 +19,7 @@ import hashlib
 import unittest2
 from expects import equal, expect
 
-from google.api.control import signing
+from endpoints_management.control import signing
 
 
 class TestAddDictToHash(unittest2.TestCase):

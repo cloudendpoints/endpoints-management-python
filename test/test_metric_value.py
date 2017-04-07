@@ -21,8 +21,8 @@ import unittest2
 from expects import equal, expect, raise_error
 
 from apitools.base.py import encoding
-from google.api.control import distribution, timestamp, metric_value, messages
-from google.api.control import MetricKind
+from endpoints_management.control import distribution, timestamp, metric_value, messages
+from endpoints_management.control import MetricKind
 
 
 class TestUpdateHash(unittest2.TestCase):

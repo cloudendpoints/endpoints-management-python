@@ -1,4 +1,4 @@
-# Copyright 2016 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,20 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Provides support for creating signatures using secure hashes."""
+import sys
 
-from __future__ import absolute_import
+import endpoints_management.control.signing
 
-
-def add_dict_to_hash(a_hash, a_dict):
-    """Adds `a_dict` to `a_hash`
-
-    Args:
-       a_hash (`Hash`): the secure hash, e.g created by hashlib.md5
-       a_dict (dict[string, [string]]): the dictionary to add to the hash
-
-    """
-    if a_dict is None:
-        return
-    for k, v in a_dict.items():
-        a_hash.update(b'\x00' + k.encode('utf-8') + b'\x00' + v.encode('utf-8'))
+sys.modules[__name__] = sys.modules['endpoints_management.control.signing']

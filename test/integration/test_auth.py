@@ -28,9 +28,9 @@ from jwkest import ecc
 from jwkest import jwk
 from test import token_utils
 
-from google.api import auth
-from google.api.auth import suppliers
-from google.api.auth import tokens
+from endpoints_management import auth
+from endpoints_management.auth import suppliers
+from endpoints_management.auth import tokens
 
 
 class IntegrationTest(unittest.TestCase):

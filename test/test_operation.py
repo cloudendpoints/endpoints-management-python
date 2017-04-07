@@ -19,8 +19,8 @@ import datetime
 import unittest2
 from expects import be_none, expect, equal, raise_error
 
-from google.api.control import messages, metric_value, operation, timestamp
-from google.api.control import MetricKind
+from endpoints_management.control import messages, metric_value, operation, timestamp
+from endpoints_management.control import MetricKind
 
 _A_FLOAT_VALUE = 1.1
 _REALLY_EARLY = timestamp.to_rfc3339(datetime.datetime(1970, 1, 1, 0, 0, 0))

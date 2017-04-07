@@ -22,9 +22,9 @@ import tempfile
 import unittest2
 from expects import be_false, be_none, be_true, expect, equal, raise_error
 
-from google.api.auth import suppliers
-from google.api.auth import tokens
-from google.api.control import client, messages, report_request, service, wsgi
+from endpoints_management.auth import suppliers
+from endpoints_management.auth import tokens
+from endpoints_management.control import client, messages, report_request, service, wsgi
 
 
 def _dummy_start_response(content, dummy_response_headers):

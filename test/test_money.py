@@ -18,7 +18,7 @@ import sys
 import unittest2
 from expects import expect, equal, raise_error
 
-from google.api.control import money, messages
+from endpoints_management.control import money, messages
 
 
 class TestCheckValid(unittest2.TestCase):

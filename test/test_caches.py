@@ -21,7 +21,7 @@ import unittest2
 
 from expects import be, be_a, be_none, equal, expect, raise_error
 
-from google.api.control import caches, report_request
+from endpoints_management.control import caches, report_request
 
 
 _TEST_NUM_ENTRIES = 3  # arbitrary

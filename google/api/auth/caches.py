@@ -1,4 +1,4 @@
-# Copyright 2016 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,29 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Defines a dogpile in-memory cache backend that supports size management."""
+import sys
 
-from dogpile.cache import api
-import pylru
+import endpoints_management.auth.caches
 
-
-class LruBackend(api.CacheBackend):
-    """A dogpile.cache backend that uses LRU as the size management."""
-
-    def __init__(self, options):
-        """Initializes an LruBackend.
-
-        Args:
-          options: a dictionary that contains configuration options.
-        """
-        capacity = options[u"capacity"] if u"capacity" in options else 200
-        self._cache = pylru.lrucache(capacity)
-
-    def get(self, key):
-        return self._cache[key] if key in self._cache else api.NO_VALUE
-
-    def set(self, key, value):
-        self._cache[key] = value
-
-    def delete(self, key):
-        del self._cache[key]
+sys.modules[__name__] = sys.modules['endpoints_management.auth.caches']

@@ -25,8 +25,8 @@ from expects import be_none, equal, expect, raise_error
 
 from apitools.base.py import encoding
 
-from google.api.control import caches, label_descriptor, messages, metric_value
-from google.api.control import metric_descriptor, report_request, timestamp
+from endpoints_management.control import caches, label_descriptor, messages, metric_value
+from endpoints_management.control import metric_descriptor, report_request, timestamp
 
 
 class TestReportingRules(unittest2.TestCase):

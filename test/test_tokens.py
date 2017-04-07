@@ -25,8 +25,8 @@ from jwkest import jwk
 from jwkest import jws
 from test import token_utils
 
-from google.api.auth import suppliers
-from google.api.auth import tokens
+from endpoints_management.auth import suppliers
+from endpoints_management.auth import tokens
 
 
 if PY3:

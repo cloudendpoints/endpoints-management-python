@@ -1,4 +1,4 @@
-# Copyright 2016 Google Inc. All Rights Reserved.
+# Copyright 2017 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,19 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Google Service Control Client"""
+import sys
 
-from __future__ import absolute_import
+import endpoints_management.control
 
-import google.api.gen.servicecontrol_v1_messages as messages
-import google.api.gen.servicecontrol_v1_client as api_client
-
-__version__ = '1.0.2'
-
-# Alias the generated MetricKind and ValueType enums to simplify their usage
-# elsewhere
-MetricKind = messages.MetricDescriptor.MetricKindValueValuesEnum
-ValueType = messages.MetricDescriptor.ValueTypeValueValuesEnum
-
-USER_AGENT = u'ESP'
-SERVICE_AGENT = u'EF_PYTHON/' + __version__
+sys.modules[__name__] = sys.modules['endpoints_management.control']
