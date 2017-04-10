@@ -380,8 +380,11 @@ _INFO_TESTS = [
          startTime=_START_OF_EPOCH,
          endTime=_START_OF_EPOCH)),
     (check_request.Info(
+        android_cert_fingerprint='an_android_cert_fingerprint',
+        android_package_name='an_android_package_name',
         api_key='an_api_key',
         api_key_valid=True,
+        ios_bundle_id='an_ios_bundle_id',
         operation_id='an_op_id',
         operation_name='an_op_name',
         referer='a_referer',
@@ -391,6 +394,9 @@ _INFO_TESTS = [
          consumerId='api_key:an_api_key',
          labels = encoding.PyValueToMessage(
              messages.Operation.LabelsValue, {
+                 'servicecontrol.googleapis.com/android_cert_fingerprint': 'an_android_cert_fingerprint',
+                 'servicecontrol.googleapis.com/android_package_name': 'an_android_package_name',
+                 'servicecontrol.googleapis.com/ios_bundle_id': 'an_ios_bundle_id',
                  'servicecontrol.googleapis.com/user_agent': _WANTED_USER_AGENT,
                  'servicecontrol.googleapis.com/referer': 'a_referer',
                  'servicecontrol.googleapis.com/service_agent':

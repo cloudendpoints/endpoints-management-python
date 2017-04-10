@@ -332,8 +332,11 @@ _INFO_TESTS = [
          startTime=_REALLY_EARLY,
          endTime=_REALLY_EARLY)),
     (operation.Info(
+        android_cert_fingerprint='an_android_cert_fingerprint',
+        android_package_name='an_android_package_name',
         api_key='an_api_key',
         api_key_valid=True,
+        ios_bundle_id='an_ios_bundle_id',
         operation_id='an_op_id',
         operation_name='an_op_name',
         referer='a_referer',

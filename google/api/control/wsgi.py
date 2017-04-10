@@ -371,10 +371,13 @@ class Middleware(object):
             api_key_valid = True
 
         check_info = check_request.Info(
+            android_cert_fingerprint=environ.get('HTTP_X_ANDROID_CERT', ''),
+            android_package_name=environ.get('HTTP_X_ANDROID_PACKAGE', ''),
             api_key=api_key,
             api_key_valid=api_key_valid,
             client_ip=environ.get('REMOTE_ADDR', ''),
             consumer_project_id=self._project_id,  # TODO: switch this to producer_project_id
+            ios_bundle_id=environ.get('HTTP_X_IOS_BUNDLE_IDENTIFIER', ''),
             operation_id=operation_id,
             operation_name=method_info.selector,
             referer=environ.get('HTTP_REFERER', ''),

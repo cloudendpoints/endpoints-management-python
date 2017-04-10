@@ -231,8 +231,17 @@ class Info(collections.namedtuple('Info',
             raise ValueError('the operation name must be set')
         op = super(Info, self).as_operation(timer=timer)
         labels = {}
+        if self.android_cert_fingerprint:
+            labels[_KNOWN_LABELS.SCC_ANDROID_CERT_FINGERPRINT.label_name] = self.android_cert_fingerprint
+
+        if self.android_package_name:
+            labels[_KNOWN_LABELS.SCC_ANDROID_PACKAGE_NAME.label_name] = self.android_package_name
+
         if self.client_ip:
             labels[_KNOWN_LABELS.SCC_CALLER_IP.label_name] = self.client_ip
+
+        if self.ios_bundle_id:
+            labels[_KNOWN_LABELS.SCC_IOS_BUNDLE_ID.label_name] = self.ios_bundle_id
 
         if self.referer:
             labels[_KNOWN_LABELS.SCC_REFERER.label_name] = self.referer

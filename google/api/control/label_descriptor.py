@@ -199,8 +199,14 @@ class KnownLabels(Enum):
     GCP_API_VERSION = (
         'serviceruntime.googleapis.com/api_version', ValueType.STRING, Kind.USER,
         set_api_version)
+    SCC_ANDROID_CERT_FINGERPRINT = (
+        'servicecontrol.googleapis.com/android_cert_fingerprint', ValueType.STRING, Kind.SYSTEM, None)
+    SCC_ANDROID_PACKAGE_NAME = (
+        'servicecontrol.googleapis.com/android_package_name', ValueType.STRING, Kind.SYSTEM, None)
     SCC_CALLER_IP = (
         'servicecontrol.googleapis.com/caller_ip', ValueType.STRING, Kind.SYSTEM, None)
+    SCC_IOS_BUNDLE_ID = (
+        'servicecontrol.googleapis.com/ios_bundle_id', ValueType.STRING, Kind.SYSTEM, None)
     SCC_PLATFORM = (
         'servicecontrol.googleapis.com/platform', ValueType.STRING, Kind.SYSTEM,
         set_platform)

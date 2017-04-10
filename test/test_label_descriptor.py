@@ -227,8 +227,20 @@ class GcpApiVersion(KnownLabelsBase, unittest2.TestCase):
     WANTED_LABEL_DICT = {SUBJECT.label_name: 'dummy_version'}
 
 
+class SccAndroidCertFingerprint(KnownLabelsBase, unittest2.TestCase):
+    SUBJECT = _KNOWN.SCC_ANDROID_CERT_FINGERPRINT
+
+
+class SccAndroidPackageName(KnownLabelsBase, unittest2.TestCase):
+    SUBJECT = _KNOWN.SCC_ANDROID_PACKAGE_NAME
+
+
 class SccCallerIp(KnownLabelsBase, unittest2.TestCase):
     SUBJECT = _KNOWN.SCC_CALLER_IP
+
+
+class SccIosBundleId(KnownLabelsBase, unittest2.TestCase):
+    SUBJECT = _KNOWN.SCC_IOS_BUNDLE_ID
 
 
 class SccPlatform(KnownLabelsBase, unittest2.TestCase):

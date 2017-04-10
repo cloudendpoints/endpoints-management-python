@@ -39,9 +39,12 @@ logger = logging.getLogger(__name__)
 class Info(
         collections.namedtuple(
             'Info', [
+                'android_cert_fingerprint',
+                'android_package_name',
                 'api_key',
                 'api_key_valid',
                 'consumer_project_id',
+                'ios_bundle_id',
                 'operation_id',
                 'operation_name',
                 'referer',
@@ -54,11 +57,18 @@ class Info(
     operations using this surface
 
     Attributes:
+        android_cert_fingerprint (string): the SHA-1 signing-certificate
+          fingerprint of the calling app, used when the provided api_key is
+          restricted to certain Android apps
+        android_package_name (string): the package name of the calling app,
+          used when the provided api_key is restricted to certain Android apps
         api_key (string): the api key
         api_key_valid (bool): it the request has a valid api key. By default
           it is true, it will only be set to false if the api key cannot
           be validated by the service controller
         consumer_project_id (string): the project id of the api consumer
+        ios_bundle_id (string): the bundle identifier of the calling app,
+          used when the provided api_key is restricted to certain iOS apps
         operation_id (string): identity of the operation, which must be unique
           within the scope of the service. Calls to report and check on the
           same operation should carry the same operation id
@@ -70,9 +80,12 @@ class Info(
     # pylint: disable=too-many-arguments
 
     def __new__(cls,
+                android_cert_fingerprint='',
+                android_package_name='',
                 api_key='',
                 api_key_valid=False,
                 consumer_project_id='',
+                ios_bundle_id = '',
                 operation_id='',
                 operation_name='',
                 referer='',
@@ -80,9 +93,12 @@ class Info(
         """Invokes the base constructor with default values."""
         return super(cls, Info).__new__(
             cls,
+            android_cert_fingerprint,
+            android_package_name,
             api_key,
             api_key_valid,
             consumer_project_id,
+            ios_bundle_id,
             operation_id,
             operation_name,
             referer,
