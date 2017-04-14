@@ -16,7 +16,6 @@
 # limitations under the License.
 
 import re
-import sys
 
 from setuptools import setup, find_packages
 
@@ -53,13 +52,6 @@ tests_require = [
     "pytest-cov"
 ]
 
-packages = find_packages()
-namespace_packages = ['google']
-if sys.version_info.major > 2:
-    # On PY3 we will exclude the google.api namespace package.
-    packages = [p for p in packages if not p.startswith('google')]
-    namespace_packages = []
-
 setup(
     name='google-endpoints-api-management',
     version=version,
@@ -68,8 +60,8 @@ setup(
     author='Google Inc',
     author_email='googleapis-packages@google.com',
     url='https://github.com/cloudendpoints/endpoints-management-python',
-    packages=packages,
-    namespace_packages=namespace_packages,
+    packages=find_packages(),
+    namespace_packages=[],
     package_dir={'google-endpoints-api-management': 'endpoints_management'},
     license='Apache License',
     classifiers=[

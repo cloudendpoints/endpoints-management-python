@@ -34,8 +34,7 @@ from builtins import object
 from apitools.base.py import encoding
 
 from . import caches, label_descriptor, messages, metric_value, operation, signing
-# An absolute import is required here to work around an issue with the namespace package.
-from endpoints_management import USER_AGENT, SERVICE_AGENT
+from .. import USER_AGENT, SERVICE_AGENT
 
 # These imports should be above project-level imports, but flake8 doesn't like
 # it when the with block is above unadorned imports.

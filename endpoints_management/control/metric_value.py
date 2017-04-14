@@ -28,7 +28,7 @@ import logging
 from apitools.base.py import encoding
 
 from . import distribution, money, signing, timestamp, MetricKind
-from endpoints_management.gen.servicecontrol_v1_messages import MetricValue
+from ..gen.servicecontrol_v1_messages import MetricValue
 
 
 logger = logging.getLogger(__name__)

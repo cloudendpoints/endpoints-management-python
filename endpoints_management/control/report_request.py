@@ -35,8 +35,7 @@ from apitools.base.py import encoding
 from enum import Enum
 from . import caches, label_descriptor, operation, messages
 from . import metric_descriptor, signing, timestamp
-# An absolute import is required here to work around an issue with the namespace package.
-from endpoints_management import USER_AGENT, SERVICE_AGENT
+from .. import USER_AGENT, SERVICE_AGENT
 
 logger = logging.getLogger(__name__)
 

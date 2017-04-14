@@ -16,8 +16,8 @@
 
 from __future__ import absolute_import
 
-from endpoints_management.gen import servicecontrol_v1_messages as messages
-from endpoints_management.gen import servicecontrol_v1_client as api_client
+from ..gen import servicecontrol_v1_messages as messages
+from ..gen import servicecontrol_v1_client as api_client
 
 # Alias the generated MetricKind and ValueType enums to simplify their usage
 # elsewhere

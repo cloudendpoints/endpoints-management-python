@@ -23,7 +23,7 @@ import os
 import urllib3
 
 from apitools.base.py import encoding
-import endpoints_management.gen.servicecontrol_v1_messages as messages
+from ..gen import servicecontrol_v1_messages as messages
 from oauth2client import client
 from urllib3.contrib import appengine
 
