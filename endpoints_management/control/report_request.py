@@ -35,7 +35,7 @@ from apitools.base.py import encoding
 from enum import Enum
 from . import caches, label_descriptor, operation, messages
 from . import metric_descriptor, signing, timestamp
-from . import USER_AGENT, SERVICE_AGENT
+from .. import USER_AGENT, SERVICE_AGENT
 
 logger = logging.getLogger(__name__)
 
