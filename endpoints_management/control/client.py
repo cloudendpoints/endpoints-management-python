@@ -50,7 +50,8 @@ import time
 import sys
 
 from . import api_client, check_request, report_request
-from .. import USER_AGENT
+# An absolute import is required here to work around an issue with the namespace package.
+from endpoints_management import USER_AGENT
 from .caches import CheckOptions, ReportOptions, to_cache_timer
 
 if sys.version_info[0] == 3 and sys.version_info[1] >= 6:

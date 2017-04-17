@@ -30,7 +30,8 @@ from builtins import range
 import base64
 from enum import Enum
 from . import messages
-from .. import USER_AGENT, SERVICE_AGENT
+# An absolute import is required here to work around an issue with the namespace package.
+from endpoints_management import USER_AGENT, SERVICE_AGENT
 
 ValueType = messages.LabelDescriptor.ValueTypeValueValuesEnum
 
