@@ -397,7 +397,7 @@ class Middleware(object):
 
         # there was problem; the request cannot proceed
         logger.warn(u'Check failed %d, %s', code, detail)
-        error_msg = u'%d %s' % (code, detail)
+        error_msg = b'%d %s' % (code, detail.encode('utf-8'))
         start_response(error_msg, [])
         app_info.response_code = code
         app_info.api_key_valid = api_key_valid
@@ -407,7 +407,7 @@ class Middleware(object):
         code = compat.httplib.UNAUTHORIZED
         detail = self._NO_API_KEY_MSG
         logger.warn(u'Check not performed %d, %s', code, detail)
-        error_msg = u'%d %s' % (code, detail)
+        error_msg = b'%d %s' % (code, detail.encode('utf-8'))
         start_response(error_msg, [])
         app_info.response_code = code
         app_info.api_key_valid = False
