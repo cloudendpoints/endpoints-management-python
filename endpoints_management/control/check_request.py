@@ -471,7 +471,7 @@ class Aggregator(object):
 
         signature = sign(check_request)
         with self._cache as cache:
-            logger.debug(u'checking the cache for %s\n%s', signature, cache)
+            logger.debug(u'checking the cache for %r\n%s', signature, cache)
             item = cache.get(signature)
             if item is None:
                 return None  # signal to caller to send req
