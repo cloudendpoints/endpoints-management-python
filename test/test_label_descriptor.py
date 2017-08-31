@@ -20,7 +20,8 @@ import datetime
 import unittest2
 from expects import be_none, be_true, expect, equal, raise_error
 
-from endpoints_management.control import label_descriptor, messages, report_request
+from endpoints_management.control import (label_descriptor, sm_messages,
+                                          report_request)
 
 _KNOWN = label_descriptor.KnownLabels
 ValueType = label_descriptor.ValueType
@@ -35,7 +36,7 @@ class KnownLabelsBase(object):
     WANTED_LABEL_DICT = {}
 
     def _matching_descriptor(self, hide_default=False):
-        res = messages.LabelDescriptor(
+        res = sm_messages.LabelDescriptor(
             key=self.SUBJECT.label_name,
             valueType=self.SUBJECT.value_type)
         if res.valueType == ValueType.STRING and hide_default:

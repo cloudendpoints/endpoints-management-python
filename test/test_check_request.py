@@ -25,7 +25,8 @@ from expects import be_none, equal, expect, raise_error
 from apitools.base.py import encoding
 
 from endpoints_management.control import caches, label_descriptor, timestamp
-from endpoints_management.control import check_request, messages, metric_value
+from endpoints_management.control import (check_request, metric_value,
+                                          sc_messages)
 
 # This import should be above project-level imports, but flake8 doesn't like
 # it when the if block is above unadorned imports.
@@ -37,15 +38,15 @@ else:
 class TestSign(unittest2.TestCase):
 
     def setUp(self):
-        op = messages.Operation(
+        op = sc_messages.Operation(
             consumerId=_TEST_CONSUMER_ID,
             operationName=_TEST_OP_NAME
         )
-        self.test_check_request = messages.CheckRequest(operation=op)
+        self.test_check_request = sc_messages.CheckRequest(operation=op)
         self.test_op = op
 
     def test_should_fail_if_operation_is_not_set(self):
-        testf = lambda: check_request.sign(messages.CheckRequest())
+        testf = lambda: check_request.sign(sc_messages.CheckRequest())
         expect(testf).to(raise_error(ValueError))
 
     def test_should_fail_on_invalid_input(self):
@@ -55,13 +56,15 @@ class TestSign(unittest2.TestCase):
         expect(testf).to(raise_error(ValueError))
 
     def test_should_fail_if_operation_has_no_operation_name(self):
-        op = messages.Operation(consumerId=_TEST_CONSUMER_ID)
-        testf = lambda: check_request.sign(messages.CheckRequest(operation=op))
+        op = sc_messages.Operation(consumerId=_TEST_CONSUMER_ID)
+        testf = lambda: check_request.sign(
+            sc_messages.CheckRequest(operation=op))
         expect(testf).to(raise_error(ValueError))
 
     def test_should_fail_if_operation_has_no_consumer_id(self):
-        op = messages.Operation(operationName=_TEST_OP_NAME)
-        testf = lambda: check_request.sign(messages.CheckRequest(operation=op))
+        op = sc_messages.Operation(operationName=_TEST_OP_NAME)
+        testf = lambda: check_request.sign(
+            sc_messages.CheckRequest(operation=op))
         expect(testf).to(raise_error(ValueError))
 
     def test_should_sign_a_valid_check_request(self):
@@ -70,7 +73,7 @@ class TestSign(unittest2.TestCase):
     def test_should_change_signature_when_labels_are_added(self):
         without_labels = check_request.sign(self.test_check_request)
         self.test_op.labels = encoding.PyValueToMessage(
-            messages.Operation.LabelsValue, {
+            sc_messages.Operation.LabelsValue, {
                 u'key1': u'value1',
                 u'key2': u'value2'})
         with_labels = check_request.sign(self.test_check_request)
@@ -79,7 +82,7 @@ class TestSign(unittest2.TestCase):
     def test_should_change_signature_when_metric_values_are_added(self):
         without_mvs = check_request.sign(self.test_check_request)
         self.test_op.metricValueSets = [
-            messages.MetricValueSet(
+            sc_messages.MetricValueSet(
                 metricName=u'a_float',
                 metricValues=[
                     metric_value.create(
@@ -96,7 +99,7 @@ class TestSign(unittest2.TestCase):
 
     def test_should_change_signature_quota_properties_are_specified(self):
         without_qprops = check_request.sign(self.test_check_request)
-        self.test_op.quotaProperties = messages.QuotaProperties()
+        self.test_op.quotaProperties = sc_messages.QuotaProperties()
         with_qprops = check_request.sign(self.test_check_request)
         expect(with_qprops).not_to(equal(without_qprops))
 
@@ -122,21 +125,21 @@ class TestAggregatorCheck(unittest2.TestCase):
         expect(testf).to(raise_error(ValueError))
 
     def test_should_fail_if_check_request_is_missing(self):
-        req = messages.ServicecontrolServicesCheckRequest(
+        req = sc_messages.ServicecontrolServicesCheckRequest(
             serviceName=self.SERVICE_NAME)
         testf = lambda: self.agg.check(req)
         expect(testf).to(raise_error(ValueError))
 
     def test_should_fail_if_operation_is_missing(self):
-        req = messages.ServicecontrolServicesCheckRequest(
+        req = sc_messages.ServicecontrolServicesCheckRequest(
             serviceName=self.SERVICE_NAME,
-            checkRequest=messages.CheckRequest())
+            checkRequest=sc_messages.CheckRequest())
         testf = lambda: self.agg.check(req)
         expect(testf).to(raise_error(ValueError))
 
     def test_should_return_none_initially_as_req_is_not_cached(self):
         req = _make_test_request(self.SERVICE_NAME)
-        fake_response = messages.CheckResponse(
+        fake_response = sc_messages.CheckResponse(
             operationId=self.FAKE_OPERATION_ID)
         agg = self.agg
         expect(agg.check(req)).to(be_none)
@@ -154,7 +157,7 @@ class TestAggregatorThatCannotCache(unittest2.TestCase):
 
     def test_should_not_cache_responses(self):
         req = _make_test_request(self.SERVICE_NAME)
-        fake_response = messages.CheckResponse(
+        fake_response = sc_messages.CheckResponse(
             operationId=self.FAKE_OPERATION_ID)
         agg = self.agg
         expect(agg.check(req)).to(be_none)
@@ -203,7 +206,7 @@ class TestCachingAggregator(unittest2.TestCase):
 
     def test_should_cache_responses(self):
         req = _make_test_request(self.SERVICE_NAME)
-        fake_response = messages.CheckResponse(
+        fake_response = sc_messages.CheckResponse(
             operationId=self.FAKE_OPERATION_ID)
         agg = self.agg
         expect(agg.check(req)).to(be_none)
@@ -213,8 +216,8 @@ class TestCachingAggregator(unittest2.TestCase):
     def test_should_not_cache_requests_with_important_operations(self):
         req = _make_test_request(
             self.SERVICE_NAME,
-            importance=messages.Operation.ImportanceValueValuesEnum.HIGH)
-        fake_response = messages.CheckResponse(
+            importance=sc_messages.Operation.ImportanceValueValuesEnum.HIGH)
+        fake_response = sc_messages.CheckResponse(
             operationId=self.FAKE_OPERATION_ID)
         agg = self.agg
         expect(agg.check(req)).to(be_none)
@@ -223,7 +226,7 @@ class TestCachingAggregator(unittest2.TestCase):
 
     def test_signals_a_resend_on_1st_call_after_flush_interval(self):
         req = _make_test_request(self.SERVICE_NAME)
-        fake_response = messages.CheckResponse(
+        fake_response = sc_messages.CheckResponse(
             operationId=self.FAKE_OPERATION_ID)
         agg = self.agg
         expect(agg.check(req)).to(be_none)
@@ -247,10 +250,10 @@ class TestCachingAggregator(unittest2.TestCase):
 
     def test_signals_resend_on_1st_call_after_flush_interval_with_errors(self):
         req = _make_test_request(self.SERVICE_NAME)
-        failure_code = messages.CheckError.CodeValueValuesEnum.NOT_FOUND
-        fake_response = messages.CheckResponse(
+        failure_code = sc_messages.CheckError.CodeValueValuesEnum.NOT_FOUND
+        fake_response = sc_messages.CheckResponse(
             operationId=self.FAKE_OPERATION_ID, checkErrors=[
-                messages.CheckError(code=failure_code)
+                sc_messages.CheckError(code=failure_code)
             ])
         agg = self.agg
         expect(agg.check(req)).to(be_none)
@@ -273,7 +276,7 @@ class TestCachingAggregator(unittest2.TestCase):
 
     def test_should_extend_expiration_on_receipt_of_a_response(self):
         req = _make_test_request(self.SERVICE_NAME)
-        fake_response = messages.CheckResponse(
+        fake_response = sc_messages.CheckResponse(
             operationId=self.FAKE_OPERATION_ID
         )
         agg = self.agg
@@ -301,7 +304,7 @@ class TestCachingAggregator(unittest2.TestCase):
 
     def test_does_not_flush_request_that_has_not_been_updated(self):
         req = _make_test_request(self.SERVICE_NAME)
-        fake_response = messages.CheckResponse(
+        fake_response = sc_messages.CheckResponse(
             operationId=self.FAKE_OPERATION_ID
         )
         agg = self.agg
@@ -317,7 +320,7 @@ class TestCachingAggregator(unittest2.TestCase):
 
     def test_does_flush_requests_that_have_been_updated(self):
         req = _make_test_request(self.SERVICE_NAME)
-        fake_response = messages.CheckResponse(
+        fake_response = sc_messages.CheckResponse(
             operationId=self.FAKE_OPERATION_ID
         )
         agg = self.agg
@@ -332,7 +335,7 @@ class TestCachingAggregator(unittest2.TestCase):
 
     def test_should_clear_requests(self):
         req = _make_test_request(self.SERVICE_NAME)
-        fake_response = messages.CheckResponse(
+        fake_response = sc_messages.CheckResponse(
             operationId=self.FAKE_OPERATION_ID
         )
         agg = self.agg
@@ -350,14 +353,14 @@ _TEST_OP_NAME = u'testOperationName'
 
 def _make_test_request(service_name, importance=None):
     if importance is None:
-        importance = messages.Operation.ImportanceValueValuesEnum.LOW
-    op = messages.Operation(
+        importance = sc_messages.Operation.ImportanceValueValuesEnum.LOW
+    op = sc_messages.Operation(
         consumerId=_TEST_CONSUMER_ID,
         operationName=_TEST_OP_NAME,
         importance=importance
     )
-    check_request = messages.CheckRequest(operation=op)
-    return messages.ServicecontrolServicesCheckRequest(
+    check_request = sc_messages.CheckRequest(operation=op)
+    return sc_messages.ServicecontrolServicesCheckRequest(
         serviceName=service_name,
         checkRequest=check_request)
 
@@ -372,10 +375,10 @@ _INFO_TESTS = [
         operation_name=u'an_op_name',
         referer=u'a_referer',
         service_name=_TEST_SERVICE_NAME),
-     messages.Operation(
-         importance=messages.Operation.ImportanceValueValuesEnum.LOW,
+     sc_messages.Operation(
+         importance=sc_messages.Operation.ImportanceValueValuesEnum.LOW,
          labels = encoding.PyValueToMessage(
-             messages.Operation.LabelsValue, {
+             sc_messages.Operation.LabelsValue, {
                  u'servicecontrol.googleapis.com/user_agent': _WANTED_USER_AGENT,
                  u'servicecontrol.googleapis.com/referer': u'a_referer',
                  u'servicecontrol.googleapis.com/service_agent':
@@ -395,11 +398,11 @@ _INFO_TESTS = [
         operation_name=u'an_op_name',
         referer=u'a_referer',
         service_name=_TEST_SERVICE_NAME),
-     messages.Operation(
-         importance=messages.Operation.ImportanceValueValuesEnum.LOW,
+     sc_messages.Operation(
+         importance=sc_messages.Operation.ImportanceValueValuesEnum.LOW,
          consumerId=u'api_key:an_api_key',
          labels = encoding.PyValueToMessage(
-             messages.Operation.LabelsValue, {
+             sc_messages.Operation.LabelsValue, {
                  u'servicecontrol.googleapis.com/android_cert_fingerprint': u'an_android_cert_fingerprint',
                  u'servicecontrol.googleapis.com/android_package_name': u'an_android_package_name',
                  u'servicecontrol.googleapis.com/ios_bundle_id': u'an_ios_bundle_id',
@@ -421,11 +424,11 @@ _INFO_TESTS = [
         operation_name=u'an_op_name',
         referer=u'a_referer',
         service_name=_TEST_SERVICE_NAME),
-     messages.Operation(
-         importance=messages.Operation.ImportanceValueValuesEnum.LOW,
+     sc_messages.Operation(
+         importance=sc_messages.Operation.ImportanceValueValuesEnum.LOW,
          consumerId=u'project:project_id',
          labels = encoding.PyValueToMessage(
-             messages.Operation.LabelsValue, {
+             sc_messages.Operation.LabelsValue, {
                  u'servicecontrol.googleapis.com/caller_ip': u'127.0.0.1',
                  u'servicecontrol.googleapis.com/user_agent': _WANTED_USER_AGENT,
                  u'servicecontrol.googleapis.com/referer': u'a_referer',
@@ -479,15 +482,15 @@ class TestConvertResponse(unittest2.TestCase):
 
     def test_should_be_ok_with_no_errors(self):
         code, message, _ = check_request.convert_response(
-            messages.CheckResponse(), self.PROJECT_ID)
+            sc_messages.CheckResponse(), self.PROJECT_ID)
         expect(code).to(equal(httplib.OK))
         expect(message).to(equal(u''))
 
     def test_should_include_project_id_in_error_text_when_needed(self):
-        resp = messages.CheckResponse(
+        resp = sc_messages.CheckResponse(
             checkErrors = [
-                messages.CheckError(
-                    code=messages.CheckError.CodeValueValuesEnum.PROJECT_DELETED)
+                sc_messages.CheckError(
+                    code=sc_messages.CheckError.CodeValueValuesEnum.PROJECT_DELETED)
             ]
         )
         code, got, _ = check_request.convert_response(resp, self.PROJECT_ID)
@@ -497,10 +500,10 @@ class TestConvertResponse(unittest2.TestCase):
 
     def test_should_include_detail_in_error_text_when_needed(self):
         detail = u'details, details, details'
-        resp = messages.CheckResponse(
+        resp = sc_messages.CheckResponse(
             checkErrors = [
-                messages.CheckError(
-                    code=messages.CheckError.CodeValueValuesEnum.IP_ADDRESS_BLOCKED,
+                sc_messages.CheckError(
+                    code=sc_messages.CheckError.CodeValueValuesEnum.IP_ADDRESS_BLOCKED,
                     detail=detail)
             ]
         )

@@ -24,7 +24,8 @@ from expects import be_false, be_none, be_true, expect, equal, raise_error
 
 from endpoints_management.auth import suppliers
 from endpoints_management.auth import tokens
-from endpoints_management.control import client, messages, report_request, service, wsgi
+from endpoints_management.control import (client, report_request, service,
+                                          sc_messages, sm_messages, wsgi)
 
 
 def _dummy_start_response(content, dummy_response_headers):
@@ -74,7 +75,8 @@ class TestMiddleware(unittest2.TestCase):
             u'HTTP_HOST': u'localhost',
             u'HTTP_REFERER': u'example.myreferer.com',
             u'REQUEST_METHOD': u'GET'}
-        dummy_response = messages.CheckResponse(operationId=u'fake_operation_id')
+        dummy_response = sc_messages.CheckResponse(
+            operationId=u'fake_operation_id')
         wrapped = wsgi.Middleware(wrappee, self.PROJECT_ID, control_client)
         wrapped(given, _dummy_start_response)
         expect(control_client.check.called).to(be_false)
@@ -91,7 +93,8 @@ class TestMiddleware(unittest2.TestCase):
             u'HTTP_HOST': u'localhost',
             u'HTTP_REFERER': u'example.myreferer.com',
             u'REQUEST_METHOD': u'GET'}
-        dummy_response = messages.CheckResponse(operationId=u'fake_operation_id')
+        dummy_response = sc_messages.CheckResponse(
+            operationId=u'fake_operation_id')
         with_control = wsgi.Middleware(wrappee, self.PROJECT_ID, control_client)
         wrapped = wsgi.EnvironmentMiddleware(with_control,
                                              service.Loaders.SIMPLE.load())
@@ -110,11 +113,11 @@ class TestMiddleware(unittest2.TestCase):
             u'HTTP_HOST': u'localhost',
             u'HTTP_REFERER': u'example.myreferer.com',
             u'REQUEST_METHOD': u'GET'}
-        dummy_response = messages.CheckResponse(
+        dummy_response = sc_messages.CheckResponse(
             operationId = u'fake_operation_id',
             checkErrors = [
-                messages.CheckError(
-                    code=messages.CheckError.CodeValueValuesEnum.PROJECT_DELETED)
+                sc_messages.CheckError(
+                    code=sc_messages.CheckError.CodeValueValuesEnum.PROJECT_DELETED)
             ]
         )
         wrapped = wsgi.add_all(wrappee,
@@ -217,7 +220,8 @@ class TestMiddlewareWithParams(unittest2.TestCase):
             u'HTTP_HOST': u'localhost',
             u'HTTP_REFERER': u'example.myreferer.com',
             u'REQUEST_METHOD': u'GET'}
-        dummy_response = messages.CheckResponse(operationId=u'fake_operation_id')
+        dummy_response = sc_messages.CheckResponse(
+            operationId=u'fake_operation_id')
         wrapped = wsgi.add_all(wrappee,
                                self.PROJECT_ID,
                                control_client,
@@ -241,7 +245,8 @@ class TestMiddlewareWithParams(unittest2.TestCase):
             u'HTTP_HOST': u'localhost',
             u'HTTP_REFERER': u'example.myreferer.com',
             u'REQUEST_METHOD': u'GET'}
-        dummy_response = messages.CheckResponse(operationId=u'fake_operation_id')
+        dummy_response = sc_messages.CheckResponse(
+            operationId=u'fake_operation_id')
         wrapped = wsgi.add_all(wrappee,
                                self.PROJECT_ID,
                                control_client,
@@ -268,7 +273,8 @@ class TestMiddlewareWithParams(unittest2.TestCase):
             u'HTTP_APIKEYHEADER': u'my-header-value',
             u'HTTP_REFERER': u'example.myreferer.com',
             u'REQUEST_METHOD': u'GET'}
-        dummy_response = messages.CheckResponse(operationId=u'fake_operation_id')
+        dummy_response = sc_messages.CheckResponse(
+            operationId=u'fake_operation_id')
         wrapped = wsgi.add_all(wrappee,
                                self.PROJECT_ID,
                                control_client,
@@ -297,7 +303,8 @@ class TestMiddlewareWithParams(unittest2.TestCase):
                 u'HTTP_HOST': u'localhost',
                 u'HTTP_REFERER': u'example.myreferer.com',
                 u'REQUEST_METHOD': u'GET'}
-            dummy_response = messages.CheckResponse(operationId=u'fake_operation_id')
+            dummy_response = sc_messages.CheckResponse(
+                operationId=u'fake_operation_id')
             wrapped = wsgi.add_all(wrappee,
                                    self.PROJECT_ID,
                                    control_client,
@@ -324,7 +331,8 @@ class TestMiddlewareWithParams(unittest2.TestCase):
             u'HTTP_HOST': u'localhost',
             u'HTTP_REFERER': u'example.myreferer.com',
             u'REQUEST_METHOD': u'GET'}
-        dummy_response = messages.CheckResponse(operationId=u'fake_operation_id')
+        dummy_response = sc_messages.CheckResponse(
+            operationId=u'fake_operation_id')
         wrapped = wsgi.add_all(wrappee,
                                self.PROJECT_ID,
                                control_client,
@@ -494,4 +502,4 @@ class TestPlatformDetection(unittest2.TestCase):
 
 
 def _read_service_from_json(json):
-    return encoding.JsonToMessage(messages.Service, json)
+    return encoding.JsonToMessage(sm_messages.Service, json)

@@ -33,7 +33,7 @@ from datetime import datetime, timedelta
 
 from apitools.base.py import encoding
 from enum import Enum
-from . import caches, label_descriptor, operation, messages
+from . import caches, label_descriptor, operation, sc_messages
 from . import metric_descriptor, signing, timestamp
 from .. import USER_AGENT, SERVICE_AGENT
 
@@ -156,11 +156,12 @@ class ErrorCause(Enum):
 
 
 # alias the severity enum
-_SEVERITY = messages.LogEntry.SeverityValueValuesEnum
+_SEVERITY = sc_messages.LogEntry.SeverityValueValuesEnum
 
 
 def _struct_payload_from(a_dict):
-    return encoding.PyValueToMessage(messages.LogEntry.StructPayloadValue, a_dict)
+    return encoding.PyValueToMessage(
+        sc_messages.LogEntry.StructPayloadValue, a_dict)
 
 
 _KNOWN_LABELS = label_descriptor.KnownLabels
@@ -331,7 +332,7 @@ class Info(
             if value:
                 d[key] = value
 
-        return messages.LogEntry(
+        return sc_messages.LogEntry(
             name=name,
             timestamp=timestamp.to_rfc3339(now),
             severity=severity,
@@ -375,7 +376,7 @@ class Info(
 
             if labels:
                 op.labels = encoding.PyValueToMessage(
-                    messages.Operation.LabelsValue,
+                    sc_messages.Operation.LabelsValue,
                     labels)
             for known_metric in rules.metrics:
                 known_metric.do_operation_update(self, op)
@@ -384,9 +385,9 @@ class Info(
         now = timer()
         op.logEntries = [self._as_log_entry(l, now) for l in rules.logs]
 
-        return messages.ServicecontrolServicesReportRequest(
+        return sc_messages.ServicecontrolServicesReportRequest(
             serviceName=self.service_name,
-            reportRequest=messages.ReportRequest(operations=[op]))
+            reportRequest=sc_messages.ReportRequest(operations=[op]))
 
 
 _NO_RESULTS = tuple()
@@ -461,10 +462,10 @@ class Aggregator(object):
             reqs = []
             max_ops = self.MAX_OPERATION_COUNT
             for x in range(0, len(flushed_ops), max_ops):
-                report_request = messages.ReportRequest(
+                report_request = sc_messages.ReportRequest(
                     operations=flushed_ops[x:x + max_ops])
                 reqs.append(
-                    messages.ServicecontrolServicesReportRequest(
+                    sc_messages.ServicecontrolServicesReportRequest(
                         serviceName=self.service_name,
                         reportRequest=report_request))
 
@@ -488,7 +489,7 @@ class Aggregator(object):
         send the request to the server, otherwise it returns ``CACHED_OK``.
 
         Args:
-           req (:class:`messages.ReportRequest`): the request
+           req (:class:`sc_messages.ReportRequest`): the request
              to be aggregated
 
         Result:
@@ -497,7 +498,7 @@ class Aggregator(object):
         """
         if self._cache is None:
             return None  # no cache, send request now
-        if not isinstance(req, messages.ServicecontrolServicesReportRequest):
+        if not isinstance(req, sc_messages.ServicecontrolServicesReportRequest):
             raise ValueError(u'Invalid request')
         if req.serviceName != self.service_name:
             logger.error(u'bad report(): service_name %s does not match ours %s',
@@ -530,7 +531,7 @@ class Aggregator(object):
 def _has_high_important_operation(req):
     def is_important(op):
         return (op.importance !=
-                messages.Operation.ImportanceValueValuesEnum.LOW)
+                sc_messages.Operation.ImportanceValueValuesEnum.LOW)
 
     return functools.reduce(lambda x, y: x and is_important(y),
                             req.operations, True)

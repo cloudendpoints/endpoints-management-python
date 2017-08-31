@@ -29,10 +29,10 @@ from __future__ import absolute_import
 from builtins import range
 import base64
 from enum import Enum
-from . import messages
+from . import sm_messages
 from .. import USER_AGENT, SERVICE_AGENT
 
-ValueType = messages.LabelDescriptor.ValueTypeValueValuesEnum
+ValueType = sm_messages.LabelDescriptor.ValueTypeValueValuesEnum
 
 
 class Kind(Enum):
@@ -243,8 +243,8 @@ class KnownLabels(Enum):
         """Determines if a given label descriptor matches this enum instance
 
         Args:
-           desc (:class:`endpoints_management.gen.servicecontrol_v1_messages.LabelDescriptor`): the
-              instance to test
+           desc (:class:`endpoints_management.gen.servicemanagement_v1_messages.LabelDescriptor`):
+              the instance to test
 
         Return:
            `True` if desc is supported, otherwise `False`
@@ -274,8 +274,8 @@ class KnownLabels(Enum):
         """Determines if the given label descriptor is supported.
 
         Args:
-           desc (:class:`endpoints_management.gen.servicecontrol_v1_messages.LabelDescriptor`): the
-             label descriptor to test
+           desc (:class:`endpoints_management.gen.servicemanagement_v1_messages.LabelDescriptor`):
+             the label descriptor to test
 
         Return:
            `True` if desc is supported, otherwise `False`

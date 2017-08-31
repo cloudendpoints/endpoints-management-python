@@ -15,6 +15,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+from apitools.base.py import exceptions
 from builtins import object
 from past.utils import old_div
 import datetime
@@ -24,7 +25,8 @@ import tempfile
 import unittest2
 from expects import be_false, be_none, be_true, expect, equal, raise_error
 
-from endpoints_management.control import caches, check_request, client, messages, report_request
+from endpoints_management.control import (caches, check_request, client,
+                                          report_request, sc_messages)
 
 
 class TestSimpleLoader(unittest2.TestCase):
@@ -170,7 +172,7 @@ class TestClientStartAndStop(unittest2.TestCase):
         self._subject.report(
             _make_dummy_report_request(self.PROJECT_ID, self.SERVICE_NAME))
         self._subject.stop()
-        expect(self._mock_transport.services.report.called).to(be_true)
+        expect(self._mock_transport.services.Report.called).to(be_true)
 
     @mock.patch(u"endpoints_management.control.client._THREAD_CLASS", spec=True)
     def test_should_ignore_stop_if_already_stopped(self, dummy_thread_class):
@@ -181,16 +183,16 @@ class TestClientStartAndStop(unittest2.TestCase):
         self._subject.stop()
         self._mock_transport.reset_mock()
         self._subject.stop()
-        expect(self._mock_transport.services.report.called).to(be_false)
+        expect(self._mock_transport.services.Report.called).to(be_false)
 
     @mock.patch(u"endpoints_management.control.client._THREAD_CLASS", spec=True)
     def test_should_ignore_bad_transport_when_not_cached(self, dummy_thread_class):
         self._subject.start()
         self._subject.report(
             _make_dummy_report_request(self.PROJECT_ID, self.SERVICE_NAME))
-        self._mock_transport.services.report.side_effect = lambda: old_div(1,0)
+        self._mock_transport.services.Report.side_effect = exceptions.Error()
         self._subject.stop()
-        expect(self._mock_transport.services.report.called).to(be_true)
+        expect(self._mock_transport.services.Report.called).to(be_true)
 
 
 class TestClientCheck(unittest2.TestCase):
@@ -215,7 +217,7 @@ class TestClientCheck(unittest2.TestCase):
         dummy_request = _make_dummy_check_request(self.PROJECT_ID,
                                                   self.SERVICE_NAME)
         self._subject.check(dummy_request)
-        expect(self._mock_transport.services.check.called).to(be_true)
+        expect(self._mock_transport.services.Check.called).to(be_true)
 
     @mock.patch(u"endpoints_management.control.client._THREAD_CLASS", spec=True)
     def test_should_not_send_the_request_if_cached(self, dummy_thread_class):
@@ -223,20 +225,20 @@ class TestClientCheck(unittest2.TestCase):
         self._subject.start()
         dummy_request = _make_dummy_check_request(self.PROJECT_ID,
                                                   self.SERVICE_NAME)
-        dummy_response = messages.CheckResponse(
+        dummy_response = sc_messages.CheckResponse(
             operationId=dummy_request.checkRequest.operation.operationId)
-        t.services.check.return_value = dummy_response
+        t.services.Check.return_value = dummy_response
         expect(self._subject.check(dummy_request)).to(equal(dummy_response))
         t.reset_mock()
         expect(self._subject.check(dummy_request)).to(equal(dummy_response))
-        expect(t.services.check.called).to(be_false)
+        expect(t.services.Check.called).to(be_false)
 
     @mock.patch(u"endpoints_management.control.client._THREAD_CLASS", spec=True)
     def test_should_return_null_if_transport_fails(self, dummy_thread_class):
         self._subject.start()
         dummy_request = _make_dummy_check_request(self.PROJECT_ID,
                                                   self.SERVICE_NAME)
-        self._mock_transport.services.check.side_effect = lambda: old_div(1,0)
+        self._mock_transport.services.Check.side_effect = exceptions.Error()
         expect(self._subject.check(dummy_request)).to(be_none)
 
 
@@ -263,7 +265,7 @@ class TestClientReport(unittest2.TestCase):
         dummy_request = _make_dummy_report_request(self.PROJECT_ID,
                                                    self.SERVICE_NAME)
         self._subject.report(dummy_request)
-        expect(t.services.report.called).to(be_false)
+        expect(t.services.Report.called).to(be_false)
 
     @mock.patch(u"endpoints_management.control.client._THREAD_CLASS", spec=True)
     def test_should_send_a_request_if_not_cached(self, dummy_thread_class):
@@ -276,7 +278,7 @@ class TestClientReport(unittest2.TestCase):
         dummy_request = _make_dummy_report_request(self.PROJECT_ID,
                                                    self.SERVICE_NAME)
         self._subject.report(dummy_request)
-        expect(t.services.report.called).to(be_true)
+        expect(t.services.Report.called).to(be_true)
 
     @mock.patch(u"endpoints_management.control.client._THREAD_CLASS", spec=True)
     def test_should_ignore_bad_transport_when_not_cached(self, dummy_thread_class):
@@ -284,12 +286,12 @@ class TestClientReport(unittest2.TestCase):
             self.SERVICE_NAME,
             create_transport=lambda: self._mock_transport)
 
-        self._mock_transport.services.report.side_effect = lambda: old_div(1,0)
+        self._mock_transport.services.Report.side_effect = exceptions.Error()
         self._subject.start()
         dummy_request = _make_dummy_report_request(self.PROJECT_ID,
                                                    self.SERVICE_NAME)
         self._subject.report(dummy_request)
-        expect(self._mock_transport.services.report.called).to(be_true)
+        expect(self._mock_transport.services.Report.called).to(be_true)
 
 
 class TestNoSchedulerThread(unittest2.TestCase):
@@ -350,16 +352,16 @@ class TestNoSchedulerThread(unittest2.TestCase):
         # call check once, to a cache response
         dummy_request = _make_dummy_check_request(self.PROJECT_ID,
                                                   self.SERVICE_NAME)
-        dummy_response = messages.CheckResponse(
+        dummy_response = sc_messages.CheckResponse(
             operationId=dummy_request.checkRequest.operation.operationId)
         t = self._mock_transport
-        t.services.check.return_value = dummy_response
+        t.services.Check.return_value = dummy_response
         expect(self._subject.check(dummy_request)).to(equal(dummy_response))
         t.reset_mock()
 
         # call check again - response is cached...
         expect(self._subject.check(dummy_request)).to(equal(dummy_response))
-        expect(self._mock_transport.services.check.called).to(be_false)
+        expect(self._mock_transport.services.Check.called).to(be_false)
 
         # ... the scheduler is not run
         expect(scheduler.run.called).to(be_false)
@@ -380,7 +382,7 @@ class TestNoSchedulerThread(unittest2.TestCase):
         dummy_request = _make_dummy_report_request(self.PROJECT_ID,
                                                    self.SERVICE_NAME)
         self._subject.report(dummy_request)
-        expect(self._mock_transport.services.report.called).to(be_false)
+        expect(self._mock_transport.services.Report.called).to(be_false)
         expect(scheduler.run.called).to(be_true)
 
     @mock.patch(u"endpoints_management.control.client._THREAD_CLASS", spec=True)
@@ -392,13 +394,13 @@ class TestNoSchedulerThread(unittest2.TestCase):
         dummy_request = _make_dummy_report_request(self.PROJECT_ID,
                                                    self.SERVICE_NAME)
         self._subject.report(dummy_request)  # cached a report
-        expect(self._mock_transport.services.report.called).to(be_false)
+        expect(self._mock_transport.services.Report.called).to(be_false)
         # pass time, at least the flush interval, after which the report
         # cache to flush
         self._timer.tick()
         self._timer.tick()
         self._subject.report(dummy_request)
-        expect(self._mock_transport.services.report.called).to(be_true)
+        expect(self._mock_transport.services.Report.called).to(be_true)
 
     @mock.patch(u"endpoints_management.control.client._THREAD_CLASS", spec=True)
     @mock.patch(u"endpoints_management.control.client.sched", spec=True)
@@ -416,7 +418,7 @@ class TestNoSchedulerThread(unittest2.TestCase):
             _make_dummy_report_request(self.PROJECT_ID, self.SERVICE_NAME))
         scheduler.reset_mock()
         self._subject.stop()
-        expect(self._mock_transport.services.report.called).to(be_true)
+        expect(self._mock_transport.services.Report.called).to(be_true)
         expect(scheduler.run.called).to(be_false)
 
 

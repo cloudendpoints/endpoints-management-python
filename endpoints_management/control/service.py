@@ -37,7 +37,7 @@ import os
 from apitools.base.py import encoding
 from enum import Enum
 
-from . import label_descriptor, metric_descriptor, messages, path_template
+from . import label_descriptor, metric_descriptor, path_template, sm_messages
 from endpoints_management.config import service_config
 
 
@@ -57,7 +57,7 @@ def _load_from_well_known_env():
         return None
     try:
         with open(config_file) as f:
-            return encoding.JsonToMessage(messages.Service, f.read())
+            return encoding.JsonToMessage(sm_messages.Service, f.read())
     except ValueError:
         logger.warn(u'did not load service; bad json config file %s', config_file)
         return None
@@ -86,7 +86,7 @@ _SIMPLE_CONFIG = """
     }
 }
 """
-_SIMPLE_CORE = encoding.JsonToMessage(messages.Service, _SIMPLE_CONFIG)
+_SIMPLE_CORE = encoding.JsonToMessage(sm_messages.Service, _SIMPLE_CONFIG)
 
 
 def _load_simple():
@@ -125,10 +125,10 @@ class MethodRegistry(object):
         """Constructor.
 
         Args:
-          service (:class:`endpoints_management.gen.servicecontrol_v1_messages.Service`):
+          service (:class:`endpoints_management.gen.servicemanagement_v1_messages.Service`):
             a service instance
         """
-        if not isinstance(service, messages.Service):
+        if not isinstance(service, sm_messages.Service):
             raise ValueError(u'service should be an instance of Service')
         if not service.name:
             raise ValueError(u'Bad service: the name is missing')

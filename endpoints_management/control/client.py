@@ -39,6 +39,7 @@ Example:
 """
 from __future__ import absolute_import
 
+from apitools.base.py import exceptions
 from builtins import object
 from datetime import datetime, timedelta
 from enum import Enum
@@ -291,10 +292,10 @@ class Client(object):
         # return None to indicate that no response was obtained
         try:
             transport = self._create_transport()
-            resp = transport.services.check(check_req)
+            resp = transport.services.Check(check_req)
             self._check_aggregator.add_response(check_req, resp)
             return resp
-        except Exception:  # pylint: disable=broad-except
+        except exceptions.Error:  # only sink apitools errors
             logger.error(u'direct send of check request failed %s',
                          check_request, exc_info=True)
             return None
@@ -316,8 +317,8 @@ class Client(object):
             logger.info(u'need to send a report request directly')
             try:
                 transport = self._create_transport()
-                transport.services.report(report_req)
-            except Exception:  # pylint: disable=broad-except
+                transport.services.Report(report_req)
+            except exceptions.Error:  # only sink apitools errors
                 logger.error(u'direct send for report request failed',
                              exc_info=True)
 
@@ -370,7 +371,7 @@ class Client(object):
         transport = self._create_transport()
         for req in self._check_aggregator.flush():
             try:
-                resp = transport.services.check(req)
+                resp = transport.services.Check(req)
                 self._check_aggregator.add_response(req, resp)
             except Exception:  # pylint: disable=broad-except
                 logger.error(u'failed to flush check_req %s', req, exc_info=True)
@@ -399,8 +400,8 @@ class Client(object):
         logger.debug(u"will flush %d report requests", len(reqs))
         for req in reqs:
             try:
-                transport.services.report(req)
-            except Exception:  # pylint: disable=broad-except
+                transport.services.Report(req)
+            except exceptions.Error:  # only sink apitools errors
                 logger.error(u'failed to flush report_req %s', req, exc_info=True)
 
         self._scheduler.enter(
@@ -416,8 +417,8 @@ class Client(object):
         transport = self._create_transport()
         for req in all_requests:
             try:
-                transport.services.report(req)
-            except Exception:  # pylint: disable=broad-except
+                transport.services.Report(req)
+            except exceptions.Error:  # only sink apitools errors
                 logger.error(u'failed to flush report_req %s', req, exc_info=True)
 
 

@@ -22,7 +22,7 @@ import unittest
 
 from apitools.base.py import encoding
 from endpoints_management.config import service_config
-from endpoints_management.control import messages
+from endpoints_management.control import sm_messages
 from oauth2client import client
 
 class ServiceConfigFetchTest(unittest.TestCase):
@@ -68,7 +68,7 @@ class ServiceConfigFetchTest(unittest.TestCase):
         mock_http_client.request.return_value = mock_response
         ServiceConfigFetchTest._get_http_client.return_value = mock_http_client
 
-        service = encoding.JsonToMessage(messages.Service,
+        service = encoding.JsonToMessage(sm_messages.Service,
                                          json.dumps(self._SERVICE_CONFIG_JSON))
         self.assertEqual(service, service_config.fetch_service_config())
 

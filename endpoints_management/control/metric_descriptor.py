@@ -29,12 +29,12 @@ from __future__ import absolute_import
 
 
 from enum import Enum
-from . import distribution, metric_value, messages, MetricKind, ValueType
+from . import distribution, metric_value, sc_messages, MetricKind, ValueType
 
 
 def _add_metric_value(name, value, an_op):
     an_op.metricValueSets.append(
-        messages.MetricValueSet(metricName=name, metricValues=[value]))
+        sc_messages.MetricValueSet(metricName=name, metricValues=[value]))
 
 
 def _add_int64_metric_value(name, value, an_op):

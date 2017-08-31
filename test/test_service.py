@@ -24,7 +24,7 @@ import unittest2
 from apitools.base.py import encoding
 from expects import be_false, be_none, be_true, expect, equal, raise_error
 
-from endpoints_management.control import messages, service
+from endpoints_management.control import service, sm_messages
 
 
 _LOGGING_DESTINATIONS_INPUT = u"""
@@ -74,7 +74,7 @@ _LOGGING_DESTINATIONS_INPUT = u"""
 class _JsonServiceBase(object):
 
     def setUp(self):
-        self._subject = encoding.JsonToMessage(messages.Service, self._INPUT)
+        self._subject = encoding.JsonToMessage(sm_messages.Service, self._INPUT)
 
     def _extract(self):
         return service.extract_report_spec(
@@ -106,11 +106,11 @@ class TestLoggingDestinations(_JsonServiceBase, unittest2.TestCase):
         expect(set(labels)).to(equal(set(self._WANTED_LABELS)))
 
     def test_should_drop_conflicting_log_labels(self):
-        conflicting_label = messages.LabelDescriptor(
+        conflicting_label = sm_messages.LabelDescriptor(
             key=u'supported/endpoints-log-label',
-            valueType=messages.LabelDescriptor.ValueTypeValueValuesEnum.BOOL
+            valueType=sm_messages.LabelDescriptor.ValueTypeValueValuesEnum.BOOL
         )
-        bad_log_desc = messages.LogDescriptor(
+        bad_log_desc = sm_messages.LogDescriptor(
             name=u'bad-endpoints-log',
             labels=[conflicting_label]
         )

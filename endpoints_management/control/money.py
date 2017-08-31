@@ -23,7 +23,7 @@ from __future__ import absolute_import
 
 import logging
 
-from . import messages
+from . import sc_messages
 
 logger = logging.getLogger(__name__)
 
@@ -47,8 +47,8 @@ def check_valid(money):
     Raises:
       ValueError: if the money instance is invalid
     """
-    if not isinstance(money, messages.Money):
-        raise ValueError(u'Inputs should be of type %s' % (messages.Money,))
+    if not isinstance(money, sc_messages.Money):
+        raise ValueError(u'Inputs should be of type %s' % (sc_messages.Money,))
     currency = money.currencyCode
     if not currency or len(currency) != 3:
         raise ValueError(_MSG_3_LETTERS_LONG)
@@ -78,8 +78,8 @@ def add(a, b, allow_overflow=False):
       OverflowError: if the sum overflows and allow_overflow is not `True`
     """
     for m in (a, b):
-        if not isinstance(m, messages.Money):
-            raise ValueError(u'Inputs should be of type %s' % (messages.Money,))
+        if not isinstance(m, sc_messages.Money):
+            raise ValueError(u'Inputs should be of type %s' % (sc_messages.Money,))
     if a.currencyCode != b.currencyCode:
         raise ValueError(u'Money values need the same currency to be summed')
     nano_carry, nanos_sum = _sum_nanos(a, b)
@@ -101,21 +101,21 @@ def add(a, b, allow_overflow=False):
         if not allow_overflow:
             raise OverflowError(u'Money addition positive overflow')
         else:
-            return messages.Money(units=_INT64_MAX,
-                                  nanos=MAX_NANOS,
-                                  currencyCode=a.currencyCode)
+            return sc_messages.Money(units=_INT64_MAX,
+                                     nanos=MAX_NANOS,
+                                     currencyCode=a.currencyCode)
     elif (sign_a < 0 and sign_b < 0 and
           (units_sum_no_carry <= -_INT64_MAX or units_sum <= -_INT64_MAX)):
         if not allow_overflow:
             raise OverflowError(u'Money addition negative overflow')
         else:
-            return messages.Money(units=_INT64_MIN,
-                                  nanos=-MAX_NANOS,
-                                  currencyCode=a.currencyCode)
+            return sc_messages.Money(units=_INT64_MIN,
+                                     nanos=-MAX_NANOS,
+                                     currencyCode=a.currencyCode)
     else:
-        return messages.Money(units=units_sum,
-                              nanos=nanos_sum,
-                              currencyCode=a.currencyCode)
+        return sc_messages.Money(units=units_sum,
+                                 nanos=nanos_sum,
+                                 currencyCode=a.currencyCode)
 
 
 def _sum_nanos(a, b):

@@ -19,7 +19,8 @@ import datetime
 import unittest2
 from expects import be_none, expect, equal, raise_error
 
-from endpoints_management.control import messages, metric_value, operation, timestamp
+from endpoints_management.control import (metric_value, operation, sc_messages,
+                                          timestamp)
 from endpoints_management.control import MetricKind
 
 _A_FLOAT_VALUE = 1.1
@@ -38,79 +39,79 @@ _TESTS = [
     {
         u'description': u'update the start time to that of the earliest',
         u'kinds': None,
-        u'initial': messages.Operation(
+        u'initial': sc_messages.Operation(
             startTime=_EARLY,
             endTime=_LATER
         ),
         u'ops': [
-            messages.Operation(
+            sc_messages.Operation(
                 startTime=_REALLY_EARLY,
                 endTime=_LATER
             ),
-            messages.Operation(
+            sc_messages.Operation(
                 startTime=_LATER,
                 endTime=_LATER
             ),
         ],
-        u'want': messages.Operation(startTime=_REALLY_EARLY, endTime=_LATER)
+        u'want': sc_messages.Operation(startTime=_REALLY_EARLY, endTime=_LATER)
     },
     {
         u'description': u'update the end time to that of the latest',
         u'kinds': None,
-        u'initial': messages.Operation(
+        u'initial': sc_messages.Operation(
             startTime=_EARLY,
             endTime=_LATER
         ),
         u'ops': [
-            messages.Operation(
+            sc_messages.Operation(
                 startTime=_EARLY,
                 endTime=_LATER
             ),
-            messages.Operation(
+            sc_messages.Operation(
                 startTime=_EARLY,
                 endTime=_LATER_STILL
             ),
         ],
-        u'want': messages.Operation(startTime=_EARLY, endTime=_LATER_STILL)
+        u'want': sc_messages.Operation(startTime=_EARLY, endTime=_LATER_STILL)
     },
     {
         u'description': u'combine the log entries',
         u'kinds': None,
-        u'initial': messages.Operation(
+        u'initial': sc_messages.Operation(
             startTime=_EARLY,
             endTime=_LATER,
-            logEntries=[messages.LogEntry(textPayload=u'initial')]
+            logEntries=[sc_messages.LogEntry(textPayload=u'initial')]
         ),
         u'ops': [
-            messages.Operation(
+            sc_messages.Operation(
                 startTime=_EARLY,
                 endTime=_LATER,
-                logEntries=[messages.LogEntry(textPayload=u'agg1')]
+                logEntries=[sc_messages.LogEntry(textPayload=u'agg1')]
             ),
-            messages.Operation(
+            sc_messages.Operation(
                 startTime=_EARLY,
                 endTime=_LATER,
-                logEntries=[messages.LogEntry(textPayload=u'agg2')]
+                logEntries=[sc_messages.LogEntry(textPayload=u'agg2')]
             ),
         ],
-        u'want': messages.Operation(
+        u'want': sc_messages.Operation(
             startTime=_EARLY,
             endTime=_LATER,
             logEntries=[
-                messages.LogEntry(textPayload=u'initial'),
-                messages.LogEntry(textPayload=u'agg1'),
-                messages.LogEntry(textPayload=u'agg2')
+                sc_messages.LogEntry(textPayload=u'initial'),
+                sc_messages.LogEntry(textPayload=u'agg1'),
+                sc_messages.LogEntry(textPayload=u'agg2')
             ]
         )
     },
     {
         u'description': u'combines the metric value using the default kind',
         u'kinds': None,
-        u'initial': messages.Operation(
+        u'initial': sc_messages.Operation(
             startTime=_EARLY,
             endTime=_LATER,
             metricValueSets = [
-                messages.MetricValueSet(
+                sc_messages.MetricValueSet(
                     metricName=u'some_floats',
                     metricValues=[
                         metric_value.create(
@@ -120,7 +121,7 @@ _TESTS = [
                         ),
                     ]
                 ),
-                messages.MetricValueSet(
+                sc_messages.MetricValueSet(
                     metricName=u'other_floats',
                     metricValues=[
                         metric_value.create(
@@ -133,11 +134,11 @@ _TESTS = [
             ]
         ),
         u'ops': [
-            messages.Operation(
+            sc_messages.Operation(
                 startTime=_EARLY,
                 endTime=_LATER,
                 metricValueSets = [
-                    messages.MetricValueSet(
+                    sc_messages.MetricValueSet(
                         metricName=u'some_floats',
                         metricValues=[
                             metric_value.create(
@@ -149,11 +150,11 @@ _TESTS = [
                     ),
                 ]
             ),
-            messages.Operation(
+            sc_messages.Operation(
                 startTime=_EARLY,
                 endTime=_LATER,
                 metricValueSets = [
-                    messages.MetricValueSet(
+                    sc_messages.MetricValueSet(
                         metricName=u'other_floats',
                         metricValues=[
                             metric_value.create(
@@ -167,11 +168,11 @@ _TESTS = [
 
             ),
         ],
-        u'want': messages.Operation(
+        u'want': sc_messages.Operation(
             startTime=_EARLY,
             endTime=_LATER,
             metricValueSets = [
-                messages.MetricValueSet(
+                sc_messages.MetricValueSet(
                     metricName=u'other_floats',
                     metricValues=[
                         metric_value.create(
@@ -181,7 +182,7 @@ _TESTS = [
                         ),
                     ]
                 ),
-                messages.MetricValueSet(
+                sc_messages.MetricValueSet(
                     metricName=u'some_floats',
                     metricValues=[
                         metric_value.create(
@@ -197,11 +198,11 @@ _TESTS = [
     {
         u'description': u'combines a metric value using a kind that is not DELTA',
         u'kinds': {u'some_floats': MetricKind.GAUGE },
-        u'initial': messages.Operation(
+        u'initial': sc_messages.Operation(
             startTime=_EARLY,
             endTime=_LATER,
             metricValueSets = [
-                messages.MetricValueSet(
+                sc_messages.MetricValueSet(
                     metricName=u'some_floats',
                     metricValues=[
                         metric_value.create(
@@ -211,7 +212,7 @@ _TESTS = [
                         ),
                     ]
                 ),
-                messages.MetricValueSet(
+                sc_messages.MetricValueSet(
                     metricName=u'other_floats',
                     metricValues=[
                         metric_value.create(
@@ -224,11 +225,11 @@ _TESTS = [
             ]
         ),
         u'ops': [
-            messages.Operation(
+            sc_messages.Operation(
                 startTime=_EARLY,
                 endTime=_LATER,
                 metricValueSets = [
-                    messages.MetricValueSet(
+                    sc_messages.MetricValueSet(
                         metricName=u'some_floats',
                         metricValues=[
                             metric_value.create(
@@ -240,11 +241,11 @@ _TESTS = [
                     ),
                 ]
             ),
-            messages.Operation(
+            sc_messages.Operation(
                 startTime=_EARLY,
                 endTime=_LATER,
                 metricValueSets = [
-                    messages.MetricValueSet(
+                    sc_messages.MetricValueSet(
                         metricName=u'other_floats',
                         metricValues=[
                             metric_value.create(
@@ -258,11 +259,11 @@ _TESTS = [
 
             ),
         ],
-        u'want': messages.Operation(
+        u'want': sc_messages.Operation(
             startTime=_EARLY,
             endTime=_LATER,
             metricValueSets = [
-                messages.MetricValueSet(
+                sc_messages.MetricValueSet(
                     metricName=u'other_floats',
                     metricValues=[
                         metric_value.create(
@@ -272,7 +273,7 @@ _TESTS = [
                         ),
                     ]
                 ),
-                messages.MetricValueSet(
+                sc_messages.MetricValueSet(
                     metricName=u'some_floats',
                     metricValues=[
                         metric_value.create(
@@ -308,16 +309,16 @@ _INFO_TESTS = [
     (operation.Info(
         referer=u'a_referer',
         service_name=u'a_service_name'),
-     messages.Operation(
-         importance=messages.Operation.ImportanceValueValuesEnum.LOW,
+     sc_messages.Operation(
+         importance=sc_messages.Operation.ImportanceValueValuesEnum.LOW,
          startTime=_REALLY_EARLY,
          endTime=_REALLY_EARLY)),
     (operation.Info(
         operation_id=u'an_op_id',
         referer=u'a_referer',
         service_name=u'a_service_name'),
-     messages.Operation(
-         importance=messages.Operation.ImportanceValueValuesEnum.LOW,
+     sc_messages.Operation(
+         importance=sc_messages.Operation.ImportanceValueValuesEnum.LOW,
          operationId=u'an_op_id',
          startTime=_REALLY_EARLY,
          endTime=_REALLY_EARLY)),
@@ -326,8 +327,8 @@ _INFO_TESTS = [
         operation_name=u'an_op_name',
         referer=u'a_referer',
         service_name=u'a_service_name'),
-     messages.Operation(
-         importance=messages.Operation.ImportanceValueValuesEnum.LOW,
+     sc_messages.Operation(
+         importance=sc_messages.Operation.ImportanceValueValuesEnum.LOW,
          operationId=u'an_op_id',
          operationName=u'an_op_name',
          startTime=_REALLY_EARLY,
@@ -342,8 +343,8 @@ _INFO_TESTS = [
         operation_name=u'an_op_name',
         referer=u'a_referer',
         service_name=u'a_service_name'),
-     messages.Operation(
-         importance=messages.Operation.ImportanceValueValuesEnum.LOW,
+     sc_messages.Operation(
+         importance=sc_messages.Operation.ImportanceValueValuesEnum.LOW,
          consumerId=u'api_key:an_api_key',
          operationId=u'an_op_id',
          operationName=u'an_op_name',
@@ -357,8 +358,8 @@ _INFO_TESTS = [
         operation_name=u'an_op_name',
         referer=u'a_referer',
         service_name=u'a_service_name'),
-     messages.Operation(
-         importance=messages.Operation.ImportanceValueValuesEnum.LOW,
+     sc_messages.Operation(
+         importance=sc_messages.Operation.ImportanceValueValuesEnum.LOW,
          consumerId=u'project:project_id',
          operationId=u'an_op_id',
          operationName=u'an_op_name',

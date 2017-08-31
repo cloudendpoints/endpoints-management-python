@@ -21,7 +21,8 @@ import unittest2
 from expects import equal, expect, raise_error
 
 from apitools.base.py import encoding
-from endpoints_management.control import distribution, timestamp, metric_value, messages
+from endpoints_management.control import (distribution, timestamp,
+                                          metric_value, sc_messages)
 from endpoints_management.control import MetricKind
 
 
@@ -34,7 +35,7 @@ class TestUpdateHash(unittest2.TestCase):
         return md5.digest()
 
     def test_should_add_nothing_without_labels_or_currency(self):
-        expect(self.make_hash(messages.MetricValue())).to(
+        expect(self.make_hash(sc_messages.MetricValue())).to(
             equal(self.NOTHING_ADDED))
 
     def test_should_add_matching_hashes_for_matching_labels(self):
@@ -49,7 +50,7 @@ class TestUpdateHash(unittest2.TestCase):
         a_dict = {u'test': u'dict'}
         mv1 = metric_value.create(labels=a_dict)
         mv2 = metric_value.create(labels=a_dict)
-        mv2.moneyValue = messages.Money(currencyCode=u'JPY')
+        mv2.moneyValue = sc_messages.Money(currencyCode=u'JPY')
         want = self.make_hash(mv1)
         got = self.make_hash(mv2)
         expect(got).to_not(equal(want))
@@ -84,7 +85,8 @@ class TestMerge(unittest2.TestCase):
             endTime=self.LATER)
         self.test_value_with_money = metric_value.create(
             labels=self.TEST_LABELS,
-            moneyValue=messages.Money(currencyCode=u'JPY', units=100, nanos=0))
+            moneyValue=sc_messages.Money(
+                currencyCode=u'JPY', units=100, nanos=0))
 
     def test_should_fail_for_metric_values_with_different_types(self):
         changed = metric_value.create(labels=self.TEST_LABELS, int64Value=1)

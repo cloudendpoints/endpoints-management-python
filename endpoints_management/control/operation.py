@@ -32,7 +32,7 @@ from datetime import datetime
 
 from apitools.base.py import encoding
 
-from . import messages, metric_value, timestamp, MetricKind
+from . import metric_value, sc_messages, timestamp, MetricKind
 
 logger = logging.getLogger(__name__)
 
@@ -113,10 +113,10 @@ class Info(
 
         """
         now = timer()
-        op = messages.Operation(
+        op = sc_messages.Operation(
             endTime=timestamp.to_rfc3339(now),
             startTime=timestamp.to_rfc3339(now),
-            importance=messages.Operation.ImportanceValueValuesEnum.LOW)
+            importance=sc_messages.Operation.ImportanceValueValuesEnum.LOW)
         if self.operation_id:
             op.operationId = self.operation_id
         if self.operation_name:
@@ -150,7 +150,7 @@ class Aggregator(object):
               each metric name
 
         """
-        assert isinstance(initial_op, messages.Operation)
+        assert isinstance(initial_op, sc_messages.Operation)
         if kinds is None:
             kinds = {}
         self._kinds = kinds
@@ -171,7 +171,7 @@ class Aggregator(object):
         for name in names:
             mvs = self._metric_values_by_name_then_sign[name]
             result.metricValueSets.append(
-                messages.MetricValueSet(
+                sc_messages.MetricValueSet(
                     metricName=name, metricValues=list(mvs.values())))
         return result
 

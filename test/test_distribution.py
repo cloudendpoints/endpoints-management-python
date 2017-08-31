@@ -21,7 +21,7 @@ import sys
 import unittest2
 from expects import expect, equal, raise_error
 
-from endpoints_management.control import distribution, messages
+from endpoints_management.control import distribution, sc_messages
 
 
 class TestCreateExponential(unittest2.TestCase):
@@ -124,7 +124,7 @@ def _expect_stats_eq_direct_calc_from_samples(d, samples):
 
 
 class TestAddSample(unittest2.TestCase):
-    NOTHING_SET = messages.Distribution()
+    NOTHING_SET = sc_messages.Distribution()
 
     def test_should_fail_if_no_buckets_are_set(self):
         testf = lambda: distribution.add_sample(_UNDERFLOW_SAMPLE,

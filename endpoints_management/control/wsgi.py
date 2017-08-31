@@ -29,7 +29,7 @@ from builtins import object
 from datetime import datetime
 
 from ..auth import suppliers, tokens
-from . import check_request, messages, report_request, service
+from . import check_request, report_request, service, sm_messages
 
 from . import compat
 
@@ -162,10 +162,10 @@ class EnvironmentMiddleware(object):
 
         Args:
           application: the wrapped wsgi application
-          a_service (:class:`endpoints_management.gen.servicecontrol_v1_messages.Service`):
+          a_service (:class:`endpoints_management.gen.servicemanagement_v1_messages.Service`):
             a service instance
         """
-        if not isinstance(a_service, messages.Service):
+        if not isinstance(a_service, sm_messages.Service):
             raise ValueError(u"service is None or not an instance of Service")
 
         self._application = application
@@ -518,10 +518,10 @@ def _create_authenticator(a_service):
     """Create an instance of :class:`google.auth.tokens.Authenticator`.
 
     Args:
-      a_service (:class:`endpoints_management.gen.servicecontrol_v1_messages.Service`): a
+      a_service (:class:`endpoints_management.gen.servicemanagement_v1_messages.Service`): a
         service instance
     """
-    if not isinstance(a_service, messages.Service):
+    if not isinstance(a_service, sm_messages.Service):
         raise ValueError(u"service is None or not an instance of Service")
 
     authentication = a_service.authentication

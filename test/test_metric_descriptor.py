@@ -19,7 +19,8 @@ import datetime
 import unittest2
 from expects import be_none, be_true, expect, equal, raise_error
 
-import endpoints_management.gen.servicecontrol_v1_messages as messages
+import endpoints_management.gen.servicecontrol_v1_messages as sc_messages
+import endpoints_management.gen.servicemanagement_v1_messages as sm_messages
 from endpoints_management.control import (distribution, metric_descriptor, timestamp, MetricKind,
                         ValueType)
 from endpoints_management.control import metric_value, operation, report_request
@@ -54,7 +55,7 @@ class KnownMetricsBase(object):
     GIVEN_INFO = _given_info(WANTED_SIZE, TEST_API_KEY, api_key_valid=True)
 
     def _base_operation(self):
-        return messages.Operation(
+        return sc_messages.Operation(
             consumerId=u'project:project_id',
             operationId=u'an_op_id',
             operationName=u'an_op_name')
@@ -66,7 +67,7 @@ class KnownMetricsBase(object):
         return op
 
     def _matching_descriptor(self):
-        return messages.MetricDescriptor(
+        return sm_messages.MetricDescriptor(
             name=self.SUBJECT.metric_name,
             metricKind=self.SUBJECT.kind,
             valueType=self.SUBJECT.value_type)
@@ -99,7 +100,7 @@ class KnownMetricsInvalidApiKey(KnownMetricsBase):
 
 class TestConsumerRequestCount(KnownMetricsBase, unittest2.TestCase):
     SUBJECT = _KNOWN.CONSUMER_REQUEST_COUNT
-    WANTED_ADDED_METRICS = messages.MetricValueSet(
+    WANTED_ADDED_METRICS = sc_messages.MetricValueSet(
         metricName=SUBJECT.metric_name,
         metricValues=[metric_value.create(int64Value=1)])
 
@@ -111,7 +112,7 @@ class TestConsumerRequestCountInvalidApiKey(KnownMetricsInvalidApiKey,
 
 class TestProducerRequestCount(KnownMetricsBase, unittest2.TestCase):
     SUBJECT = _KNOWN.PRODUCER_REQUEST_COUNT
-    WANTED_ADDED_METRICS = messages.MetricValueSet(
+    WANTED_ADDED_METRICS = sc_messages.MetricValueSet(
         metricName=SUBJECT.metric_name,
         metricValues=[metric_value.create(int64Value=1)])
 
@@ -121,7 +122,7 @@ class TestConsumerRequestSizes(KnownMetricsBase, unittest2.TestCase):
     WANTED_DISTRIBUTION = _wanted_distribution_with_sample(
         KnownMetricsBase.WANTED_SIZE,
         *metric_descriptor._SIZE_DISTRIBUTION_ARGS)
-    WANTED_ADDED_METRICS = messages.MetricValueSet(
+    WANTED_ADDED_METRICS = sc_messages.MetricValueSet(
         metricName=SUBJECT.metric_name,
         metricValues=[metric_value.create(distributionValue=WANTED_DISTRIBUTION)])
 
@@ -136,7 +137,7 @@ class TestProducerRequestSizes(KnownMetricsBase, unittest2.TestCase):
     WANTED_DISTRIBUTION = _wanted_distribution_with_sample(
         KnownMetricsBase.WANTED_SIZE,
         *metric_descriptor._SIZE_DISTRIBUTION_ARGS)
-    WANTED_ADDED_METRICS = messages.MetricValueSet(
+    WANTED_ADDED_METRICS = sc_messages.MetricValueSet(
         metricName=SUBJECT.metric_name,
         metricValues=[metric_value.create(distributionValue=WANTED_DISTRIBUTION)])
 
@@ -146,7 +147,7 @@ class TestConsumerResponseSizes(KnownMetricsBase, unittest2.TestCase):
     WANTED_DISTRIBUTION = _wanted_distribution_with_sample(
         KnownMetricsBase.WANTED_SIZE,
         *metric_descriptor._SIZE_DISTRIBUTION_ARGS)
-    WANTED_ADDED_METRICS = messages.MetricValueSet(
+    WANTED_ADDED_METRICS = sc_messages.MetricValueSet(
         metricName=SUBJECT.metric_name,
         metricValues=[metric_value.create(distributionValue=WANTED_DISTRIBUTION)])
 
@@ -161,7 +162,7 @@ class TestProducerResponseSizes(KnownMetricsBase, unittest2.TestCase):
     WANTED_DISTRIBUTION = _wanted_distribution_with_sample(
         KnownMetricsBase.WANTED_SIZE,
         *metric_descriptor._SIZE_DISTRIBUTION_ARGS)
-    WANTED_ADDED_METRICS = messages.MetricValueSet(
+    WANTED_ADDED_METRICS = sc_messages.MetricValueSet(
         metricName=SUBJECT.metric_name,
         metricValues=[metric_value.create(distributionValue=WANTED_DISTRIBUTION)])
 
@@ -177,7 +178,7 @@ class TestConsumerErrorCountWithErrors(KnownMetricsBase, unittest2.TestCase):
         api_key=KnownMetricsBase.TEST_API_KEY,
         api_key_valid=True,
     )
-    WANTED_ADDED_METRICS = messages.MetricValueSet(
+    WANTED_ADDED_METRICS = sc_messages.MetricValueSet(
         metricName=SUBJECT.metric_name,
         metricValues=[metric_value.create(int64Value=1)])
 
@@ -198,7 +199,7 @@ class TestProducerErrorCountWithErrors(KnownMetricsBase, unittest2.TestCase):
         api_key=KnownMetricsBase.TEST_API_KEY,
         api_key_valid=True,
     )
-    WANTED_ADDED_METRICS = messages.MetricValueSet(
+    WANTED_ADDED_METRICS = sc_messages.MetricValueSet(
         metricName=SUBJECT.metric_name,
         metricValues=[metric_value.create(int64Value=1)])
 
@@ -208,7 +209,7 @@ class TestConsumerTotalLatencies(KnownMetricsBase, unittest2.TestCase):
     WANTED_DISTRIBUTION = _wanted_distribution_with_sample(
         KnownMetricsBase.GIVEN_INFO.request_time.seconds,
         *metric_descriptor._TIME_DISTRIBUTION_ARGS)
-    WANTED_ADDED_METRICS = messages.MetricValueSet(
+    WANTED_ADDED_METRICS = sc_messages.MetricValueSet(
         metricName=SUBJECT.metric_name,
         metricValues=[metric_value.create(distributionValue=WANTED_DISTRIBUTION)])
 
@@ -223,7 +224,7 @@ class TestProducerTotalLatencies(KnownMetricsBase, unittest2.TestCase):
     WANTED_DISTRIBUTION = _wanted_distribution_with_sample(
         KnownMetricsBase.GIVEN_INFO.request_time.seconds,
         *metric_descriptor._TIME_DISTRIBUTION_ARGS)
-    WANTED_ADDED_METRICS = messages.MetricValueSet(
+    WANTED_ADDED_METRICS = sc_messages.MetricValueSet(
         metricName=SUBJECT.metric_name,
         metricValues=[metric_value.create(distributionValue=WANTED_DISTRIBUTION)])
 
@@ -233,7 +234,7 @@ class TestConsumerRequestOverheadLatencies(KnownMetricsBase, unittest2.TestCase)
     WANTED_DISTRIBUTION = _wanted_distribution_with_sample(
         KnownMetricsBase.GIVEN_INFO.overhead_time.seconds,
         *metric_descriptor._TIME_DISTRIBUTION_ARGS)
-    WANTED_ADDED_METRICS = messages.MetricValueSet(
+    WANTED_ADDED_METRICS = sc_messages.MetricValueSet(
         metricName=SUBJECT.metric_name,
         metricValues=[metric_value.create(distributionValue=WANTED_DISTRIBUTION)])
 
@@ -248,7 +249,7 @@ class TestProducerRequestOverheadLatencies(KnownMetricsBase, unittest2.TestCase)
     WANTED_DISTRIBUTION = _wanted_distribution_with_sample(
         KnownMetricsBase.GIVEN_INFO.overhead_time.seconds,
         *metric_descriptor._TIME_DISTRIBUTION_ARGS)
-    WANTED_ADDED_METRICS = messages.MetricValueSet(
+    WANTED_ADDED_METRICS = sc_messages.MetricValueSet(
         metricName=SUBJECT.metric_name,
         metricValues=[metric_value.create(distributionValue=WANTED_DISTRIBUTION)])
 
@@ -258,7 +259,7 @@ class TestConsumerBackendLatencies(KnownMetricsBase, unittest2.TestCase):
     WANTED_DISTRIBUTION = _wanted_distribution_with_sample(
         KnownMetricsBase.GIVEN_INFO.backend_time.seconds,
         *metric_descriptor._TIME_DISTRIBUTION_ARGS)
-    WANTED_ADDED_METRICS = messages.MetricValueSet(
+    WANTED_ADDED_METRICS = sc_messages.MetricValueSet(
         metricName=SUBJECT.metric_name,
         metricValues=[metric_value.create(distributionValue=WANTED_DISTRIBUTION)])
 
@@ -273,6 +274,6 @@ class TestProducerBackendLatencies(KnownMetricsBase, unittest2.TestCase):
     WANTED_DISTRIBUTION = _wanted_distribution_with_sample(
         KnownMetricsBase.GIVEN_INFO.backend_time.seconds,
         *metric_descriptor._TIME_DISTRIBUTION_ARGS)
-    WANTED_ADDED_METRICS = messages.MetricValueSet(
+    WANTED_ADDED_METRICS = sc_messages.MetricValueSet(
         metricName=SUBJECT.metric_name,
         metricValues=[metric_value.create(distributionValue=WANTED_DISTRIBUTION)])

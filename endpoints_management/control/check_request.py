@@ -33,7 +33,8 @@ from builtins import object
 
 from apitools.base.py import encoding
 
-from . import caches, label_descriptor, messages, metric_value, operation, signing
+from . import (caches, label_descriptor, metric_value, operation, sc_messages,
+               signing)
 from .. import USER_AGENT, SERVICE_AGENT
 
 # These imports should be above project-level imports, but flake8 doesn't like
@@ -52,7 +53,7 @@ else:
 logger = logging.getLogger(__name__)
 
 # alias for brevity
-_CheckErrors = messages.CheckError.CodeValueValuesEnum
+_CheckErrors = sc_messages.CheckError.CodeValueValuesEnum
 _IS_OK = (httplib.OK, u'', True)
 _IS_UNKNOWN = (
     httplib.INTERNAL_SERVER_ERROR,
@@ -174,7 +175,7 @@ def sign(check_request):
     Returns:
        string: a secure hash generated from the operation
     """
-    if not isinstance(check_request, messages.CheckRequest):
+    if not isinstance(check_request, sc_messages.CheckRequest):
         raise ValueError(u'Invalid request')
     op = check_request.operation
     if op is None or op.operationName is None or op.consumerId is None:
@@ -262,9 +263,9 @@ class Info(collections.namedtuple(u'Info',
         labels[_KNOWN_LABELS.SCC_USER_AGENT.label_name] = USER_AGENT
 
         op.labels = encoding.PyValueToMessage(
-            messages.Operation.LabelsValue, labels)
-        check_request = messages.CheckRequest(operation=op)
-        return messages.ServicecontrolServicesCheckRequest(
+            sc_messages.Operation.LabelsValue, labels)
+        check_request = sc_messages.CheckRequest(operation=op)
+        return sc_messages.ServicecontrolServicesCheckRequest(
             serviceName=self.service_name,
             checkRequest=check_request)
 
@@ -452,7 +453,7 @@ class Aggregator(object):
         """
         if self._cache is None:
             return None  # no cache, send request now
-        if not isinstance(req, messages.ServicecontrolServicesCheckRequest):
+        if not isinstance(req, sc_messages.ServicecontrolServicesCheckRequest):
             raise ValueError(u'Invalid request')
         if req.serviceName != self.service_name:
             logger.error(u'bad check(): service_name %s does not match ours %s',
@@ -466,7 +467,7 @@ class Aggregator(object):
         if op is None:
             logger.error(u'bad check(): no operation in %s', req)
             raise ValueError(u'Expected operation not set')
-        if op.importance != messages.Operation.ImportanceValueValuesEnum.LOW:
+        if op.importance != sc_messages.Operation.ImportanceValueValuesEnum.LOW:
             return None  # op is important, send request now
 
         signature = sign(check_request)
@@ -510,7 +511,7 @@ class CachedItem(object):
     Thread compatible.
 
     Attributes:
-       response (:class:`messages.CachedResponse`): the cached response
+       response (:class:`sc_messages.CachedResponse`): the cached response
        is_flushing (bool): indicates if it's been detected that item
          is stale, and needs to be flushed
        quota_scale (int): WIP, used to determine quota
@@ -541,7 +542,7 @@ class CachedItem(object):
 
         op = self._op_aggregator.as_operation()
         self._op_aggregator = None
-        check_request = messages.CheckRequest(operation=op)
-        return messages.ServicecontrolServicesCheckRequest(
+        check_request = sc_messages.CheckRequest(operation=op)
+        return sc_messages.ServicecontrolServicesCheckRequest(
             serviceName=self._service_name,
             checkRequest=check_request)

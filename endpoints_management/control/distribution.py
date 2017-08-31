@@ -34,7 +34,7 @@ import bisect
 import logging
 import math
 
-from . import messages
+from . import sc_messages
 
 logger = logging.getLogger(__name__)
 
@@ -63,9 +63,9 @@ def create_exponential(num_finite_buckets, growth_factor, scale):
         raise ValueError(_BAD_FLOAT_ARG % (u'growth factor', 1.0))
     if scale <= 0.0:
         raise ValueError(_BAD_FLOAT_ARG % (u'scale', 0.0))
-    return messages.Distribution(
+    return sc_messages.Distribution(
         bucketCounts=[0] * (num_finite_buckets + 2),
-        exponentialBuckets=messages.ExponentialBuckets(
+        exponentialBuckets=sc_messages.ExponentialBuckets(
             numFiniteBuckets=num_finite_buckets,
             growthFactor=growth_factor,
             scale=scale))
@@ -89,9 +89,9 @@ def create_linear(num_finite_buckets, width, offset):
         raise ValueError(_BAD_NUM_FINITE_BUCKETS)
     if width <= 0.0:
         raise ValueError(_BAD_FLOAT_ARG % (u'width', 0.0))
-    return messages.Distribution(
+    return sc_messages.Distribution(
         bucketCounts=[0] * (num_finite_buckets + 2),
-        linearBuckets=messages.LinearBuckets(
+        linearBuckets=sc_messages.LinearBuckets(
             numFiniteBuckets=num_finite_buckets,
             width=width,
             offset=offset))
@@ -114,9 +114,9 @@ def create_explicit(bounds):
     safe_bounds = sorted(float(x) for x in bounds)
     if len(safe_bounds) != len(set(safe_bounds)):
         raise ValueError(u'Detected two elements of bounds that are the same')
-    return messages.Distribution(
+    return sc_messages.Distribution(
         bucketCounts=[0] * (len(safe_bounds) + 1),
-        explicitBuckets=messages.ExplicitBuckets(bounds=safe_bounds))
+        explicitBuckets=sc_messages.ExplicitBuckets(bounds=safe_bounds))
 
 
 def add_sample(a_float, dist):

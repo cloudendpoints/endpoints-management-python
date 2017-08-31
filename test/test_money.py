@@ -18,20 +18,21 @@ import sys
 import unittest2
 from expects import expect, equal, raise_error
 
-from endpoints_management.control import money, messages
+from endpoints_management.control import money, sc_messages
 
 
 class TestCheckValid(unittest2.TestCase):
-    _BAD_CURRENCY = messages.Money(currencyCode=u'this-is-bad')
+    _BAD_CURRENCY = sc_messages.Money(currencyCode=u'this-is-bad')
     _MISMATCHED_UNITS = (
-        messages.Money(currencyCode=u'JPY', units=-1, nanos=1),
-        messages.Money(currencyCode=u'JPY', units=1, nanos=-1),
+        sc_messages.Money(currencyCode=u'JPY', units=-1, nanos=1),
+        sc_messages.Money(currencyCode=u'JPY', units=1, nanos=-1),
     )
-    _NANOS_OOB = messages.Money(currencyCode=u'EUR', units=0, nanos=9999999999)
+    _NANOS_OOB = sc_messages.Money(
+        currencyCode=u'EUR', units=0, nanos=9999999999)
     _OK = (
-        messages.Money(currencyCode=u'JPY', units=1, nanos=1),
-        messages.Money(currencyCode=u'JPY', units=-1, nanos=-1),
-        messages.Money(currencyCode=u'EUR', units=0, nanos=money.MAX_NANOS),
+        sc_messages.Money(currencyCode=u'JPY', units=1, nanos=1),
+        sc_messages.Money(currencyCode=u'JPY', units=-1, nanos=-1),
+        sc_messages.Money(currencyCode=u'EUR', units=0, nanos=money.MAX_NANOS),
     )
 
     def test_should_fail_if_not_really_money(self):
@@ -39,7 +40,7 @@ class TestCheckValid(unittest2.TestCase):
         expect(lambda: money.check_valid(None)).to(raise_error(ValueError))
 
     def test_should_fail_when_no_currency_is_set(self):
-        expect(lambda: money.check_valid(messages.Money())).to(
+        expect(lambda: money.check_valid(sc_messages.Money())).to(
             raise_error(ValueError))
 
     def test_should_fail_when_the_currency_is_bad(self):
@@ -60,15 +61,17 @@ class TestCheckValid(unittest2.TestCase):
 
 
 class TestAdd(unittest2.TestCase):
-    _SOME_YEN = messages.Money(currencyCode=u'JPY', units=3, nanos=0)
-    _SOME_YEN_DEBT = messages.Money(currencyCode=u'JPY', units=-2, nanos=-1)
-    _SOME_MORE_YEN = messages.Money(currencyCode=u'JPY', units=1, nanos=3)
-    _SOME_USD = messages.Money(currencyCode=u'USD', units=1, nanos=0)
+    _SOME_YEN = sc_messages.Money(currencyCode=u'JPY', units=3, nanos=0)
+    _SOME_YEN_DEBT = sc_messages.Money(currencyCode=u'JPY', units=-2, nanos=-1)
+    _SOME_MORE_YEN = sc_messages.Money(currencyCode=u'JPY', units=1, nanos=3)
+    _SOME_USD = sc_messages.Money(currencyCode=u'USD', units=1, nanos=0)
     # sys.maxint doesn't exist on PY3 because there is no max int size in PY3.
     _INT64_MAX = int(2**63 - 1)
     _INT64_MIN = int(-(2**63))
-    _LARGE_YEN = messages.Money(currencyCode=u'JPY', units=_INT64_MAX -1, nanos=0)
-    _LARGE_YEN_DEBT = messages.Money(currencyCode=u'JPY', units=-_INT64_MAX + 1, nanos=0)
+    _LARGE_YEN = sc_messages.Money(
+        currencyCode=u'JPY', units=_INT64_MAX -1, nanos=0)
+    _LARGE_YEN_DEBT = sc_messages.Money(
+        currencyCode=u'JPY', units=-_INT64_MAX + 1, nanos=0)
 
     def test_should_fail_if_non_money_is_used(self):
         testfs = [
