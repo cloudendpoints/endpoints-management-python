@@ -150,6 +150,11 @@ def set_user_agent(name, dummy_info, labels):
     labels[name] = USER_AGENT
 
 
+def set_consumer_project(name, info, labels):
+    if info.consumer_project_number > 0:
+        labels[name] = unicode(info.consumer_project_number)
+
+
 class KnownLabels(Enum):
     """Enumerates the known labels."""
 
@@ -220,6 +225,9 @@ class KnownLabels(Enum):
     SCC_USER_AGENT = (
         u'servicecontrol.googleapis.com/user_agent', ValueType.STRING, Kind.SYSTEM,
         set_user_agent)
+    SCC_CONSUMER_PROJECT = (
+        u'serviceruntime.googleapis.com/consumer_project', ValueType.STRING, Kind.SYSTEM,
+        set_consumer_project)
 
     def __init__(self, label_name, value_type, kind, update_label_func):
         """Constructor.

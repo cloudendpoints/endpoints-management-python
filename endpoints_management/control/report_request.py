@@ -176,6 +176,7 @@ class Info(
                 u'auth_issuer',
                 u'auth_audience',
                 u'backend_time',
+                u'consumer_project_number',
                 u'error_cause',
                 u'location',
                 u'log_message',
@@ -202,6 +203,8 @@ class Info(
        auth_issuer (string): the auth issuer
        auth_audience (string): the auth audience
        backend_time(datetime.timedelta): the backend request time, None for N/A
+       consumer_project_number(int): the project number of the consumer, as
+           returned by the check request
        error_cause(:class:`ErrorCause`): the cause of error if one has occurred
        location (string): the location of the service
        log_message (string): a message to log as an info log
@@ -237,6 +240,7 @@ class Info(
                 auth_issuer=u'',
                 auth_audience=u'',
                 backend_time=None,
+                consumer_project_number=SIZE_NOT_SET,
                 error_cause=ErrorCause.internal,
                 location=u'',
                 log_message=u'',
@@ -272,6 +276,7 @@ class Info(
             auth_issuer,
             auth_audience,
             backend_time,
+            consumer_project_number,
             error_cause,
             location,
             log_message,

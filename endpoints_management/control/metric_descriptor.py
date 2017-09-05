@@ -98,6 +98,7 @@ class Mark(Enum):
     """Enumerates the types of metric."""
     PRODUCER = 1
     CONSUMER = 2
+    PRODUCER_BY_CONSUMER = 3
 
 
 class KnownMetrics(Enum):
@@ -116,6 +117,13 @@ class KnownMetrics(Enum):
         ValueType.INT64,
         _set_int64_metric_to_constant_1,
     )
+    PRODUCER_BY_CONSUMER_REQUEST_COUNT = (
+        u'serviceruntime.googleapis.com/api/producer/by_consumer/request_count',
+        MetricKind.DELTA,
+        ValueType.INT64,
+        _set_int64_metric_to_constant_1,
+        Mark.PRODUCER_BY_CONSUMER,
+    )
     CONSUMER_REQUEST_SIZES = (
         u'serviceruntime.googleapis.com/api/consumer/request_sizes',
         MetricKind.DELTA,
@@ -128,6 +136,13 @@ class KnownMetrics(Enum):
         MetricKind.DELTA,
         ValueType.DISTRIBUTION,
         _set_distribution_metric_to_request_size,
+    )
+    PRODUCER_BY_CONSUMER_REQUEST_SIZES = (
+        'serviceruntime.googleapis.com/api/producer/by_consumer/request_sizes',
+        MetricKind.DELTA,
+        ValueType.DISTRIBUTION,
+        _set_distribution_metric_to_request_size,
+        Mark.PRODUCER_BY_CONSUMER,
     )
     CONSUMER_RESPONSE_SIZES = (
         u'serviceruntime.googleapis.com/api/consumer/response_sizes',
@@ -142,6 +157,13 @@ class KnownMetrics(Enum):
         ValueType.DISTRIBUTION,
         _set_distribution_metric_to_response_size,
     )
+    PRODUCER_BY_CONSUMER_RESPONSE_SIZES = (
+        'serviceruntime.googleapis.com/api/producer/by_consumer/response_sizes',
+        MetricKind.DELTA,
+        ValueType.DISTRIBUTION,
+        _set_distribution_metric_to_response_size,
+        Mark.PRODUCER_BY_CONSUMER,
+    )
     CONSUMER_ERROR_COUNT = (
         u'serviceruntime.googleapis.com/api/consumer/error_count',
         MetricKind.DELTA,
@@ -154,6 +176,13 @@ class KnownMetrics(Enum):
         MetricKind.DELTA,
         ValueType.INT64,
         _set_int64_metric_to_constant_1_if_http_error,
+    )
+    PRODUCER_BY_CONSUMER_ERROR_COUNT = (
+        'serviceruntime.googleapis.com/api/producer/by_consumer/error_count',
+        MetricKind.DELTA,
+        ValueType.INT64,
+        _set_int64_metric_to_constant_1_if_http_error,
+        Mark.PRODUCER_BY_CONSUMER,
     )
     CONSUMER_TOTAL_LATENCIES = (
         u'serviceruntime.googleapis.com/api/consumer/total_latencies',
@@ -168,6 +197,14 @@ class KnownMetrics(Enum):
         ValueType.DISTRIBUTION,
         _set_distribution_metric_to_request_time,
     )
+    PRODUCER_BY_CONSUMER_TOTAL_LATENCIES = (
+        'serviceruntime.googleapis.com/api/producer/by_consumer/'
+        'total_latencies',
+        MetricKind.DELTA,
+        ValueType.DISTRIBUTION,
+        _set_distribution_metric_to_request_time,
+        Mark.PRODUCER_BY_CONSUMER,
+    )
     CONSUMER_BACKEND_LATENCIES = (
         u'serviceruntime.googleapis.com/api/consumer/backend_latencies',
         MetricKind.DELTA,
@@ -181,6 +218,14 @@ class KnownMetrics(Enum):
         ValueType.DISTRIBUTION,
         _set_distribution_metric_to_backend_time,
     )
+    PRODUCER_BY_CONSUMER_BACKEND_LATENCIES = (
+        'serviceruntime.googleapis.com/api/producer/by_consumer/'
+        'backend_latencies',
+        MetricKind.DELTA,
+        ValueType.DISTRIBUTION,
+        _set_distribution_metric_to_backend_time,
+        Mark.PRODUCER_BY_CONSUMER,
+    )
     CONSUMER_REQUEST_OVERHEAD_LATENCIES = (
         u'serviceruntime.googleapis.com/api/consumer/request_overhead_latencies',
         MetricKind.DELTA,
@@ -193,6 +238,14 @@ class KnownMetrics(Enum):
         MetricKind.DELTA,
         ValueType.DISTRIBUTION,
         _set_distribution_metric_to_overhead_time,
+    )
+    PRODUCER_BY_CONSUMER_REQUEST_OVERHEAD_LATENCIES = (
+        'serviceruntime.googleapis.com/api/producer/by_consumer/'
+        'request_overhead_latencies',
+        MetricKind.DELTA,
+        ValueType.DISTRIBUTION,
+        _set_distribution_metric_to_overhead_time,
+        Mark.PRODUCER_BY_CONSUMER,
     )
 
     def __init__(self, metric_name, kind, value_type, update_op_func,
@@ -211,8 +264,12 @@ class KnownMetrics(Enum):
         """
         self.kind = kind
         self.metric_name = metric_name
-        self.update_op_func = (self._consumer_metric(update_op_func)
-                               if mark is Mark.CONSUMER else update_op_func)
+        if mark is Mark.CONSUMER:
+            self.update_op_func = self._consumer_metric(update_op_func)
+        elif mark is Mark.PRODUCER_BY_CONSUMER:
+            self.update_op_func = self._by_consumer_metric(update_op_func)
+        else:
+            self.update_op_func = update_op_func
         self.value_type = value_type
         self.mark = mark
 
@@ -249,6 +306,13 @@ class KnownMetrics(Enum):
     def _consumer_metric(self, update_op_func):
         def resulting_updater(metric_name, info, an_op):
             if info.api_key_valid:
+                update_op_func(metric_name, info, an_op)
+
+        return resulting_updater
+
+    def _by_consumer_metric(self, update_op_func):
+        def resulting_updater(metric_name, info, an_op):
+            if info.consumer_project_number > 0:
                 update_op_func(metric_name, info, an_op)
 
         return resulting_updater

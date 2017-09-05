@@ -276,6 +276,9 @@ class Middleware(object):
         app_info.http_method = http_method
         app_info.url = parsed_uri
 
+        # Default to 0 for consumer project number to disable per-consumer
+        # metric reporting if the check request doesn't return one.
+        consumer_project_number = 0
         check_info = self._create_check_info(method_info, parsed_uri, environ)
         if not check_info.api_key and not method_info.allow_unregistered_calls:
             logger.debug(u"skipping %s, no api key was provided", parsed_uri)
@@ -285,6 +288,10 @@ class Middleware(object):
             logger.debug(u'checking %s with %s', method_info, check_request)
             check_resp = self._control_client.check(check_req)
             error_msg = self._handle_check_response(app_info, check_resp, start_response)
+            if (check_resp and check_resp.checkInfo and
+                check_resp.checkInfo.consumerInfo):
+                consumer_project_number = (
+                    check_resp.checkInfo.consumerInfo.projectNumber)
 
         if error_msg:
             # send a report request that indicates that the request failed
@@ -294,7 +301,8 @@ class Middleware(object):
                                                      check_info,
                                                      app_info,
                                                      latency_timer,
-                                                     rules)
+                                                     rules,
+                                                     consumer_project_number)
             logger.debug(u'scheduling report_request %s', report_req)
             self._control_client.report(report_req)
             return error_msg
@@ -324,7 +332,8 @@ class Middleware(object):
                                                  check_info,
                                                  app_info,
                                                  latency_timer,
-                                                 rules)
+                                                 rules,
+                                                 consumer_project_number)
         logger.debug(u'scheduling report_request %s', report_req)
         self._control_client.report(report_req)
         return result
@@ -334,7 +343,8 @@ class Middleware(object):
                                check_info,
                                app_info,
                                latency_timer,
-                               reporting_rules):
+                               reporting_rules,
+                               consumer_project_number):
         # TODO: determine how to obtain the consumer_project_id and the location
         # correctly
         report_info = report_request.Info(
@@ -342,6 +352,7 @@ class Middleware(object):
             api_key_valid=app_info.api_key_valid,
             api_method=method_info.selector,
             consumer_project_id=self._project_id,  # TODO: see above
+            consumer_project_number=consumer_project_number,
             location=_DEFAULT_LOCATION,  # TODO: see above
             method=app_info.http_method,
             operation_id=check_info.operation_id,

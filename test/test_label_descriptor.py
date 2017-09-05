@@ -32,7 +32,8 @@ class KnownLabelsBase(object):
         api_method = u'dummy_method',
         api_version = u'dummy_version',
         location = u'dummy_location',
-        referer = u'dummy_referer')
+        referer = u'dummy_referer',
+        consumer_project_number=1234)
     WANTED_LABEL_DICT = {}
 
     def _matching_descriptor(self, hide_default=False):
@@ -262,3 +263,8 @@ class SccServiceAgent(KnownLabelsBase, unittest2.TestCase):
 class SccUserAgent(KnownLabelsBase, unittest2.TestCase):
     SUBJECT = _KNOWN.SCC_USER_AGENT
     WANTED_LABEL_DICT = {SUBJECT.label_name: label_descriptor.USER_AGENT}
+
+
+class SccConsumerProject(KnownLabelsBase, unittest2.TestCase):
+    SUBJECT = _KNOWN.SCC_CONSUMER_PROJECT
+    WANTED_LABEL_DICT = {SUBJECT.label_name: "1234"}
