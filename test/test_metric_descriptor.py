@@ -14,7 +14,6 @@
 
 from __future__ import absolute_import
 
-from builtins import object
 import datetime
 import unittest2
 from expects import be_none, be_true, expect, equal, raise_error

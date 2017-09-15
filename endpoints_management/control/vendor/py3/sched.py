@@ -35,9 +35,6 @@ from __future__ import absolute_import
 # flake8: noqa
 # pylint: skip-file
 
-from builtins import map
-from builtins import object
-from future.utils import PY3
 import time
 import heapq
 from collections import namedtuple
@@ -45,12 +42,7 @@ try:
     import threading
 except ImportError:
     import dummy_threading as threading
-import future.utils
-
-if PY3:
-    from time import monotonic as _time
-else:
-    from time import time as _time
+from time import time as _time
 
 __all__ = ["scheduler"]
 
@@ -63,17 +55,6 @@ class Event(namedtuple('Event', 'time, priority, action, argument, kwargs')):
     def __gt__(s, o): return (s.time, s.priority) >  (o.time, o.priority)
     def __ge__(s, o): return (s.time, s.priority) >= (o.time, o.priority)
 
-if PY3:
-    Event.time.__doc__ = ('''Numeric type compatible with the return value of the
-    timefunc function passed to the constructor.''')
-    Event.priority.__doc__ = ('''Events scheduled for the same time will be executed
-    in the order of their priority.''')
-    Event.action.__doc__ = ('''Executing the event means executing
-    action(*argument, **kwargs)''')
-    Event.argument.__doc__ = ('''argument is a sequence holding the positional
-    arguments for the action.''')
-    Event.kwargs.__doc__ = ('''kwargs is a dictionary holding the keyword
-    arguments for the action.''')
 
 _sentinel = object()
 

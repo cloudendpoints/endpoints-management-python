@@ -14,7 +14,6 @@
 
 from __future__ import absolute_import
 
-from builtins import object
 from apitools.base.py import encoding
 import mock
 import os

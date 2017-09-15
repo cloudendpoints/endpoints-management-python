@@ -22,14 +22,14 @@
 from __future__ import absolute_import
 
 import logging
+import sys
 
 from . import sc_messages
 
 logger = logging.getLogger(__name__)
 
-# sys.maxint doesn't exist on PY3 because there is no max int size in PY3.
-_INT64_MAX = int(2**63 - 1)
-_INT64_MIN = int(-(2**63))
+_INT64_MAX = sys.maxint
+_INT64_MIN = -sys.maxint - 1
 _BILLION = 1000000000
 MAX_NANOS = _BILLION - 1
 _MSG_3_LETTERS_LONG = u'The currency code is not 3 letters long'

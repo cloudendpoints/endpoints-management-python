@@ -14,10 +14,8 @@
 
 from __future__ import absolute_import
 
-from future.utils import PY3
-
-from builtins import object
 import datetime
+import httplib
 import unittest2
 from operator import attrgetter
 from expects import be_none, equal, expect, raise_error
@@ -28,12 +26,6 @@ from endpoints_management.control import caches, label_descriptor, timestamp
 from endpoints_management.control import (check_request, metric_value,
                                           sc_messages)
 
-# This import should be above project-level imports, but flake8 doesn't like
-# it when the if block is above unadorned imports.
-if PY3:
-    import http.client as httplib
-else:
-    import httplib
 
 class TestSign(unittest2.TestCase):
 

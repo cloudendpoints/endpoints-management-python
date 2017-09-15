@@ -33,7 +33,6 @@ from __future__ import absolute_import
 # makes sense to have this chain of ancestors, so it's right the disable the
 # warning here.
 
-from builtins import object
 import collections
 import logging
 import threading

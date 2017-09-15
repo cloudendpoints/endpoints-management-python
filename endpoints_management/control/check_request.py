@@ -27,28 +27,17 @@ and caching their responses.
 
 from __future__ import absolute_import
 
-from future import standard_library
-from future.utils import PY3
-from builtins import object
+import collections
+import hashlib
+import httplib
+import logging
+from datetime import datetime
 
 from apitools.base.py import encoding
 
 from . import (caches, label_descriptor, metric_value, operation, sc_messages,
                signing)
 from .. import USER_AGENT, SERVICE_AGENT
-
-# These imports should be above project-level imports, but flake8 doesn't like
-# it when the with block is above unadorned imports.
-with standard_library.hooks():
-    import collections
-    import hashlib
-    import logging
-    from datetime import datetime
-
-if PY3:
-    import http.client as httplib
-else:
-    import httplib
 
 logger = logging.getLogger(__name__)
 

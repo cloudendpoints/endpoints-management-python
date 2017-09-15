@@ -24,23 +24,18 @@ that wraps another WSGI application to uses a provided
 
 from __future__ import absolute_import
 
-from future import standard_library
-from builtins import object
 from datetime import datetime
+import httplib
+import logging
+import os
+import socket
+import uuid
+import urllib2
+import urlparse
+import wsgiref.util
 
 from ..auth import suppliers, tokens
 from . import check_request, report_request, service, sm_messages
-
-from . import compat
-
-# These imports should be above project-level imports, but flake8 doesn't like
-# it when the with block is above unadorned imports.
-with standard_library.hooks():
-    import logging
-    import os
-    import socket
-    import uuid
-    import wsgiref.util
 
 
 logger = logging.getLogger(__name__)
@@ -56,11 +51,11 @@ def _running_on_gce():
     headers = {u'Metadata-Flavor': u'Google'}
 
     try:
-        request = compat.Request(_METADATA_SERVER_URL, headers=headers)
-        response = compat.urlopen(request)
-        if response.info().getheader('Metadata-Flavor') == u'Google':
+        request = urllib2.Request(_METADATA_SERVER_URL, headers=headers)
+        response = urllib2.urlopen(request)
+        if response.info().getheader(u'Metadata-Flavor') == u'Google':
             return True
-    except (compat.URLError, socket.error):
+    except (urllib2.URLError, socket.error):
         pass
 
     return False
@@ -190,7 +185,7 @@ class EnvironmentMiddleware(object):
         environ[self.SERVICE_NAME] = self._service.name
         environ[self.METHOD_REGISTRY] = self._method_registry
         environ[self.REPORTING_RULES] = self._reporting_rules
-        parsed_uri = compat.urlparse(wsgiref.util.request_uri(environ))
+        parsed_uri = urlparse.urlparse(wsgiref.util.request_uri(environ))
         http_method = environ.get(u'REQUEST_METHOD')
         method_info = self._method_registry.lookup(http_method, parsed_uri.path)
         if method_info:
@@ -263,7 +258,7 @@ class Middleware(object):
 
         # Determine if the request can proceed
         http_method = environ.get(u'REQUEST_METHOD')
-        parsed_uri = compat.urlparse(wsgiref.util.request_uri(environ))
+        parsed_uri = urlparse.urlparse(wsgiref.util.request_uri(environ))
         app_info = _AppInfo()
         # TODO: determine if any of the more complex ways of getting the request size
         # (e.g) buffering and counting the wsgi input stream is more appropriate here
@@ -403,7 +398,7 @@ class Middleware(object):
     def _handle_check_response(self, app_info, check_resp, start_response):
         code, detail, api_key_valid = check_request.convert_response(
             check_resp, self._project_id)
-        if code == compat.httplib.OK:
+        if code == httplib.OK:
             return None  # the check was OK
 
         # there was problem; the request cannot proceed
@@ -415,7 +410,7 @@ class Middleware(object):
         return error_msg  # the request cannot continue
 
     def _handle_missing_api_key(self, app_info, start_response):
-        code = compat.httplib.UNAUTHORIZED
+        code = httplib.UNAUTHORIZED
         detail = self._NO_API_KEY_MSG
         logger.warn(u'Check not performed %d, %s', code, detail)
         error_msg = b'%d %s' % (code, detail.encode('utf-8'))
@@ -430,7 +425,7 @@ class _AppInfo(object):
 
     def __init__(self):
         self.api_key_valid = True
-        self.response_code = compat.httplib.INTERNAL_SERVER_ERROR
+        self.response_code = httplib.INTERNAL_SERVER_ERROR
         self.response_size = report_request.NOT_SET
         self.request_size = report_request.NOT_SET
         self.http_method = None
@@ -480,7 +475,7 @@ def _find_api_key_param(info, parsed_uri):
     if not params:
         return None
 
-    param_dict = compat.parse_qs(parsed_uri.query)
+    param_dict = urlparse.parse_qs(parsed_uri.query)
     if not param_dict:
         return None
 
@@ -498,7 +493,7 @@ _DEFAULT_API_KEYS = (u'key', u'api_key')
 
 
 def _find_default_api_key_param(parsed_uri):
-    param_dict = compat.parse_qs(parsed_uri.query)
+    param_dict = urlparse.parse_qs(parsed_uri.query)
     if not param_dict:
         return None
 
@@ -637,7 +632,7 @@ def _extract_auth_token(environ):
         return
 
     # Then try to read auth token from query.
-    parameters = compat.parse_qs(environ.get(u"QUERY_STRING", u""))
+    parameters = urlparse.parse_qs(environ.get(u"QUERY_STRING", u""))
     if _ACCESS_TOKEN_PARAM_NAME in parameters:
         auth_token, = parameters[_ACCESS_TOKEN_PARAM_NAME]
         return auth_token

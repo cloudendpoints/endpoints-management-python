@@ -13,11 +13,8 @@
 # limitations under the License.
 
 from __future__ import absolute_import
-from __future__ import division
 
 from apitools.base.py import exceptions
-from builtins import object
-from past.utils import old_div
 import datetime
 import mock
 import os
@@ -313,7 +310,7 @@ class TestNoSchedulerThread(unittest2.TestCase):
     @mock.patch(u"endpoints_management.control.client._THREAD_CLASS", spec=True)
     @mock.patch(u"endpoints_management.control.client.sched", spec=True)
     def test_should_initialize_scheduler(self, sched, thread_class):
-        thread_class.return_value.start.side_effect = lambda: old_div(1,0)
+        thread_class.return_value.start.side_effect = lambda: 1/0
         for s in (self._subject, self._no_cache_subject):
             s.start()
             expect(sched.scheduler.called).to(be_true)
@@ -322,7 +319,7 @@ class TestNoSchedulerThread(unittest2.TestCase):
     @mock.patch(u"endpoints_management.control.client._THREAD_CLASS", spec=True)
     @mock.patch(u"endpoints_management.control.client.sched", spec=True)
     def test_should_not_enter_scheduler_when_there_is_no_cache(self, sched, thread_class):
-        thread_class.return_value.start.side_effect = lambda: old_div(1,0)
+        thread_class.return_value.start.side_effect = lambda: 1/0
         self._no_cache_subject.start()
         expect(sched.scheduler.called).to(be_true)
         scheduler = sched.scheduler.return_value
@@ -331,7 +328,7 @@ class TestNoSchedulerThread(unittest2.TestCase):
     @mock.patch(u"endpoints_management.control.client._THREAD_CLASS", spec=True)
     @mock.patch(u"endpoints_management.control.client.sched", spec=True)
     def test_should_enter_scheduler_when_there_is_a_cache(self, sched, thread_class):
-        thread_class.return_value.start.side_effect = lambda: old_div(1,0)
+        thread_class.return_value.start.side_effect = lambda: 1/0
         self._subject.start()
         expect(sched.scheduler.called).to(be_true)
         scheduler = sched.scheduler.return_value
@@ -340,7 +337,7 @@ class TestNoSchedulerThread(unittest2.TestCase):
     @mock.patch(u"endpoints_management.control.client._THREAD_CLASS", spec=True)
     @mock.patch(u"endpoints_management.control.client.sched", spec=True)
     def test_should_not_enter_scheduler_for_cached_checks(self, sched, thread_class):
-        thread_class.return_value.start.side_effect = lambda: old_div(1,0)
+        thread_class.return_value.start.side_effect = lambda: 1/0
         self._subject.start()
 
         # confirm scheduler is created and initialized
@@ -369,7 +366,7 @@ class TestNoSchedulerThread(unittest2.TestCase):
     @mock.patch(u"endpoints_management.control.client._THREAD_CLASS", spec=True)
     @mock.patch(u"endpoints_management.control.client.sched", spec=True)
     def test_should_enter_scheduler_for_aggregated_reports(self, sched, thread_class):
-        thread_class.return_value.start.side_effect = lambda: old_div(1,0)
+        thread_class.return_value.start.side_effect = lambda: 1/0
         self._subject.start()
 
         # confirm scheduler is created and initialized
@@ -387,7 +384,7 @@ class TestNoSchedulerThread(unittest2.TestCase):
 
     @mock.patch(u"endpoints_management.control.client._THREAD_CLASS", spec=True)
     def test_should_flush_report_cache_in_scheduler(self, thread_class):
-        thread_class.return_value.start.side_effect = lambda: old_div(1,0)
+        thread_class.return_value.start.side_effect = lambda: 1/0
         self._subject.start()
 
         # call report once; transport is not called
@@ -405,7 +402,7 @@ class TestNoSchedulerThread(unittest2.TestCase):
     @mock.patch(u"endpoints_management.control.client._THREAD_CLASS", spec=True)
     @mock.patch(u"endpoints_management.control.client.sched", spec=True)
     def test_should_not_run_scheduler_when_stopping(self, sched, thread_class):
-        thread_class.return_value.start.side_effect = lambda: old_div(1,0)
+        thread_class.return_value.start.side_effect = lambda: 1/0
         self._subject.start()
 
         # confirm scheduler is created and initialized

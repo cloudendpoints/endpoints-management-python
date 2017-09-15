@@ -33,7 +33,6 @@ install_requires = [
     'cachetools>=1.0.0,<2',
     "dogpile.cache>=0.6.1,<0.7",
     'enum34>=1.1.6,<2',
-    'future==0.16.0',
     'google-apitools>=0.5.11,<0.6',
     'oauth2client>=2.0.0,<4.0.0dev',
     'ply>=3.8,<4.0',

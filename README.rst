@@ -35,7 +35,7 @@ Example:
    >>> project_id = 'my-project-id'
    >>>
    >>> # wrap the app for service control
-   >>> from google.api.control import client, wsgi
+   >>> from endpoints_management.control import client, wsgi
    >>> control_client = client.Loaders.DEFAULT.load(service_name)
    >>> control_client.start()
    >>> controlled_app = wsgi.add_all(application, project_id, control_client)

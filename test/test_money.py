@@ -65,9 +65,8 @@ class TestAdd(unittest2.TestCase):
     _SOME_YEN_DEBT = sc_messages.Money(currencyCode=u'JPY', units=-2, nanos=-1)
     _SOME_MORE_YEN = sc_messages.Money(currencyCode=u'JPY', units=1, nanos=3)
     _SOME_USD = sc_messages.Money(currencyCode=u'USD', units=1, nanos=0)
-    # sys.maxint doesn't exist on PY3 because there is no max int size in PY3.
-    _INT64_MAX = int(2**63 - 1)
-    _INT64_MIN = int(-(2**63))
+    _INT64_MAX = sys.maxint
+    _INT64_MIN = -sys.maxint - 1
     _LARGE_YEN = sc_messages.Money(
         currencyCode=u'JPY', units=_INT64_MAX -1, nanos=0)
     _LARGE_YEN_DEBT = sc_messages.Money(

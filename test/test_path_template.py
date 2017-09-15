@@ -16,7 +16,6 @@
 """Unit tests for the path_template module."""
 
 from __future__ import absolute_import
-from builtins import str
 import unittest2
 
 from endpoints_management.control.path_template import PathTemplate, ValidationException

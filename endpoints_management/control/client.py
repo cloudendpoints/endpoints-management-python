@@ -40,7 +40,6 @@ Example:
 from __future__ import absolute_import
 
 from apitools.base.py import exceptions
-from builtins import object
 from datetime import datetime, timedelta
 from enum import Enum
 import json
@@ -48,16 +47,11 @@ import logging
 import os
 import threading
 import time
-import sys
 
 from . import api_client, check_request, report_request
 from .. import USER_AGENT
 from .caches import CheckOptions, ReportOptions, to_cache_timer
-
-if sys.version_info[0] == 3 and sys.version_info[1] >= 6:
-    import sched
-else:
-    from .vendor.py3 import sched
+from .vendor.py3 import sched
 
 
 logger = logging.getLogger(__name__)

@@ -16,9 +16,6 @@
 
 from __future__ import absolute_import
 
-from past.builtins import basestring
-from builtins import object
-from future.utils import PY3
 import datetime
 import jwkest
 import time
@@ -29,10 +26,7 @@ from jwkest import jwt
 
 from . import suppliers
 
-if PY3:
-    INT_TYPES = (int,)
-else:
-    INT_TYPES = (int, long)
+INT_TYPES = (int, long)
 
 
 class Authenticator(object):  # pylint: disable=too-few-public-methods
