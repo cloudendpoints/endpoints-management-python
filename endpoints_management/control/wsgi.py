@@ -269,7 +269,7 @@ class Middleware(object):
         # (e.g) buffering and counting the wsgi input stream is more appropriate here
         try:
             app_info.request_size = int(environ.get(u'CONTENT_LENGTH',
-                                                    report_request.SIZE_NOT_SET))
+                                                    report_request.NOT_SET))
         except ValueError:
             logger.warn(u'ignored bad content-length: %s', environ.get(u'CONTENT_LENGTH'))
 
@@ -431,8 +431,8 @@ class _AppInfo(object):
     def __init__(self):
         self.api_key_valid = True
         self.response_code = compat.httplib.INTERNAL_SERVER_ERROR
-        self.response_size = report_request.SIZE_NOT_SET
-        self.request_size = report_request.SIZE_NOT_SET
+        self.response_size = report_request.NOT_SET
+        self.request_size = report_request.NOT_SET
         self.http_method = None
         self.url = None
 

@@ -39,11 +39,11 @@ from .. import USER_AGENT, SERVICE_AGENT
 
 logger = logging.getLogger(__name__)
 
-SIZE_NOT_SET = -1
+NOT_SET = -1
 
 
 def _validate_int_arg(name, value):
-    if value == SIZE_NOT_SET or (isinstance(value, int) and value >= 0):
+    if value == NOT_SET or (isinstance(value, int) and value >= 0):
         return
     raise ValueError(u'%s should be a non-negative int/long' % (name,))
 
@@ -240,7 +240,7 @@ class Info(
                 auth_issuer=u'',
                 auth_audience=u'',
                 backend_time=None,
-                consumer_project_number=SIZE_NOT_SET,
+                consumer_project_number=NOT_SET,
                 error_cause=ErrorCause.internal,
                 location=u'',
                 log_message=u'',
@@ -249,9 +249,9 @@ class Info(
                 platform=ReportedPlatforms.UNKNOWN,
                 producer_project_id=u'',
                 protocol=ReportedProtocols.UNKNOWN,
-                request_size=SIZE_NOT_SET,
+                request_size=NOT_SET,
                 request_time=None,
-                response_size=SIZE_NOT_SET,
+                response_size=NOT_SET,
                 response_code=200,
                 url=u'',
                 **kw):
