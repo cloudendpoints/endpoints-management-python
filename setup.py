@@ -33,7 +33,7 @@ install_requires = [
     'cachetools>=1.0.0,<2',
     "dogpile.cache>=0.6.1,<0.7",
     'enum34>=1.1.6,<2',
-    'google-apitools',
+    'google-apitools>=0.5.11,<0.6',
     'oauth2client>=2.0.0,<4.0.0dev',
     'ply>=3.8,<4.0',
     "pylru>=1.0.9,<2.0",
@@ -41,10 +41,6 @@ install_requires = [
     "requests>=2.10.0,<3.0",
     'strict-rfc3339>=0.7,<0.8',
     'urllib3>=1.16,<2.0',
-]
-
-dependency_links = [
-    'http://github.com/inklesspen/apitools/tarball/endpoints-dependency#egg=google-apitools-0.5.15dev0'
 ]
 
 tests_require = [
@@ -79,7 +75,6 @@ setup(
         'Programming Language :: Python :: Implementation :: CPython',
     ],
     install_requires=install_requires,
-    dependency_links=dependency_links,
     setup_requires=["pytest_runner"],
     tests_require=tests_require,
     test_suite="tests"
