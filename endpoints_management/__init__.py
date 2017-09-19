@@ -16,7 +16,7 @@ from __future__ import absolute_import
 
 from . import auth, config, control, gen
 
-__version__ = '1.1.3'
+__version__ = '1.2.0'
 
 USER_AGENT = u'ESP'
 SERVICE_AGENT = u'EF_PYTHON/' + __version__
