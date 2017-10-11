@@ -59,7 +59,7 @@ Install using `pip`_
 Python Versions
 ---------------
 
-endpoints-management-python is currently tested with Python 2.7 and Python 3.6.
+endpoints-management-python is currently tested with Python 2.7.
 
 
 Contributing
