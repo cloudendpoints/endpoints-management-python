@@ -35,7 +35,7 @@ import urlparse
 import wsgiref.util
 
 from ..auth import suppliers, tokens
-from . import check_request, report_request, service, sm_messages
+from . import check_request, quota_request, report_request, service, sm_messages
 
 
 logger = logging.getLogger(__name__)
@@ -240,8 +240,8 @@ class Middleware(object):
            """
         self._application = application
         self._project_id = project_id
-        self._next_operation_id = next_operation_id
         self._control_client = control_client
+        self._next_operation_id = next_operation_id
         self._timer = timer
 
     def __call__(self, environ, start_response):
@@ -284,9 +284,18 @@ class Middleware(object):
             check_resp = self._control_client.check(check_req)
             error_msg = self._handle_check_response(app_info, check_resp, start_response)
             if (check_resp and check_resp.checkInfo and
-                check_resp.checkInfo.consumerInfo):
+                    check_resp.checkInfo.consumerInfo):
                 consumer_project_number = (
                     check_resp.checkInfo.consumerInfo.projectNumber)
+            if error_msg is None:
+                quota_info = self._create_quota_info(method_info, parsed_uri, environ)
+                if not quota_info.quota_info:
+                    logger.debug(u'no metric costs for this method')
+                else:
+                    quota_request = quota_info.as_allocate_quota_request()
+                    quota_response = self._control_client.allocate_quota(quota_request)
+                    error_msg = self._handle_quota_response(
+                        app_info, quota_response, start_response)
 
         if error_msg:
             # send a report request that indicates that the request failed
@@ -367,24 +376,24 @@ class Middleware(object):
         )
         return report_info.as_report_request(reporting_rules, timer=self._timer)
 
-    def _create_check_info(self, method_info, parsed_uri, environ):
-        service_name = environ.get(EnvironmentMiddleware.SERVICE_NAME)
-        operation_id = self._next_operation_id()
-        api_key_valid = False
+    def _get_api_key_info(self, method_info, parsed_uri, environ):
         api_key = _find_api_key_param(method_info, parsed_uri)
         if not api_key:
             api_key = _find_api_key_header(method_info, environ)
         if not api_key:
             api_key = _find_default_api_key_param(parsed_uri)
+        return api_key
 
-        if api_key:
-            api_key_valid = True
+    def _create_check_info(self, method_info, parsed_uri, environ):
+        service_name = environ.get(EnvironmentMiddleware.SERVICE_NAME)
+        operation_id = self._next_operation_id()
+        api_key = self._get_api_key_info(method_info, parsed_uri, environ)
 
         check_info = check_request.Info(
             android_cert_fingerprint=environ.get('HTTP_X_ANDROID_CERT', ''),
             android_package_name=environ.get('HTTP_X_ANDROID_PACKAGE', ''),
             api_key=api_key,
-            api_key_valid=api_key_valid,
+            api_key_valid=api_key is not None,
             client_ip=environ.get(u'REMOTE_ADDR', u''),
             consumer_project_id=self._project_id,  # TODO: switch this to producer_project_id
             ios_bundle_id=environ.get('HTTP_X_IOS_BUNDLE_IDENTIFIER', ''),
@@ -394,6 +403,25 @@ class Middleware(object):
             service_name=service_name
         )
         return check_info
+
+    def _create_quota_info(self, method_info, parsed_uri, environ):
+        service_name = environ.get(EnvironmentMiddleware.SERVICE_NAME)
+        operation_id = self._next_operation_id()
+        api_key = self._get_api_key_info(method_info, parsed_uri, environ)
+        service = environ.get(EnvironmentMiddleware.SERVICE)
+
+        return quota_request.Info(
+            api_key=api_key,
+            api_key_valid=api_key is not None,
+            referer=environ.get(u'HTTP_REFERER', u''),
+            consumer_project_id=self._project_id,
+            operation_id=operation_id,
+            operation_name=method_info.selector,
+            service_name=service_name,
+            quota_info=method_info.quota_info,
+            config_id=service.id,
+            client_ip=environ.get(u'REMOTE_ADDR', u''),
+        )
 
     def _handle_check_response(self, app_info, check_resp, start_response):
         code, detail, api_key_valid = check_request.convert_response(
@@ -407,6 +435,19 @@ class Middleware(object):
         start_response(error_msg, [])
         app_info.response_code = code
         app_info.api_key_valid = api_key_valid
+        return error_msg  # the request cannot continue
+
+    def _handle_quota_response(self, app_info, quota_resp, start_response):
+        code, detail = quota_request.convert_response(
+            quota_resp, self._project_id)
+        if code == httplib.OK:
+            return None  # the quota was OK
+
+        # there was problem; the request cannot proceed
+        logger.warn(u'Quota failed %d, %s', code, detail)
+        error_msg = b'%d %s' % (code, detail.encode('utf-8'))
+        start_response(error_msg, [])
+        app_info.response_code = code
         return error_msg  # the request cannot continue
 
     def _handle_missing_api_key(self, app_info, start_response):

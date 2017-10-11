@@ -48,9 +48,9 @@ import os
 import threading
 import time
 
-from . import api_client, check_request, report_request
+from . import api_client, check_request, quota_request, report_request, sc_messages
 from .. import USER_AGENT
-from .caches import CheckOptions, ReportOptions, to_cache_timer
+from .caches import CheckOptions, QuotaOptions, ReportOptions, to_cache_timer
 from .vendor.py3 import sched
 
 
@@ -72,6 +72,7 @@ def _load_from_well_known_env():
         with open(json_file) as f:
             json_dict = json.load(f)
             check_json = json_dict[u'checkAggregatorConfig']
+            quota_json = json_dict[u'quotaAggregatorConfig']
             report_json = json_dict[u'reportAggregatorConfig']
             check_options = CheckOptions(
                 num_entries=check_json[u'cacheEntries'],
@@ -79,11 +80,17 @@ def _load_from_well_known_env():
                     milliseconds=check_json[u'responseExpirationMs']),
                 flush_interval=timedelta(
                     milliseconds=check_json[u'flushIntervalMs']))
+            quota_options = QuotaOptions(
+                num_entries=quota_json[u'cacheEntries'],
+                expiration=timedelta(
+                    milliseconds=quota_json[u'expirationMs']),
+                flush_interval=timedelta(
+                    milliseconds=quota_json[u'flushIntervalMs']))
             report_options = ReportOptions(
                 num_entries=report_json[u'cacheEntries'],
                 flush_interval=timedelta(
                     milliseconds=report_json[u'flushIntervalMs']))
-            return check_options, report_options
+            return check_options, quota_options, report_options
     except (KeyError, ValueError):
         logger.warn(u'did not load service; bad json config file %s',
                     json_file,
@@ -92,11 +99,12 @@ def _load_from_well_known_env():
 
 
 def _load_default():
-    return CheckOptions(), ReportOptions()
+    return CheckOptions(), QuotaOptions(), ReportOptions()
 
 
 def _load_no_cache():
     return (CheckOptions(num_entries=-1),
+            QuotaOptions(num_entries=-1),
             ReportOptions(num_entries=-1))
 
 
@@ -115,8 +123,8 @@ class Loaders(Enum):
         self._load_func = load_func
 
     def load(self, service_name, **kw):
-        check_opts, report_opts = self._load_func()
-        return Client(service_name, check_opts, report_opts, **kw)
+        check_opts, quota_opts, report_opts = self._load_func()
+        return Client(service_name, check_opts, quota_opts, report_opts, **kw)
 
 
 _THREAD_CLASS = threading.Thread
@@ -172,6 +180,7 @@ class Client(object):
     def __init__(self,
                  service_name,
                  check_options,
+                 quota_options,
                  report_options,
                  timer=datetime.utcnow,
                  create_transport=_CREATE_THREAD_LOCAL_TRANSPORT):
@@ -181,12 +190,17 @@ class Client(object):
             service_name (str): the name of the service to be controlled
             check_options (:class:`endpoints_management.control.caches.CheckOptions`):
               configures checking
+            quota_options (:class:`endpoints_management.control.caches.QuotaOptions`):
+              configures quota allocation
             report_options (:class:`endpoints_management.control.caches.ReportOptions`):
               configures reporting
             timer (:func[[datetime.datetime]]: used to obtain the current time.
         """
         self._check_aggregator = check_request.Aggregator(service_name,
                                                           check_options,
+                                                          timer=timer)
+        self._quota_aggregator = quota_request.Aggregator(service_name,
+                                                          quota_options,
                                                           timer=timer)
         self._report_aggregator = report_request.Aggregator(service_name,
                                                             report_options,
@@ -294,6 +308,28 @@ class Client(object):
                          check_request, exc_info=True)
             return None
 
+    def allocate_quota(self, allocate_quota_req):
+        self._assert_is_running()
+        res = self._quota_aggregator.allocate_quota(allocate_quota_req)
+        if res:
+            logger.debug(u'using cached quota response for %s: %s',
+                         allocate_quota_req, res)
+            return res
+
+        # no cache, making direct request
+        try:
+            transport = self._create_transport()
+            resp = transport.services.AllocateQuota(allocate_quota_req)
+            self._quota_aggregator.add_response(allocate_quota_req, resp)
+            return resp
+        except exceptions.Error:  # only sink apitools errors
+            logger.error(u'direct send of quota request failed %s',
+                         allocate_quota_req, exc_info=True)
+            # fail open
+            dummy_resp = sc_messages.AllocateQuotaResponse()
+            self._quota_aggregator.add_response(allocate_quota_req, dummy_resp)
+            return dummy_resp
+
     def report(self, report_req):
         """Processes a report request.
 
@@ -328,9 +364,10 @@ class Client(object):
             logger.info(u'created a scheduler to control flushing')
             self._scheduler = sched.scheduler(to_cache_timer(self._timer),
                                               time.sleep)
-            logger.info(u'scheduling initial check and flush')
+            logger.info(u'scheduling initial check, report, and quota')
             self._flush_schedule_check_aggregator()
             self._flush_schedule_report_aggregator()
+            self._flush_schedule_quota_aggregator()
 
     def _schedule_flushes(self):
         # the method expects to be run in the thread created in start()
@@ -375,6 +412,39 @@ class Client(object):
             flush_interval.total_seconds(),
             2,  # a higher priority than report flushes
             self._flush_schedule_check_aggregator,
+            ()
+        )
+
+    def _flush_schedule_quota_aggregator(self):
+        if self._cleanup_if_stopped():
+            logger.info(u'did not schedule quota flush: client is stopped')
+            return
+
+        flush_interval = self._quota_aggregator.flush_interval
+        if not flush_interval or flush_interval.total_seconds() < 0:
+            logger.debug(u'did not schedule quota flush: caching is disabled')
+            return
+
+        if self._run_scheduler_directly:
+            logger.debug(u'did not schedule quota flush: no scheduler thread')
+            return
+
+        logger.debug(u'flushing the quota aggregator')
+        transport = self._create_transport()
+        reqs = self._quota_aggregator.flush()
+        logger.debug(u'flushing %d quota from the quota aggregator', len(reqs))
+        for req in reqs:
+            try:
+                resp = transport.services.AllocateQuota(req)
+                self._quota_aggregator.add_response(req, resp)
+            except Exception:  # pylint: disable=broad-except
+                logger.error(u'failed to flush quota_req %s', req, exc_info=True)
+
+        # schedule a repeat of this method
+        self._scheduler.enter(
+            flush_interval.total_seconds(),
+            2,  # a higher priority than report flushes
+            self._flush_schedule_quota_aggregator,
             ()
         )
 

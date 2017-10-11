@@ -80,6 +80,7 @@ class TestMiddleware(unittest2.TestCase):
         wrapped(given, _dummy_start_response)
         expect(control_client.check.called).to(be_false)
         expect(control_client.report.called).to(be_false)
+        expect(control_client.allocate_quota.called).to(be_false)
 
     def test_should_send_requests_using_the_client(self):
         wrappee = _DummyWsgiApp()
@@ -101,6 +102,8 @@ class TestMiddleware(unittest2.TestCase):
         wrapped(given, _dummy_start_response)
         expect(control_client.check.called).to(be_true)
         expect(control_client.report.called).to(be_true)
+        # no quota definitions in this service config
+        expect(control_client.allocate_quota.called).to(be_false)
 
     def test_should_send_report_request_if_check_fails(self):
         wrappee = _DummyWsgiApp()
@@ -127,6 +130,7 @@ class TestMiddleware(unittest2.TestCase):
         wrapped(given, _dummy_start_response)
         expect(control_client.check.called).to(be_true)
         expect(control_client.report.called).to(be_true)
+        expect(control_client.allocate_quota.called).to(be_false)
 
     def test_load_service_failed(self):
         loader = mock.MagicMock(load=lambda: None)
@@ -160,6 +164,24 @@ _SYSTEM_PARAMETER_CONFIG_TEST = b"""
             "urlQueryParameter": "Ignored-NoName-key3"
          }]
        }, {
+         "selector": "Uvw.Method2",
+         "parameters": [{
+            "name": "name1",
+            "httpHeader": "Header-Key1",
+            "urlQueryParameter": "param_key1"
+         }, {
+            "name": "name2",
+            "httpHeader": "Header-Key2",
+            "urlQueryParameter": "param_key2"
+         }, {
+            "name": "api_key",
+            "httpHeader": "ApiKeyHeader",
+            "urlQueryParameter": "ApiKeyParam"
+         }, {
+            "httpHeader": "Ignored-NoName-Key3",
+            "urlQueryParameter": "Ignored-NoName-key3"
+         }]
+       }, {
          "selector": "Bad.NotConfigured",
          "parameters": [{
             "name": "neverUsed",
@@ -173,6 +195,9 @@ _SYSTEM_PARAMETER_CONFIG_TEST = b"""
             "selector": "Uvw.Method1",
             "get": "/uvw/method1/*"
         }, {
+            "selector": "Uvw.Method2",
+            "get": "/uvw/method2/*"
+        }, {
             "selector": "Uvw.MethodNeedsApiKey",
             "get": "/uvw/method_needs_api_key/*"
         }, {
@@ -180,9 +205,44 @@ _SYSTEM_PARAMETER_CONFIG_TEST = b"""
             "get": "/uvw/default_parameters"
         }]
     },
+    "metrics": [{
+            "metricKind": "GAUGE",
+            "name": "example-read-requests",
+            "valueType": "INT64"
+        }, {
+            "metricKind": "GAUGE",
+            "name": "example-list-requests",
+            "valueType": "INT64"
+        }
+    ],
+    "quota": {
+        "limits": [{
+            "displayName": "My Read API Requests per Minute",
+            "metric": "example-read-requests",
+            "name": "example-read-requests",
+            "unit": "1/min/{project}",
+            "values": {"STANDARD": "1000"}
+        }, {
+            "displayName": "My List API Requests per Minute",
+            "metric": "example-list-requests",
+            "name": "example-list-requests",
+            "unit": "1/min/{project}",
+            "values": {"STANDARD": "100"}
+        }],
+        "metricRules": [{
+            "metricCosts": {
+                 "example-list-requests": "1",
+                 "example-read-requests": "5"
+             },
+            "selector": "Uvw.Method2"
+        }]
+    },
     "usage": {
         "rules": [{
             "selector" : "Uvw.Method1",
+            "allowUnregisteredCalls" : true
+        },  {
+            "selector" : "Uvw.Method2",
             "allowUnregisteredCalls" : true
         },  {
             "selector": "Uvw.MethodNeedsApiKey",
@@ -232,6 +292,34 @@ class TestMiddlewareWithParams(unittest2.TestCase):
         expect(req.checkRequest.operation.consumerId).to(
             equal(u'project:middleware-with-params'))
         expect(control_client.report.called).to(be_true)
+        expect(control_client.allocate_quota.called).to(be_false)
+
+    def test_should_send_quota_requests_with_no_param(self):
+        wrappee = _DummyWsgiApp()
+        control_client = mock.MagicMock(spec=client.Client)
+        given = {
+            u'wsgi.url_scheme': u'http',
+            u'PATH_INFO': u'/uvw/method2/with_no_param',
+            u'REMOTE_ADDR': u'192.168.0.3',
+            u'HTTP_HOST': u'localhost',
+            u'HTTP_REFERER': u'example.myreferer.com',
+            u'REQUEST_METHOD': u'GET'}
+        dummy_response = sc_messages.CheckResponse(
+            operationId=u'fake_operation_id')
+        wrapped = wsgi.add_all(wrappee,
+                               self.PROJECT_ID,
+                               control_client,
+                               loader=service.Loaders.ENVIRONMENT)
+        control_client.check.return_value = dummy_response
+        control_client.allocate_quota.side_effect = lambda req: sc_messages.AllocateQuotaResponse(
+            operationId=req.allocateQuotaRequest.allocateOperation.operationId)
+        wrapped(given, _dummy_start_response)
+        expect(control_client.check.called).to(be_true)
+        req = control_client.check.call_args[0][0]
+        expect(req.checkRequest.operation.consumerId).to(
+            equal(u'project:middleware-with-params'))
+        expect(control_client.report.called).to(be_true)
+        expect(control_client.allocate_quota.called).to(be_true)
 
     def test_should_send_requests_with_configured_query_param_api_key(self):
         wrappee = _DummyWsgiApp()
@@ -260,6 +348,7 @@ class TestMiddlewareWithParams(unittest2.TestCase):
         report_req = control_client.report.call_args[0][0]
         expect(report_req.reportRequest.operations[0].consumerId).to(
             equal(u'api_key:my-query-value'))
+        expect(control_client.allocate_quota.called).to(be_false)
 
     def test_should_send_requests_with_configured_header_api_key(self):
         wrappee = _DummyWsgiApp()
@@ -289,6 +378,7 @@ class TestMiddlewareWithParams(unittest2.TestCase):
         report_req = control_client.report.call_args[0][0]
         expect(report_req.reportRequest.operations[0].consumerId).to(
             equal(u'api_key:my-header-value'))
+        expect(control_client.allocate_quota.called).to(be_false)
 
     def test_should_send_requests_with_default_query_param_api_key(self):
         for default_key in (u'key', u'api_key'):
@@ -319,6 +409,7 @@ class TestMiddlewareWithParams(unittest2.TestCase):
             report_req = control_client.report.call_args[0][0]
             expect(report_req.reportRequest.operations[0].consumerId).to(
                 equal(u'api_key:my-default-api-key-value'))
+            expect(control_client.allocate_quota.called).to(be_false)
 
     def test_should_not_perform_check_if_needed_api_key_is_missing(self):
         wrappee = _DummyWsgiApp()
@@ -343,6 +434,7 @@ class TestMiddlewareWithParams(unittest2.TestCase):
         report_req = control_client.report.call_args[0][0]
         expect(report_req.reportRequest.operations[0].consumerId).to(
             equal(u'project:middleware-with-params'))
+        expect(control_client.allocate_quota.called).to(be_false)
 
 AuthMiddleware = wsgi.AuthenticationMiddleware
 

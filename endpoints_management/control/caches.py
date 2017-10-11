@@ -85,6 +85,48 @@ class CheckOptions(
             expiration)
 
 
+class QuotaOptions(
+        collections.namedtuple(
+            u'QuotaOptions',
+            [u'num_entries',
+             u'flush_interval',
+             u'expiration'])):
+    """Holds values used to control report quota behavior.
+
+    Attributes:
+
+        num_entries: the maximum number of cache entries that can be kept in
+          the aggregation cache
+        flush_interval (:class:`datetime.timedelta`): the maximum delta before
+          aggregated report requests are flushed to the server.  The cache
+          entry is deleted after the flush.
+        expiration (:class:`datetime.timedelta`): elapsed time before a cached
+          quota response should be deleted.  This value should be larger than
+          ``flush_interval``, otherwise it will be ignored, and instead a value
+          equivalent to flush_interval + 1ms will be used.
+    """
+    # pylint: disable=too-few-public-methods
+    DEFAULT_NUM_ENTRIES = 1000
+    DEFAULT_FLUSH_INTERVAL = timedelta(seconds=1)
+    DEFAULT_EXPIRATION = timedelta(minutes=1)
+
+    def __new__(cls,
+                num_entries=DEFAULT_NUM_ENTRIES,
+                flush_interval=DEFAULT_FLUSH_INTERVAL,
+                expiration=DEFAULT_EXPIRATION):
+        """Invokes the base constructor with default values."""
+        assert isinstance(num_entries, int), u'should be an int'
+        assert isinstance(flush_interval, timedelta), u'should be a timedelta'
+        assert isinstance(expiration, timedelta), u'should be a timedelta'
+        if expiration <= flush_interval:
+            expiration = flush_interval + timedelta(milliseconds=1)
+        return super(cls, QuotaOptions).__new__(
+            cls,
+            num_entries,
+            flush_interval,
+            expiration)
+
+
 class ReportOptions(
         collections.namedtuple(
             u'ReportOptions',
@@ -121,7 +163,7 @@ class ReportOptions(
 ZERO_INTERVAL = timedelta()
 
 
-def create(options, timer=None):
+def create(options, timer=None, use_deque=True):
     """Create a cache specified by ``options``
 
     ``options`` is an instance of either
@@ -151,8 +193,7 @@ def create(options, timer=None):
     if options is None:  # no options, don't create cache
         return None
 
-    if not (isinstance(options, CheckOptions) or
-            isinstance(options, ReportOptions)):
+    if not isinstance(options, (CheckOptions, QuotaOptions, ReportOptions)):
         logger.error(u'make_cache(): bad options %s', options)
         raise ValueError(u'Invalid options')
 
@@ -166,14 +207,16 @@ def create(options, timer=None):
         # field. If the expiration is present, use that instead of the
         # flush_interval for the ttl
         ttl = getattr(options, u'expiration', options.flush_interval)
+        cache_cls = DequeOutTTLCache if use_deque else cachetools.TTLCache
         return LockedObject(
-            DequeOutTTLCache(
+            cache_cls(
                 options.num_entries,
                 ttl=ttl.total_seconds(),
                 timer=to_cache_timer(timer)
             ))
 
-    return LockedObject(DequeOutLRUCache(options.num_entries))
+    cache_cls = DequeOutLRUCache if use_deque else cachetools.LRUCache
+    return LockedObject(cache_cls(options.num_entries))
 
 
 class DequeOutTTLCache(cachetools.TTLCache):

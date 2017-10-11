@@ -136,6 +136,7 @@ class MethodRegistry(object):
         self._extracted_methods = {}  # tracks all extracted_methods by selector
 
         self._auth_infos = self._extract_auth_config()
+        self._quota_infos = self._extract_quota_config()
 
         # tracks urls templates
         self._templates_method_infos = collections.defaultdict(list)
@@ -187,6 +188,19 @@ class MethodRegistry(object):
                     provider_ids_to_audiences[provider_id] = audiences
             auth_infos[selector] = AuthInfo(provider_ids_to_audiences)
         return auth_infos
+
+    def _extract_quota_config(self):
+        service = self._service
+        if not service.quota:
+            return {}
+
+        quota_infos = {}
+        for metric_rule in service.quota.metricRules:
+            selector = metric_rule.selector
+            costs = {ap.key: ap.value for ap in metric_rule.metricCosts.additionalProperties}
+            quota_infos[selector] = costs
+
+        return quota_infos
 
     def _extract_methods(self):
         """Obtains the methods used in the service."""
@@ -249,9 +263,11 @@ class MethodRegistry(object):
             return info
 
         auth_infos = self._auth_infos
+        quota_infos = self._quota_infos
         auth_info = auth_infos[selector] if selector in auth_infos else None
+        quota_info = quota_infos[selector] if selector in quota_infos else None
 
-        info = MethodInfo(selector, auth_info)
+        info = MethodInfo(selector, auth_info, quota_info)
         extracted_methods[selector] = info
         return info
 
@@ -321,9 +337,10 @@ class MethodInfo(object):
     API_KEY_NAME = u'api_key'
     # pylint: disable=too-many-instance-attributes
 
-    def __init__(self, selector, auth_info):
+    def __init__(self, selector, auth_info, quota_info):
         self.selector = selector
         self.auth_info = auth_info
+        self.quota_info = quota_info
         self.allow_unregistered_calls = False
         self.backend_address = u''
         self.body_field_path = u''

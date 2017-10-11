@@ -693,3 +693,80 @@ class TestAuthenticationConfig(_JsonServiceBase, unittest2.TestCase):
         info = registry.lookup(u'OPTIONS', u'/shelves')
         self.assertIsNotNone(info)
         self.assertIsNone(info.auth_info)
+
+_QUOTA_CONFIG_TEST = u"""
+{
+    "name": "quota-config",
+    "quota": {
+        "limits": [
+            {
+                "displayName": "My Read API Requests per Minute",
+                "metric": "example-read-requests",
+                "name": "example-read-requests",
+                "unit": "1/min/{project}",
+                "values": {
+                    "STANDARD": "1000"
+                }
+            },
+            {
+                "displayName": "My List API Requests per Minute",
+                "metric": "example-list-requests",
+                "name": "example-list-requests",
+                "unit": "1/min/{project}",
+                "values": {
+                    "STANDARD": "100"
+                }
+            }
+        ],
+        "metricRules": [
+            {
+                "metricCosts": {
+                    "example-list-requests": "1",
+                    "example-read-requests": "5"
+                },
+                "selector": "v1.iata_appspot_com.IataApi_listAirports"
+            }
+        ]
+    },
+    "metrics": [
+        {
+            "metricKind": "GAUGE",
+            "name": "example-read-requests",
+            "valueType": "INT64"
+        },
+        {
+            "metricKind": "GAUGE",
+            "name": "example-list-requests",
+            "valueType": "INT64"
+        }
+    ],
+    "http": {
+        "rules": [
+            {
+                "get": "/airport/{iata}",
+                "selector": "v1.iata_appspot_com.IataApi_getAirport"
+            },
+            {
+                "get": "/airports",
+                "selector": "v1.iata_appspot_com.IataApi_listAirports"
+            }
+        ]
+    }
+}
+"""
+
+class TestQuotaConfig(_JsonServiceBase, unittest2.TestCase):
+    _INPUT = _QUOTA_CONFIG_TEST
+
+    def test_quota_info(self):
+        registry = self._get_registry()
+        info = registry.lookup(u'GET', u'/airports')
+        self.assertEqual(
+            {'example-read-requests': 5, 'example-list-requests': 1},
+            info.quota_info)
+
+    def test_quota_info_not_present(self):
+        registry = self._get_registry()
+        info = registry.lookup(u'GET', u'/airport/SEA')
+        self.assertIsNotNone(info)
+        self.assertIsNone(info.quota_info)

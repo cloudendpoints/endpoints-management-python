@@ -22,23 +22,27 @@ import tempfile
 import unittest2
 from expects import be_false, be_none, be_true, expect, equal, raise_error
 
-from endpoints_management.control import (caches, check_request, client,
-                                          report_request, sc_messages)
+from endpoints_management.control import (
+    caches, check_request, client, quota_request, report_request, sc_messages
+)
 
 
 class TestSimpleLoader(unittest2.TestCase):
     SERVICE_NAME = u'simpler-loader'
 
     @mock.patch(u"endpoints_management.control.client.ReportOptions", autospec=True)
+    @mock.patch(u"endpoints_management.control.client.QuotaOptions", autospec=True)
     @mock.patch(u"endpoints_management.control.client.CheckOptions", autospec=True)
-    def test_should_create_client_ok(self, check_opts, report_opts):
+    def test_should_create_client_ok(self, check_opts, quota_opts, report_opts):
         # the mocks return fake instances else code using them fails
         check_opts.return_value = caches.CheckOptions()
         report_opts.return_value = caches.ReportOptions()
+        quota_opts.return_value = caches.QuotaOptions()
 
         # ensure the client is constructed using no args instances of the opts
         expect(client.Loaders.DEFAULT.load(self.SERVICE_NAME)).not_to(be_none)
         check_opts.assert_called_once_with()
+        quota_opts.assert_called_once_with()
         report_opts.assert_called_once_with()
 
 _TEST_CONFIG = u"""{
@@ -46,6 +50,11 @@ _TEST_CONFIG = u"""{
        "cacheEntries": 10,
        "responseExpirationMs": 1000,
        "flushIntervalMs": 2000
+    },
+    "quotaAggregatorConfig": {
+       "cacheEntries": 10,
+       "expirationMs": 2000,
+       "flushIntervalMs": 1000
     },
     "reportAggregatorConfig": {
        "cacheEntries": 10,
@@ -70,10 +79,12 @@ class TestEnvironmentLoader(unittest2.TestCase):
             os.remove(self._config_file)
 
     @mock.patch(u"endpoints_management.control.client.ReportOptions", autospec=True)
+    @mock.patch(u"endpoints_management.control.client.QuotaOptions", autospec=True)
     @mock.patch(u"endpoints_management.control.client.CheckOptions", autospec=True)
-    def test_should_create_client_from_environment_ok(self, check_opts, report_opts):
+    def test_should_create_client_from_environment_ok(self, check_opts, quota_opts, report_opts):
         check_opts.return_value = caches.CheckOptions()
         report_opts.return_value = caches.ReportOptions()
+        quota_opts.return_value = caches.QuotaOptions()
 
         # ensure the client is constructed using options values from the test JSON
         expect(client.Loaders.ENVIRONMENT.load(self.SERVICE_NAME)).not_to(be_none)
@@ -84,32 +95,37 @@ class TestEnvironmentLoader(unittest2.TestCase):
                                             num_entries=10)
 
     @mock.patch(u"endpoints_management.control.client.ReportOptions", autospec=True)
+    @mock.patch(u"endpoints_management.control.client.QuotaOptions", autospec=True)
     @mock.patch(u"endpoints_management.control.client.CheckOptions", autospec=True)
-    def test_should_use_defaults_if_file_is_missing(self, check_opts, report_opts):
+    def test_should_use_defaults_if_file_is_missing(self, check_opts, quota_opts, report_opts):
         os.remove(self._config_file)
-        self._assert_called_with_no_args_options(check_opts, report_opts)
+        self._assert_called_with_no_args_options(check_opts, quota_opts, report_opts)
 
     @mock.patch(u"endpoints_management.control.client.ReportOptions", autospec=True)
+    @mock.patch(u"endpoints_management.control.client.QuotaOptions", autospec=True)
     @mock.patch(u"endpoints_management.control.client.CheckOptions", autospec=True)
-    def test_should_use_defaults_if_file_is_missing(self, check_opts, report_opts):
+    def test_should_use_defaults_if_file_is_missing(self, check_opts, quota_opts, report_opts):
         del os.environ[client.CONFIG_VAR]
-        self._assert_called_with_no_args_options(check_opts, report_opts)
+        self._assert_called_with_no_args_options(check_opts, quota_opts, report_opts)
 
     @mock.patch(u"endpoints_management.control.client.ReportOptions")
+    @mock.patch(u"endpoints_management.control.client.QuotaOptions")
     @mock.patch(u"endpoints_management.control.client.CheckOptions")
-    def test_should_use_defaults_if_json_is_bad(self, check_opts, report_opts):
+    def test_should_use_defaults_if_json_is_bad(self, check_opts, quota_opts, report_opts):
         with open(self._config_file, u'w') as f:
             f.write(_TEST_CONFIG + u'\n{ this will not parse as json}')
-        self._assert_called_with_no_args_options(check_opts, report_opts)
+        self._assert_called_with_no_args_options(check_opts, quota_opts, report_opts)
 
-    def _assert_called_with_no_args_options(self, check_opts, report_opts):
+    def _assert_called_with_no_args_options(self, check_opts, quota_opts, report_opts):
         # the mocks return fake instances else code using them fails
         check_opts.return_value = caches.CheckOptions()
         report_opts.return_value = caches.ReportOptions()
+        quota_opts.return_value = caches.QuotaOptions()
 
         # ensure the client is constructed using no args instances of the opts
         expect(client.Loaders.ENVIRONMENT.load(self.SERVICE_NAME)).not_to(be_none)
         check_opts.assert_called_once_with()
+        quota_opts.assert_called_once_with()
         report_opts.assert_called_once_with()
 
 
@@ -123,6 +139,17 @@ def _make_dummy_report_request(project_id, service_name):
         referer=u'a_referer',
         service_name=service_name)
     return info.as_report_request(rules)
+
+
+def _make_dummy_quota_request(project_id, service_name):
+    info = quota_request.Info(
+        consumer_project_id=project_id,
+        operation_id=u'an_op_id',
+        operation_name=u'an_op_name',
+        referer=u'a_referer',
+        service_name=service_name,
+        quota_info={'foo': 1, 'bar': 2})
+    return info.as_allocate_quota_request()
 
 
 def _make_dummy_check_request(project_id, service_name):
@@ -237,6 +264,60 @@ class TestClientCheck(unittest2.TestCase):
                                                   self.SERVICE_NAME)
         self._mock_transport.services.Check.side_effect = exceptions.Error()
         expect(self._subject.check(dummy_request)).to(be_none)
+
+
+class TestClientQuota(unittest2.TestCase):
+    SERVICE_NAME = u'quota'
+    PROJECT_ID = SERVICE_NAME + u'.project'
+
+    def setUp(self):
+        self._mock_transport = mock.MagicMock()
+        self._subject = client.Loaders.DEFAULT.load(
+            self.SERVICE_NAME,
+            create_transport=lambda: self._mock_transport)
+
+    def test_should_raise_on_quota_without_start(self):
+        dummy_request = _make_dummy_quota_request(self.PROJECT_ID,
+                                                  self.SERVICE_NAME)
+        expect(lambda: self._subject.allocate_quota(dummy_request)).to(
+            raise_error(AssertionError))
+
+    @mock.patch(u"endpoints_management.control.client._THREAD_CLASS", spec=True)
+    def test_should_queue_the_request_if_not_cached(self, dummy_thread_class):
+        # the request isn't sent immediately as long as a cache exists
+        # instead we get a temporary response
+        self._subject.start()
+        dummy_request = _make_dummy_quota_request(self.PROJECT_ID,
+                                                  self.SERVICE_NAME)
+        resp = self._subject.allocate_quota(dummy_request)
+        with self._subject._quota_aggregator._out as out_deque:
+            expect(out_deque[0]).to(equal(dummy_request))
+        expect(resp.operationId).to(equal(
+            dummy_request.allocateQuotaRequest.allocateOperation.operationId))
+
+    @mock.patch(u"endpoints_management.control.client._THREAD_CLASS", spec=True)
+    def test_should_not_send_the_request_if_cached(self, dummy_thread_class):
+        t = self._mock_transport
+        self._subject.start()
+        dummy_request = _make_dummy_quota_request(self.PROJECT_ID,
+                                                  self.SERVICE_NAME)
+        dummy_response = sc_messages.AllocateQuotaResponse(
+            operationId=dummy_request.allocateQuotaRequest.allocateOperation.operationId)
+        t.services.AllocateQuota.return_value = dummy_response
+        expect(self._subject.allocate_quota(dummy_request)).to(equal(dummy_response))
+        t.reset_mock()
+        expect(self._subject.allocate_quota(dummy_request)).to(equal(dummy_response))
+        expect(t.services.AllocateQuota.called).to(be_false)
+
+    @mock.patch(u"endpoints_management.control.client._THREAD_CLASS", spec=True)
+    def test_should_return_dummy_response_if_transport_fails(self, dummy_thread_class):
+        self._subject.start()
+        dummy_request = _make_dummy_quota_request(self.PROJECT_ID,
+                                                  self.SERVICE_NAME)
+        dummy_response = sc_messages.AllocateQuotaResponse(
+            operationId=dummy_request.allocateQuotaRequest.allocateOperation.operationId)
+        self._mock_transport.services.AllocateQuota.side_effect = exceptions.Error()
+        expect(self._subject.allocate_quota(dummy_request)).to(equal(dummy_response))
 
 
 class TestClientReport(unittest2.TestCase):

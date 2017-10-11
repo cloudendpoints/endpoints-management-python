@@ -166,20 +166,6 @@ class TestAggregatorThatCannotCache(unittest2.TestCase):
 
 
 
-class _DateTimeTimer(object):
-    def __init__(self, auto=False):
-        self.auto = auto
-        self.time = datetime.datetime.utcfromtimestamp(0)
-
-    def __call__(self):
-        if self.auto:
-            self.tick()
-        return self.time
-
-    def tick(self):
-        self.time += datetime.timedelta(seconds=1)
-
-
 class TestCachingAggregator(unittest2.TestCase):
     SERVICE_NAME = u'service.with_cache'
     FAKE_OPERATION_ID = u'service.with_cache.op_id'
@@ -507,7 +493,7 @@ class TestConvertResponse(unittest2.TestCase):
 class _DateTimeTimer(object):
     def __init__(self, auto=False):
         self.auto = auto
-        self.time = datetime.datetime(1970, 1, 1)
+        self.time = datetime.datetime.utcfromtimestamp(0)
 
     def __call__(self):
         if self.auto:

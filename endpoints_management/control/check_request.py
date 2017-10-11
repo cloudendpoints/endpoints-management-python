@@ -148,10 +148,8 @@ def convert_response(check_response, project_id):
     if error_tuple[1].find(u'{') == -1:  # no replacements needed:
         return error_tuple
 
-    updated_msg = error_tuple[1].replace(u'{project_id}', project_id)
-    updated_msg = updated_msg.replace(u'{detail}', theError.detail or u'')
-    error_tuple = (error_tuple[0], updated_msg, error_tuple[2])
-    return error_tuple
+    updated_msg = error_tuple[1].format(project_id=project_id, detail=theError.detail or u'')
+    return error_tuple[0], updated_msg, error_tuple[2]
 
 
 def sign(check_request):
