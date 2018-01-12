@@ -19,6 +19,7 @@ import json
 import os
 import tempfile
 import unittest2
+import urllib
 
 from apitools.base.py import encoding
 from expects import be_false, be_none, be_true, expect, equal, raise_error
@@ -352,7 +353,7 @@ _BAD_HTTP_RULE_CONFIG_TEST = """
             "get": "/uvv/bad_rule/no_selector"
         },{
             "selector": "Uvw.OkRule",
-            "get": "/uvw/ok_rule/*"
+            "get": "/uvw/ok_rule/{x}"
         }]
     }
 }
@@ -393,10 +394,10 @@ _USAGE_CONFIG_TEST = """
     "http": {
         "rules": [{
             "selector": "Uvw.Method1",
-            "get": "/uvw/method1/*"
+            "get": "/uvw/method1/{x}"
         }, {
             "selector": "Uvw.Method2",
-            "get": "/uvw/method2/*"
+            "get": "/uvw/method2/{x}"
         }, {
             "selector": "Uvw.DefaultUsage",
             "get": "/uvw/default_usage"
@@ -464,7 +465,7 @@ _SYSTEM_PARAMETER_CONFIG_TEST = u"""
     "http": {
         "rules": [{
             "selector": "Uvw.Method1",
-            "get": "/uvw/method1/*"
+            "get": "/uvw/method1/{x}"
         }, {
             "selector": "Uvw.DefaultParameters",
             "get": "/uvw/default_parameters"
@@ -526,10 +527,10 @@ _BOOKSTORE_CONFIG_TEST = b"""
             }
         }, {
             "selector": "Bookstore.ListBooks",
-            "get": "/shelves/{shelf=*}/books"
+            "get": "/shelves/{shelf}/books"
         },{
             "selector": "Bookstore.CreateBook",
-            "post": "/shelves/{shelf=*}/books",
+            "post": "/shelves/{shelf}/books",
             "body": "book"
         }]
     }
@@ -664,10 +665,10 @@ _AUTHENTICATION_CONFIG_TEST = u"""
             }
         }, {
             "selector": "Bookstore.ListBooks",
-            "get": "/shelves/{shelf=*}/books"
+            "get": "/shelves/{shelf}/books"
         },{
             "selector": "Bookstore.CreateBook",
-            "post": "/shelves/{shelf=*}/books",
+            "post": "/shelves/{shelf}/books",
             "body": "book"
         }]
     }
@@ -770,3 +771,40 @@ class TestQuotaConfig(_JsonServiceBase, unittest2.TestCase):
         info = registry.lookup(u'GET', u'/airport/SEA')
         self.assertIsNotNone(info)
         self.assertIsNone(info.quota_info)
+
+_CUSTOM_METHOD_CONFIG_TEST = b"""
+{
+    "name": "bookstore-http-api",
+    "http": {
+        "rules": [{
+            "selector": "Bookstore.ListShelves",
+            "get": "/shelves"
+        },{
+            "selector": "Bookstore.LockShelf",
+            "post": "/shelves/{shelf}:lock"
+        },{
+            "selector": "Bookstore.CreateBook",
+            "post": "/shelves/{shelf}/books",
+            "body": "book"
+        }]
+    }
+}
+"""
+
+class TestMethodRegistryCustomMethodConfig(_JsonServiceBase, unittest2.TestCase):
+    _INPUT = _CUSTOM_METHOD_CONFIG_TEST
+    def test_configures_custom_method(self):
+        registry = self._get_registry()
+        url = urllib.quote(u'/shelves/88:lock')  # custom methods come in percent-encoded
+        info = registry.lookup(u'POST', url)
+        assert info is not None
+        assert info.selector == 'Bookstore.LockShelf'
+
+    def test_other_characters_still_quoted(self):
+        registry = self._get_registry()
+        shelf = urllib.quote('A/Z', safe='')
+        assert '/' not in shelf
+        url = '/shelves/{}/books'.format(shelf)
+        info = registry.lookup(u'POST', url)
+        assert info is not None
+        assert info.selector == 'Bookstore.CreateBook'

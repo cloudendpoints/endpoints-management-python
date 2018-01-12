@@ -69,7 +69,7 @@ class TestMiddleware(unittest2.TestCase):
 
         given = {
             u'wsgi.url_scheme': u'http',
-            u'PATH_INFO': u'/any/method',
+            u'PATH_INFO': u'/any',
             u'REMOTE_ADDR': u'192.168.0.3',
             u'HTTP_HOST': u'localhost',
             u'HTTP_REFERER': u'example.myreferer.com',
@@ -88,7 +88,7 @@ class TestMiddleware(unittest2.TestCase):
 
         given = {
             u'wsgi.url_scheme': u'http',
-            u'PATH_INFO': u'/any/method',
+            u'PATH_INFO': u'/any',
             u'REMOTE_ADDR': u'192.168.0.3',
             u'HTTP_HOST': u'localhost',
             u'HTTP_REFERER': u'example.myreferer.com',
@@ -110,7 +110,7 @@ class TestMiddleware(unittest2.TestCase):
         control_client = mock.MagicMock(spec=client.Client)
         given = {
             u'wsgi.url_scheme': u'http',
-            u'PATH_INFO': u'/any/method',
+            u'PATH_INFO': u'/any',
             u'REMOTE_ADDR': u'192.168.0.3',
             u'HTTP_HOST': u'localhost',
             u'HTTP_REFERER': u'example.myreferer.com',
@@ -193,13 +193,13 @@ _SYSTEM_PARAMETER_CONFIG_TEST = b"""
     "http": {
         "rules": [{
             "selector": "Uvw.Method1",
-            "get": "/uvw/method1/*"
+            "get": "/uvw/method1/{x}"
         }, {
             "selector": "Uvw.Method2",
-            "get": "/uvw/method2/*"
+            "get": "/uvw/method2/{x}"
         }, {
             "selector": "Uvw.MethodNeedsApiKey",
-            "get": "/uvw/method_needs_api_key/*"
+            "get": "/uvw/method_needs_api_key/{x}"
         }, {
             "selector": "Uvw.DefaultParameters",
             "get": "/uvw/default_parameters"

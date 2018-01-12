@@ -31,12 +31,13 @@ from __future__ import absolute_import
 import collections
 import logging
 import os
+import urllib
 
 
 from apitools.base.py import encoding
 from enum import Enum
 
-from . import label_descriptor, metric_descriptor, path_template, sm_messages
+from . import label_descriptor, metric_descriptor, path_regex, sm_messages
 from endpoints_management.config import service_config
 
 
@@ -68,10 +69,10 @@ _SIMPLE_CONFIG = """
     "http": {
         "rules": [{
             "selector": "allow-all.GET",
-            "get": "**"
+            "get": "{x}"
         }, {
             "selector": "allow-all.POST",
-            "post": "**"
+            "post": "{x}"
         }]
     },
     "usage": {
@@ -152,21 +153,21 @@ class MethodRegistry(object):
                          http_method,
                          self._templates_method_infos.keys())
             return None
-
+        # need to remove url quoting of colons. this is the simplest way.
+        path = path.replace('%3A', ':')
         # pylint: disable=fixme
         # TODO: speed this up if it proves to be bottleneck.
         #
         # There is sophisticated trie-based solution in esp, something similar
         # could be built around the path_template implementation
         for template, method_info in tmi:
-            logger.debug(u'trying %s with template %s', path, template)
-            try:
-                template.match(path)
-                logger.debug(u'%s matched template %s', path, template)
+            logger.debug(u'trying %s with template %s', path, template.pattern)
+            match = template.match(path)
+            if match:
+                logger.debug(u'%s matched template %s', path, template.pattern)
                 return method_info
-            except path_template.ValidationException:
-                logger.debug(u'%s did not match template %s', path, template)
-                continue
+            else:
+                logger.debug(u'%s did not match template %s', path, template.pattern)
 
         return None
 
@@ -231,15 +232,17 @@ class MethodRegistry(object):
         self._update_system_parameters()
 
     def _register(self, http_method, url, method_info):
+        if url.startswith('/'):
+            url = url[1:]
         try:
             http_method = http_method.lower()
-            template = path_template.PathTemplate(url)
+            template = path_regex.compile_path_pattern(url)
             self._templates_method_infos[http_method].append((template, method_info))
             logger.debug(u'Registered template %s under method %s',
-                         template,
+                         template.pattern,
                          http_method)
             return True
-        except path_template.ValidationException:
+        except path_regex.RegexError:
             logger.error(u'invalid HTTP template provided: %s', url)
             return False
 
