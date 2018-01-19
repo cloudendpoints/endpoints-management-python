@@ -34,7 +34,7 @@ install_requires = [
     "dogpile.cache>=0.6.1,<0.7",
     'enum34>=1.1.6,<2',
     'google-apitools>=0.5.11,<0.6',
-    'oauth2client>=2.0.0,<4.0.0dev',
+    'oauth2client==3.0.0',
     "pylru>=1.0.9,<2.0",
     "pyjwkest>=1.0.0,<=1.0.9",
     "requests>=2.10.0,<3.0",
