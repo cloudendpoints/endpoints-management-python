@@ -270,7 +270,13 @@ class MethodRegistry(object):
         auth_info = auth_infos[selector] if selector in auth_infos else None
         quota_info = quota_infos[selector] if selector in quota_infos else None
 
-        info = MethodInfo(selector, auth_info, quota_info)
+        api_version = None
+        for service_api in self._service.apis:
+            for api_method in service_api.methods:
+                if api_method.selector == selector:
+                    api_version = service_api.version
+
+        info = MethodInfo(selector, auth_info, quota_info, api_version)
         extracted_methods[selector] = info
         return info
 
@@ -340,10 +346,11 @@ class MethodInfo(object):
     API_KEY_NAME = u'api_key'
     # pylint: disable=too-many-instance-attributes
 
-    def __init__(self, selector, auth_info, quota_info):
+    def __init__(self, selector, auth_info, quota_info, api_version):
         self.selector = selector
         self.auth_info = auth_info
         self.quota_info = quota_info
+        self.api_version = api_version
         self.allow_unregistered_calls = False
         self.backend_address = u''
         self.body_field_path = u''
