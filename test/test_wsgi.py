@@ -134,11 +134,11 @@ class TestMiddleware(unittest2.TestCase):
 
     def test_load_service_failed(self):
         loader = mock.MagicMock(load=lambda: None)
-        with self.assertRaisesRegex(ValueError, u"Failed to load service config"):
-            wsgi.add_all(_DummyWsgiApp(),
-                         self.PROJECT_ID,
-                         mock.MagicMock(spec=client.Client),
-                         loader=loader)
+        result = wsgi.add_all(_DummyWsgiApp(),
+                              self.PROJECT_ID,
+                              mock.MagicMock(spec=client.Client),
+                              loader=loader)
+        assert result is wsgi.HTTPServiceUnavailable
 
 
 _SYSTEM_PARAMETER_CONFIG_TEST = b"""

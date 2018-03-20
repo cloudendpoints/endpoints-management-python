@@ -88,7 +88,7 @@ class ServiceConfigFetchTest(unittest.TestCase):
         mock_http_client = mock.MagicMock()
         mock_http_client.request.return_value = mock_response
         ServiceConfigFetchTest._get_http_client.return_value = mock_http_client
-        with self.assertRaisesRegexp(Exception, u"status code 403"):
+        with self.assertRaisesRegexp(service_config.ServiceConfigException, u"status code 403"):
             service_config.fetch_service_config()
 
     @mock.patch(u"endpoints_management.config.service_config.client.GoogleCredentials",

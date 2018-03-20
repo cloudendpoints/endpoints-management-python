@@ -33,8 +33,10 @@ import uuid
 import urllib2
 import urlparse
 import wsgiref.util
+from webob.exc import HTTPServiceUnavailable
 
 from ..auth import suppliers, tokens
+from ..config.service_config import ServiceConfigException
 from . import check_request, quota_request, report_request, service, sm_messages
 
 
@@ -118,9 +120,14 @@ def add_all(application, project_id, control_client,
        loader (:class:`endpoints_management.control.service.Loader`): loads the service
           instance that configures this instance's behaviour
     """
-    a_service = loader.load()
-    if not a_service:
-        raise ValueError(u"Failed to load service config")
+    try:
+        a_service = loader.load()
+        if not a_service:
+            raise ValueError(u'No service config loaded.')
+    except (ServiceConfigException, ValueError):
+        logger.exception(u'Failed to load service config, installing server error handler.')
+        # This will answer all requests with HTTP 503 Service Unavailable
+        return HTTPServiceUnavailable
     authenticator = _create_authenticator(a_service)
 
     wrapped_app = Middleware(application, project_id, control_client)

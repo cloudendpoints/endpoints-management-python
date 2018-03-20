@@ -40,6 +40,7 @@ install_requires = [
     "requests>=2.10.0,<3.0",
     'strict-rfc3339>=0.7,<0.8',
     'urllib3>=1.16,<2.0',
+    'webob>=1.7.4',
 ]
 
 tests_require = [

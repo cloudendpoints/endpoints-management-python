@@ -39,6 +39,10 @@ _SERVICE_NAME_ENV_KEY = u"ENDPOINTS_SERVICE_NAME"
 _SERVICE_VERSION_ENV_KEY = u"ENDPOINTS_SERVICE_VERSION"
 
 
+class ServiceConfigException(Exception):
+    pass
+
+
 def fetch_service_config(service_name=None, service_version=None):
     """Fetches the service config from Google Serivce Management API.
 
@@ -76,7 +80,7 @@ def fetch_service_config(service_name=None, service_version=None):
     status_code = response.status
     if status_code != 200:
         message_template = u"Fetching service config failed (status code {})"
-        _log_and_raise(Exception, message_template.format(status_code))
+        _log_and_raise(ServiceConfigException, message_template.format(status_code))
 
     logger.debug(u'obtained service json from the management api:\n%s', response.data)
     service = encoding.JsonToMessage(messages.Service, response.data)

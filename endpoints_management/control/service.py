@@ -37,8 +37,8 @@ import urllib
 from apitools.base.py import encoding
 from enum import Enum
 
+from ..config import service_config
 from . import label_descriptor, metric_descriptor, path_regex, sm_messages
-from endpoints_management.config import service_config
 
 
 logger = logging.getLogger(__name__)
