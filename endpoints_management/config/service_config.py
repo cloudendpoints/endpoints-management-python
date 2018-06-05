@@ -78,7 +78,16 @@ def fetch_service_config(service_name=None, service_version=None):
     response = http_client.request(u"GET", service_mgmt_url, headers=headers)
 
     status_code = response.status
-    if status_code != 200:
+    if status_code == 403:
+        message = (u"No service '{0}' found or permission denied. If this is a new "
+                   u"Endpoints service, make sure you've deployed the "
+                   u"service config using gcloud.").format(service_name)
+        _log_and_raise(ServiceConfigException, message)
+    elif status_code == 404:
+        message = (u"The service '{0}' was found, but no service config was "
+                   u"found for version '{1}'.").format(service_name, service_version)
+        _log_and_raise(ServiceConfigException, message)
+    elif status_code != 200:
         message_template = u"Fetching service config failed (status code {})"
         _log_and_raise(ServiceConfigException, message_template.format(status_code))
 

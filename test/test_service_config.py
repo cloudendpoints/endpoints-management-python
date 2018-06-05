@@ -82,13 +82,30 @@ class ServiceConfigFetchTest(unittest.TestCase):
     @mock.patch(u"endpoints_management.config.service_config.client.GoogleCredentials",
                 _credentials)
     @mock.patch(u"endpoints_management.config.service_config._get_http_client", _get_http_client)
-    def test_fetch_service_config_failed(self):
+    def test_fetch_service_config_failed_forbidden(self):
         mock_response = mock.MagicMock()
         mock_response.status = 403
         mock_http_client = mock.MagicMock()
         mock_http_client.request.return_value = mock_response
         ServiceConfigFetchTest._get_http_client.return_value = mock_http_client
-        with self.assertRaisesRegexp(service_config.ServiceConfigException, u"status code 403"):
+        expected_message = (u"No service 'test_service_name' found or permission denied. "
+                            u"If this is a new Endpoints service, make sure you've deployed "
+                            u"the service config using gcloud.")
+        with self.assertRaisesRegexp(service_config.ServiceConfigException, expected_message):
+            service_config.fetch_service_config()
+
+    @mock.patch(u"endpoints_management.config.service_config.client.GoogleCredentials",
+                _credentials)
+    @mock.patch(u"endpoints_management.config.service_config._get_http_client", _get_http_client)
+    def test_fetch_service_config_failed_not_found(self):
+        mock_response = mock.MagicMock()
+        mock_response.status = 404
+        mock_http_client = mock.MagicMock()
+        mock_http_client.request.return_value = mock_response
+        ServiceConfigFetchTest._get_http_client.return_value = mock_http_client
+        expected_message = (u"The service 'test_service_name' was found, but no service config "
+                            u"was found for version 'test_service_version'.")
+        with self.assertRaisesRegexp(service_config.ServiceConfigException, expected_message):
             service_config.fetch_service_config()
 
     @mock.patch(u"endpoints_management.config.service_config.client.GoogleCredentials",
