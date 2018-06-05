@@ -33,7 +33,7 @@ import uuid
 import urllib2
 import urlparse
 import wsgiref.util
-from webob.exc import HTTPServiceUnavailable
+from webob.exc import HTTPServiceUnavailable, status_map as exc_status_map
 
 from ..auth import suppliers, tokens
 from ..config.service_config import ServiceConfigException
@@ -439,11 +439,9 @@ class Middleware(object):
 
         # there was problem; the request cannot proceed
         logger.warn(u'Check failed %d, %s', code, detail)
-        error_msg = b'%d %s' % (code, detail.encode('utf-8'))
-        start_response(error_msg, [])
         app_info.response_code = code
         app_info.api_key_valid = api_key_valid
-        return error_msg  # the request cannot continue
+        return self._return_simple_http_response(start_response, code, detail)
 
     def _handle_quota_response(self, app_info, quota_resp, start_response):
         code, detail = quota_request.convert_response(
@@ -453,20 +451,32 @@ class Middleware(object):
 
         # there was problem; the request cannot proceed
         logger.warn(u'Quota failed %d, %s', code, detail)
-        error_msg = b'%d %s' % (code, detail.encode('utf-8'))
-        start_response(error_msg, [])
         app_info.response_code = code
-        return error_msg  # the request cannot continue
+        return self._return_simple_http_response(start_response, code, detail)
 
     def _handle_missing_api_key(self, app_info, start_response):
         code = httplib.UNAUTHORIZED
         detail = self._NO_API_KEY_MSG
         logger.warn(u'Check not performed %d, %s', code, detail)
-        error_msg = b'%d %s' % (code, detail.encode('utf-8'))
-        start_response(error_msg, [])
         app_info.response_code = code
         app_info.api_key_valid = False
-        return error_msg  # the request cannot continue
+        return self._return_simple_http_response(start_response, code, detail)
+
+    def _return_simple_http_response(self, start_response, code, detail):
+        resp = exc_status_map[code](
+            detail=detail, body_template = '''${explanation}\n\n${detail}\n''')
+        # The resp (response) object is actually a very specialized
+        # WSGI application, which means it accepts an environment
+        # dictionary and a start_response callable. We don't have
+        # access to the real request's WSGI environment at this point,
+        # and even if we did, a lot of actual requests will simply
+        # assume an application/json content type instead of
+        # specifying it with the Accept header. So we just make up a
+        # minimalistic WSGI environment; REQUEST_METHOD POST so that
+        # it's fine to return a body in the response and Accept
+        # application/json so the error response app will generate
+        # JSON instead of HTML or text.
+        return resp({'REQUEST_METHOD': 'POST', 'HTTP_ACCEPT': 'application/json'}, start_response)
 
 
 class _AppInfo(object):

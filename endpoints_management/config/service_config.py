@@ -44,7 +44,7 @@ class ServiceConfigException(Exception):
 
 
 def fetch_service_config(service_name=None, service_version=None):
-    """Fetches the service config from Google Serivce Management API.
+    """Fetches the service config from Google Service Management API.
 
     Args:
       service_name: the service name. When this argument is unspecified, this
