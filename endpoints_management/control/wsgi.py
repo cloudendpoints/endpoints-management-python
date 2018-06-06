@@ -362,7 +362,6 @@ class Middleware(object):
             api_key=check_info.api_key,
             api_key_valid=app_info.api_key_valid,
             api_method=method_info.selector,
-            api_version=method_info.api_version,
             consumer_project_id=self._project_id,  # TODO: see above
             consumer_project_number=consumer_project_number,
             location=_DEFAULT_LOCATION,  # TODO: see above

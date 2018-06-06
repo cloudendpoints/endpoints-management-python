@@ -224,7 +224,6 @@ class Info(
         u'api_name',
         u'api_method',
         u'api_key',
-        u'api_version',
         u'producer_project_id',
         u'referer',
         u'location',
@@ -267,8 +266,6 @@ class Info(
             raise ValueError(u'platform should be a %s' % (ReportedPlatforms,))
         if not isinstance(error_cause, ErrorCause):
             raise ValueError(u'error_cause should be a %s' % (ErrorCause,))
-        if api_version is None:
-            api_version = u''
         return super(cls, Info).__new__(
             cls,
             api_name,
