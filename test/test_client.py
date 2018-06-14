@@ -229,11 +229,12 @@ class TestClientCheck(unittest2.TestCase):
             self.SERVICE_NAME,
             create_transport=lambda: self._mock_transport)
 
-    def test_should_raise_on_check_without_start(self):
+    @mock.patch(u"endpoints_management.control.client._THREAD_CLASS", spec=True)
+    def test_should_start_itself_on_check_without_start(self, dummy_thread_class):
         dummy_request = _make_dummy_check_request(self.PROJECT_ID,
                                                   self.SERVICE_NAME)
-        expect(lambda: self._subject.check(dummy_request)).to(
-            raise_error(AssertionError))
+        self._subject.check(dummy_request)
+        assert self._subject._running
 
     @mock.patch(u"endpoints_management.control.client._THREAD_CLASS", spec=True)
     def test_should_send_the_request_if_not_cached(self, dummy_thread_class):
@@ -276,11 +277,12 @@ class TestClientQuota(unittest2.TestCase):
             self.SERVICE_NAME,
             create_transport=lambda: self._mock_transport)
 
-    def test_should_raise_on_quota_without_start(self):
+    @mock.patch(u"endpoints_management.control.client._THREAD_CLASS", spec=True)
+    def test_should_start_itself_on_quota_without_start(self, dummy_thread_class):
         dummy_request = _make_dummy_quota_request(self.PROJECT_ID,
                                                   self.SERVICE_NAME)
-        expect(lambda: self._subject.allocate_quota(dummy_request)).to(
-            raise_error(AssertionError))
+        self._subject.allocate_quota(dummy_request)
+        assert self._subject._running
 
     @mock.patch(u"endpoints_management.control.client._THREAD_CLASS", spec=True)
     def test_should_queue_the_request_if_not_cached(self, dummy_thread_class):
@@ -330,11 +332,12 @@ class TestClientReport(unittest2.TestCase):
             self.SERVICE_NAME,
             create_transport=lambda: self._mock_transport)
 
-    def test_should_raise_on_report_without_start(self):
+    @mock.patch(u"endpoints_management.control.client._THREAD_CLASS", spec=True)
+    def test_should_start_itself_on_report_without_start(self, dummy_thread_class):
         dummy_request = _make_dummy_report_request(self.PROJECT_ID,
                                                    self.SERVICE_NAME)
-        expect(lambda: self._subject.report(dummy_request)).to(
-            raise_error(AssertionError))
+        self._subject.report(dummy_request)
+        assert self._subject._running
 
     @mock.patch(u"endpoints_management.control.client._THREAD_CLASS", spec=True)
     def test_should_not_send_the_request_if_cached(self, dummy_thread_class):

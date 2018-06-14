@@ -58,6 +58,7 @@ logger = logging.getLogger(__name__)
 
 
 CONFIG_VAR = u'ENDPOINTS_SERVER_CONFIG_FILE'
+MAX_IDLE_TIME_SECONDS = 120
 
 
 def _load_from_well_known_env():
@@ -208,10 +209,18 @@ class Client(object):
         self._running = False
         self._scheduler = None
         self._stopped = False
-        self._timer = timer
+        self._timer = to_cache_timer(timer)
         self._thread = None
         self._create_transport = create_transport
         self._lock = threading.RLock()
+        self._idle_timer_started_at = None
+
+    def _start_idle_timer(self):
+        self._idle_timer_started_at = self._timer()
+
+    def _idle_threshold_reached(self):
+        elapsed = self._timer() - self._idle_timer_started_at
+        return elapsed > MAX_IDLE_TIME_SECONDS
 
     def start(self):
         """Starts processing.
@@ -220,19 +229,14 @@ class Client(object):
 
         - starts the thread that regularly flushes all enabled caches.
         - enables the other methods on the instance to be called successfully
-
-        I.e, even when the configuration disables aggregation, it is invalid to
-        access the other methods of an instance until ``start`` is called -
-        Calls to other public methods will fail with an AssertionError.
-
         """
         with self._lock:
             if self._running:
-                logger.info(u'%s is already started', self)
                 return
 
             self._stopped = False
             self._running = True
+            self._start_idle_timer()
             logger.info(u'starting thread of type %s to run the scheduler',
                         _THREAD_CLASS)
             self._thread = _THREAD_CLASS(target=self._schedule_flushes)
@@ -288,7 +292,7 @@ class Client(object):
 
         """
 
-        self._assert_is_running()
+        self.start()
         res = self._check_aggregator.check(check_req)
         if res:
             logger.debug(u'using cached check response for %s: %s',
@@ -309,7 +313,7 @@ class Client(object):
             return None
 
     def allocate_quota(self, allocate_quota_req):
-        self._assert_is_running()
+        self.start()
         res = self._quota_aggregator.allocate_quota(allocate_quota_req)
         if res:
             logger.debug(u'using cached quota response for %s: %s',
@@ -336,7 +340,7 @@ class Client(object):
         It will aggregate it with prior report_requests to be send later
         or it will send it immediately if that's appropriate.
         """
-        self._assert_is_running()
+        self.start()
 
         # no thread running, run the scheduler to ensure any pending
         # flush tasks are executed.
@@ -356,14 +360,10 @@ class Client(object):
     def _run_scheduler_directly(self):
         return self._running and self._thread is None
 
-    def _assert_is_running(self):
-        assert self._running, u'%s needs to be running' % (self,)
-
     def _initialize_flushing(self):
         with self._lock:
             logger.info(u'created a scheduler to control flushing')
-            self._scheduler = sched.scheduler(to_cache_timer(self._timer),
-                                              time.sleep)
+            self._scheduler = sched.scheduler(self._timer, time.sleep)
             logger.info(u'scheduling initial check, report, and quota')
             self._flush_schedule_check_aggregator()
             self._flush_schedule_report_aggregator()
@@ -468,6 +468,14 @@ class Client(object):
             except exceptions.Error:  # only sink apitools errors
                 logger.error(u'failed to flush report_req %s', req, exc_info=True)
 
+        if len(reqs) > 0:
+            self._start_idle_timer()
+        elif self._idle_threshold_reached():
+            logger.info(
+                u'Shutting down after no reports in the last %d seconds',
+                MAX_IDLE_TIME_SECONDS)
+            self.stop()
+            return
         self._scheduler.enter(
             flush_interval.total_seconds(),
             1,  # a lower priority than check flushes
