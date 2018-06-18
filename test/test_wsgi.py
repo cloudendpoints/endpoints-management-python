@@ -59,6 +59,22 @@ class TestEnvironmentMiddleware(unittest2.TestCase):
         expect(given.get(cls.REPORTING_RULES)).not_to(be_none)
         expect(given.get(cls.METHOD_INFO)).not_to(be_none)
 
+    def test_should_handle_method_override(self):
+        cls = wsgi.EnvironmentMiddleware
+        wrappee = _DummyWsgiApp()
+        wanted_service = service.Loaders.SIMPLE.load()
+        wrapped = cls(wrappee, wanted_service)
+
+        given = {
+            u'wsgi.url_scheme': u'http',
+            u'HTTP_HOST': u'localhost',
+            u'REQUEST_METHOD': u'POST',
+            u'HTTP_X_HTTP_METHOD_OVERRIDE': u'PATCH',
+        }
+
+        wrapped(given, _dummy_start_response)
+        assert given[cls.METHOD_INFO].selector == 'allow-all.PATCH'
+
 
 class TestMiddleware(unittest2.TestCase):
     PROJECT_ID = u'middleware'

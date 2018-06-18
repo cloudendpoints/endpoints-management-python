@@ -140,6 +140,10 @@ def _next_operation_uuid():
     return uuid.uuid4().hex
 
 
+def _request_method(environ):
+    return environ.get(u'HTTP_X_HTTP_METHOD_OVERRIDE', environ[u'REQUEST_METHOD'])
+
+
 class EnvironmentMiddleware(object):
     """A WSGI middleware that sets related variables in the environment.
 
@@ -193,7 +197,7 @@ class EnvironmentMiddleware(object):
         environ[self.METHOD_REGISTRY] = self._method_registry
         environ[self.REPORTING_RULES] = self._reporting_rules
         parsed_uri = urlparse.urlparse(wsgiref.util.request_uri(environ))
-        http_method = environ.get(u'REQUEST_METHOD')
+        http_method = _request_method(environ)
         method_info = self._method_registry.lookup(http_method, parsed_uri.path)
         if method_info:
             environ[self.METHOD_INFO] = method_info
@@ -264,7 +268,7 @@ class Middleware(object):
         latency_timer.start()
 
         # Determine if the request can proceed
-        http_method = environ.get(u'REQUEST_METHOD')
+        http_method = _request_method(environ)
         parsed_uri = urlparse.urlparse(wsgiref.util.request_uri(environ))
         app_info = _AppInfo()
         # TODO: determine if any of the more complex ways of getting the request size

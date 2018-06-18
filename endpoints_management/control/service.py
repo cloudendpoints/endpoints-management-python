@@ -71,6 +71,9 @@ _SIMPLE_CONFIG = """
             "selector": "allow-all.GET",
             "get": "{x}"
         }, {
+            "selector": "allow-all.PATCH",
+            "patch": "{x}"
+        }, {
             "selector": "allow-all.POST",
             "post": "{x}"
         }]
@@ -78,6 +81,9 @@ _SIMPLE_CONFIG = """
     "usage": {
         "rules": [{
             "selector" : "allow-all.GET",
+            "allowUnregisteredCalls" : true
+        }, {
+            "selector" : "allow-all.PATCH",
             "allowUnregisteredCalls" : true
         }, {
             "selector" : "allow-all.POST",
