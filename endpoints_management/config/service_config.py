@@ -66,31 +66,10 @@ def fetch_service_config(service_name=None, service_version=None):
     if not service_name:
         service_name = _get_env_var_or_raise(_SERVICE_NAME_ENV_KEY)
     if not service_version:
-        service_version = _get_env_var_or_raise(_SERVICE_VERSION_ENV_KEY)
+        service_version = _get_service_version(_SERVICE_VERSION_ENV_KEY,
+                                               service_name)
 
-    service_mgmt_url = _SERVICE_MGMT_URL_TEMPLATE.format(service_name,
-                                                         service_version)
-
-    access_token = _get_access_token()
-    headers = {u"Authorization": u"Bearer {}".format(access_token)}
-
-    http_client = _get_http_client()
-    response = http_client.request(u"GET", service_mgmt_url, headers=headers)
-
-    status_code = response.status
-    if status_code == 403:
-        message = (u"No service '{0}' found or permission denied. If this is a new "
-                   u"Endpoints service, make sure you've deployed the "
-                   u"service config using gcloud.").format(service_name)
-        _log_and_raise(ServiceConfigException, message)
-    elif status_code == 404:
-        message = (u"The service '{0}' was found, but no service config was "
-                   u"found for version '{1}'.").format(service_name, service_version)
-        _log_and_raise(ServiceConfigException, message)
-    elif status_code != 200:
-        message_template = u"Fetching service config failed (status code {})"
-        _log_and_raise(ServiceConfigException, message_template.format(status_code))
-
+    response = _make_service_config_request(service_name, service_version)
     logger.debug(u'obtained service json from the management api:\n%s', response.data)
     service = encoding.JsonToMessage(messages.Service, response.data)
     _validate_service_config(service, service_name, service_version)
@@ -116,6 +95,54 @@ def _get_env_var_or_raise(env_variable_name):
         message_template = u'The "{}" environment variable is not set'
         _log_and_raise(ValueError, message_template.format(env_variable_name))
     return os.environ[env_variable_name]
+
+
+def _make_service_config_request(service_name, service_version=''):
+    url = _SERVICE_MGMT_URL_TEMPLATE.format(service_name,
+                                            service_version).rstrip('/')
+
+    http_client = _get_http_client()
+    headers = {u"Authorization": u"Bearer {}".format(_get_access_token())}
+    response = http_client.request(u"GET", url, headers=headers)
+
+    status_code = response.status
+    if status_code == 403:
+        message = (u"No service '{0}' found or permission denied. If this is a new "
+                   u"Endpoints service, make sure you've deployed the "
+                   u"service config using gcloud.").format(service_name)
+        _log_and_raise(ServiceConfigException, message)
+    elif status_code == 404:
+        message = (u"The service '{0}' was found, but no service config was "
+                   u"found for version '{1}'.").format(service_name, service_version)
+        _log_and_raise(ServiceConfigException, message)
+    elif status_code != 200:
+        message_template = u"Fetching service config failed (status code {})"
+        _log_and_raise(ServiceConfigException, message_template.format(status_code))
+
+    return response
+
+
+def _get_service_version(env_variable_name, service_name):
+    service_version = os.environ.get(env_variable_name)
+
+    if service_version:
+        return service_version
+
+    response = _make_service_config_request(service_name)
+    logger.debug(u'obtained service config list from api: \n%s', response.data)
+
+    services = encoding.JsonToMessage(messages.ListServiceConfigsResponse,
+                                      response.data)
+
+    try:
+        logger.debug(u"found latest service version of %s",
+                     services.serviceConfigs[0].id)
+        return services.serviceConfigs[0].id
+    except:
+        # catches IndexError if no versions or anything else that would
+        # indicate a failed reading of the response.
+        message_template = u"Couldn't retrieve service version from environment or server"
+        _log_and_raise(ServiceConfigException, message_template)
 
 
 def _validate_service_config(service, expected_service_name,

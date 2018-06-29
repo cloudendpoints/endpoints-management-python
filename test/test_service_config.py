@@ -35,6 +35,15 @@ class ServiceConfigFetchTest(unittest.TestCase):
         u"name": _SERVICE_NAME,
         u"id": _SERVICE_VERSION
     }
+    _SERVICE_CONFIG_LIST_JSON = {
+        u"serviceConfigs": [{
+            u"name": _SERVICE_NAME,
+            u"title": _SERVICE_NAME,
+            u"documentation": {},
+            u"usage": {},
+            u"id": _SERVICE_VERSION
+        }]
+    }
 
     _credentials = mock.MagicMock()
     _get_http_client = mock.MagicMock()
@@ -51,11 +60,41 @@ class ServiceConfigFetchTest(unittest.TestCase):
         with self.assertRaisesRegexp(ValueError, message):
             service_config.fetch_service_config()
 
+    @mock.patch(u"endpoints_management.config.service_config.client.GoogleCredentials",
+                _credentials)
+    @mock.patch(u"endpoints_management.config.service_config._get_http_client", _get_http_client)
     def test_no_service_version(self):
         del os.environ[u"ENDPOINTS_SERVICE_VERSION"]
-        message = u'The "ENDPOINTS_SERVICE_VERSION" environment variable is not set'
-        with self.assertRaisesRegexp(ValueError, message):
-            service_config.fetch_service_config()
+
+        list_mock_response = mock.MagicMock()
+        list_mock_response.status = 200
+        list_mock_response.data = json.dumps(ServiceConfigFetchTest._SERVICE_CONFIG_LIST_JSON)
+
+        config_mock_response = mock.MagicMock()
+        config_mock_response.status = 200
+        config_mock_response.data = json.dumps(ServiceConfigFetchTest._SERVICE_CONFIG_JSON)
+
+        mock_http_client = mock.MagicMock()
+        mock_http_client.request.side_effect = [list_mock_response, config_mock_response]
+        ServiceConfigFetchTest._get_http_client.return_value = mock_http_client
+
+        service = encoding.JsonToMessage(sm_messages.Service,
+                                         json.dumps(self._SERVICE_CONFIG_JSON))
+        self.assertEqual(service, service_config.fetch_service_config())
+
+        self.assertEqual(2, mock_http_client.request.call_count)
+
+        headers={u"Authorization": u"Bearer " + ServiceConfigFetchTest._ACCESS_TOKEN}
+
+        template = service_config._SERVICE_MGMT_URL_TEMPLATE
+        url1 = template.format(ServiceConfigFetchTest._SERVICE_NAME, '').rstrip('/')
+        url2 = template.format(ServiceConfigFetchTest._SERVICE_NAME,
+                               ServiceConfigFetchTest._SERVICE_VERSION)
+
+        call1 = mock.call(u"GET", url1, headers=headers)
+        call2 = mock.call(u"GET", url2, headers=headers)
+
+        mock_http_client.request.assert_has_calls([call1, call2])
 
     @mock.patch(u"endpoints_management.config.service_config.client.GoogleCredentials",
                 _credentials)
