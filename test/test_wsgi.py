@@ -19,6 +19,7 @@ import mock
 import os
 import tempfile
 import unittest2
+import webtest
 from expects import be_false, be_none, be_true, expect, equal, raise_error
 
 from endpoints_management.auth import suppliers
@@ -154,7 +155,10 @@ class TestMiddleware(unittest2.TestCase):
                               self.PROJECT_ID,
                               mock.MagicMock(spec=client.Client),
                               loader=loader)
-        assert result is wsgi.HTTPServiceUnavailable
+        assert isinstance(result, wsgi.HTTPServiceUnavailable)
+        test_app = webtest.TestApp(result)
+        resp = test_app.get('/any', expect_errors=True)
+        assert resp.status_code == 503
 
 
 _SYSTEM_PARAMETER_CONFIG_TEST = b"""

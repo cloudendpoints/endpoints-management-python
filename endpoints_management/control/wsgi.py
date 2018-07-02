@@ -127,7 +127,7 @@ def add_all(application, project_id, control_client,
     except (ServiceConfigException, ValueError):
         logger.exception(u'Failed to load service config, installing server error handler.')
         # This will answer all requests with HTTP 503 Service Unavailable
-        return HTTPServiceUnavailable
+        return HTTPServiceUnavailable()
     authenticator = _create_authenticator(a_service)
 
     wrapped_app = Middleware(application, project_id, control_client)
