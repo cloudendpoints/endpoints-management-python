@@ -33,7 +33,7 @@ from apitools.base.py import encoding
 
 from . import metric_value, sc_messages, timestamp, MetricKind
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class Info(

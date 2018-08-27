@@ -41,7 +41,7 @@ from ..config import service_config
 from . import label_descriptor, metric_descriptor, path_regex, sm_messages
 
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 CONFIG_VAR = u'ENDPOINTS_SERVICE_CONFIG_FILE'
@@ -49,17 +49,17 @@ CONFIG_VAR = u'ENDPOINTS_SERVICE_CONFIG_FILE'
 
 def _load_from_well_known_env():
     if CONFIG_VAR not in os.environ:
-        logger.info(u'did not load service; no environ var %s', CONFIG_VAR)
+        _logger.warn(u'did not load service; no environ var %s', CONFIG_VAR)
         return None
     config_file = os.environ[CONFIG_VAR]
     if not os.path.exists(os.environ[CONFIG_VAR]):
-        logger.warn(u'did not load service; missing config file %s', config_file)
+        _logger.warn(u'did not load service; missing config file %s', config_file)
         return None
     try:
         with open(config_file) as f:
             return encoding.JsonToMessage(sm_messages.Service, f.read())
     except ValueError:
-        logger.warn(u'did not load service; bad json config file %s', config_file)
+        _logger.warn(u'did not load service; bad json config file %s', config_file)
         return None
 
 
@@ -155,9 +155,9 @@ class MethodRegistry(object):
             path = path[1:]
         tmi = self._templates_method_infos.get(http_method)
         if not tmi:
-            logger.debug(u'No methods for http method %s in %s',
-                         http_method,
-                         self._templates_method_infos.keys())
+            _logger.debug(u'No methods for http method %s in %s',
+                          http_method,
+                          self._templates_method_infos.keys())
             return None
         # need to remove url quoting of colons. this is the simplest way.
         path = path.replace('%3A', ':')
@@ -167,13 +167,13 @@ class MethodRegistry(object):
         # There is sophisticated trie-based solution in esp, something similar
         # could be built around the path_template implementation
         for template, method_info in tmi:
-            logger.debug(u'trying %s with template %s', path, template.pattern)
+            _logger.debug(u'trying %s with template %s', path, template.pattern)
             match = template.match(path)
             if match:
-                logger.debug(u'%s matched template %s', path, template.pattern)
+                _logger.debug(u'%s matched template %s', path, template.pattern)
                 return method_info
             else:
-                logger.debug(u'%s did not match template %s', path, template.pattern)
+                _logger.debug(u'%s did not match template %s', path, template.pattern)
 
         return None
 
@@ -219,7 +219,7 @@ class MethodRegistry(object):
         for rule in service.http.rules:
             http_method, url = _detect_pattern_option(rule)
             if not url or not http_method or not rule.selector:
-                logger.error(u'invalid HTTP binding encountered')
+                _logger.error(u'invalid HTTP binding encountered')
                 continue
 
             # Obtain the method info
@@ -244,12 +244,12 @@ class MethodRegistry(object):
             http_method = http_method.lower()
             template = path_regex.compile_path_pattern(url)
             self._templates_method_infos[http_method].append((template, method_info))
-            logger.debug(u'Registered template %s under method %s',
-                         template.pattern,
-                         http_method)
+            _logger.debug(u'Registered template %s under method %s',
+                          template.pattern,
+                          http_method)
             return True
         except path_regex.RegexError:
-            logger.error(u'invalid HTTP template provided: %s', url)
+            _logger.error(u'invalid HTTP template provided: %s', url)
             return False
 
     def _update_usage(self):
@@ -263,7 +263,7 @@ class MethodRegistry(object):
             if method:
                 method.allow_unregistered_calls = rule.allowUnregisteredCalls
             else:
-                logger.error(u'bad usage selector: No HTTP rule for %s', selector)
+                _logger.error(u'bad usage selector: No HTTP rule for %s', selector)
 
     def _get_or_create_method_info(self, selector):
         extracted_methods = self._extracted_methods
@@ -305,15 +305,15 @@ class MethodRegistry(object):
             selector = rule.selector
             method = extracted_methods.get(selector)
             if not method:
-                logger.error(u'bad system parameter: No HTTP rule for %s',
-                             selector)
+                _logger.error(u'bad system parameter: No HTTP rule for %s',
+                              selector)
                 continue
 
             for parameter in rule.parameters:
                 name = parameter.name
                 if not name:
-                    logger.error(u'bad system parameter: no parameter name %s',
-                                 selector)
+                    _logger.error(u'bad system parameter: no parameter name %s',
+                                  selector)
                     continue
 
                 if parameter.httpHeader:
@@ -474,7 +474,7 @@ def _add_labels_from_descriptors(descs, labels_dict, is_supported):
     for desc in descs:
         existing = labels_dict.get(desc.key)
         if existing and existing.valueType != desc.valueType:
-            logger.warn(u'halted label scan: conflicting label in %s', desc.key)
+            _logger.warn(u'halted label scan: conflicting label in %s', desc.key)
             return False
     # Update labels_dict
     for desc in descs:
@@ -488,7 +488,7 @@ def _add_labels_for_a_log(logging_descs, log_name, labels_dict, is_supported):
         if d.name == log_name:
             _add_labels_from_descriptors(d.labels, labels_dict, is_supported)
             return True
-    logger.warn(u'bad log label scan: log not found %s', log_name)
+    _logger.warn(u'bad log label scan: log not found %s', log_name)
     return False
 
 
@@ -500,7 +500,7 @@ def _add_labels_for_a_monitored_resource(resource_descs,
         if d.type == resource_name:
             _add_labels_from_descriptors(d.labels, labels_dict, is_supported)
             return True
-    logger.warn(u'bad monitored resource label scan: resource not found %s',
+    _logger.warn(u'bad monitored resource label scan: resource not found %s',
                 resource_name)
     return False
 

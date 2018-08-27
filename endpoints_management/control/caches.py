@@ -40,7 +40,7 @@ from datetime import datetime, timedelta
 
 import cachetools
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class CheckOptions(
@@ -194,14 +194,14 @@ def create(options, timer=None, use_deque=True):
         return None
 
     if not isinstance(options, (CheckOptions, QuotaOptions, ReportOptions)):
-        logger.error(u'make_cache(): bad options %s', options)
+        _logger.error(u'make_cache(): bad options %s', options)
         raise ValueError(u'Invalid options')
 
     if (options.num_entries <= 0):
-        logger.info(u"did not create cache, options was %s", options)
+        _logger.debug(u"did not create cache, options was %s", options)
         return None
 
-    logger.info(u"creating a cache from %s", options)
+    _logger.debug(u"creating a cache from %s", options)
     if (options.flush_interval > ZERO_INTERVAL):
         # options always has a flush_interval, but may have an expiration
         # field. If the expiration is present, use that instead of the

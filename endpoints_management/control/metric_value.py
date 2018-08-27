@@ -31,7 +31,7 @@ from . import distribution, money, signing, timestamp, MetricKind
 from ..gen.servicecontrol_v1_messages import MetricValue
 
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def create(labels=None, **kw):
@@ -68,12 +68,12 @@ def merge(metric_kind, prior, latest):
     prior_type, _ = _detect_value(prior)
     latest_type, _ = _detect_value(latest)
     if prior_type != latest_type:
-        logger.warn(u'Metric values are not compatible: %s, %s',
-                    prior, latest)
+        _logger.warn(u'Metric values are not compatible: %s, %s',
+                     prior, latest)
         raise ValueError(u'Incompatible delta metric values')
     if prior_type is None:
-        logger.warn(u'Bad metric values, types not known for : %s, %s',
-                    prior, latest)
+        _logger.warn(u'Bad metric values, types not known for : %s, %s',
+                     prior, latest)
         raise ValueError(u'Unsupported delta metric types')
 
     if metric_kind == MetricKind.DELTA:
@@ -169,5 +169,5 @@ def _combine_delta_values(value_type, prior, latest):
         distribution.merge(prior, latest)
         return latest
     else:
-        logger.error(u'Unmergeable metric type %s', value_type)
+        _logger.error(u'Unmergeable metric type %s', value_type)
         raise ValueError(u'Could not merge unmergeable metric type')

@@ -28,7 +28,7 @@ from oauth2client import client
 from urllib3.contrib import appengine
 
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 _GOOGLE_API_SCOPE = u"https://www.googleapis.com/auth/cloud-platform"
 
@@ -69,8 +69,10 @@ def fetch_service_config(service_name=None, service_version=None):
         service_version = _get_service_version(_SERVICE_VERSION_ENV_KEY,
                                                service_name)
 
+    _logger.debug(u'Contacting Service Management API for service %s version %s',
+                  service_name, service_version)
     response = _make_service_config_request(service_name, service_version)
-    logger.debug(u'obtained service json from the management api:\n%s', response.data)
+    _logger.debug(u'obtained service json from the management api:\n%s', response.data)
     service = encoding.JsonToMessage(messages.Service, response.data)
     _validate_service_config(service, service_name, service_version)
     return service
@@ -128,15 +130,16 @@ def _get_service_version(env_variable_name, service_name):
     if service_version:
         return service_version
 
+    _logger.debug(u'Contacting Service Management API for service %s', service_name)
     response = _make_service_config_request(service_name)
-    logger.debug(u'obtained service config list from api: \n%s', response.data)
+    _logger.debug(u'obtained service config list from api: \n%s', response.data)
 
     services = encoding.JsonToMessage(messages.ListServiceConfigsResponse,
                                       response.data)
 
     try:
-        logger.debug(u"found latest service version of %s",
-                     services.serviceConfigs[0].id)
+        _logger.debug(u"found latest service version of %s",
+                      services.serviceConfigs[0].id)
         return services.serviceConfigs[0].id
     except:
         # catches IndexError if no versions or anything else that would
@@ -163,5 +166,5 @@ def _validate_service_config(service, expected_service_name,
 
 
 def _log_and_raise(exception_class, message):
-    logger.error(message)
+    _logger.error(message)
     raise exception_class(message)

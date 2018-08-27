@@ -39,7 +39,7 @@ from . import (caches, label_descriptor, metric_value, operation, sc_messages,
                signing)
 from .. import USER_AGENT, SERVICE_AGENT
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 # alias for brevity
 _QuotaErrors = sc_messages.QuotaError.CodeValueValuesEnum
@@ -324,22 +324,22 @@ class Aggregator(object):
         if not isinstance(req, sc_messages.ServicecontrolServicesAllocateQuotaRequest):
             raise ValueError(u'Invalid request')
         if req.serviceName != self.service_name:
-            logger.error(u'bad allocate_quota(): service_name %s does not match ours %s',
-                         req.serviceName, self.service_name)
+            _logger.error(u'bad allocate_quota(): service_name %s does not match ours %s',
+                          req.serviceName, self.service_name)
             raise ValueError(u'Service name mismatch')
         allocate_quota_request = req.allocateQuotaRequest
         if allocate_quota_request is None:
-            logger.error(u'bad allocate_quota(): no allocate_quota_request in %s', req)
+            _logger.error(u'bad allocate_quota(): no allocate_quota_request in %s', req)
             raise ValueError(u'Expected operation not set')
         op = allocate_quota_request.allocateOperation
         if op is None:
-            logger.error(u'bad allocate_quota(): no operation in %s', req)
+            _logger.error(u'bad allocate_quota(): no operation in %s', req)
             raise ValueError(u'Expected operation not set')
 
         signature = sign(allocate_quota_request)
         with self._cache as cache, self._out as out:
             now = self._timer()
-            logger.debug(u'checking the cache for %r\n%s', signature, cache)
+            _logger.debug(u'checking the cache for %r\n%s', signature, cache)
             item = cache.get(signature)
             if item is None:
                 # to avoid sending concurrent allocate_quota from

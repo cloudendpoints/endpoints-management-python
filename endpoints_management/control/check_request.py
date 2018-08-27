@@ -39,7 +39,7 @@ from . import (caches, label_descriptor, metric_value, operation, sc_messages,
                signing)
 from .. import USER_AGENT, SERVICE_AGENT
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 # alias for brevity
 _CheckErrors = sc_messages.CheckError.CodeValueValuesEnum
@@ -443,23 +443,23 @@ class Aggregator(object):
         if not isinstance(req, sc_messages.ServicecontrolServicesCheckRequest):
             raise ValueError(u'Invalid request')
         if req.serviceName != self.service_name:
-            logger.error(u'bad check(): service_name %s does not match ours %s',
-                         req.serviceName, self.service_name)
+            _logger.error(u'bad check(): service_name %s does not match ours %s',
+                          req.serviceName, self.service_name)
             raise ValueError(u'Service name mismatch')
         check_request = req.checkRequest
         if check_request is None:
-            logger.error(u'bad check(): no check_request in %s', req)
+            _logger.error(u'bad check(): no check_request in %s', req)
             raise ValueError(u'Expected operation not set')
         op = check_request.operation
         if op is None:
-            logger.error(u'bad check(): no operation in %s', req)
+            _logger.error(u'bad check(): no operation in %s', req)
             raise ValueError(u'Expected operation not set')
         if op.importance != sc_messages.Operation.ImportanceValueValuesEnum.LOW:
             return None  # op is important, send request now
 
         signature = sign(check_request)
         with self._cache as cache:
-            logger.debug(u'checking the cache for %r\n%s', signature, cache)
+            _logger.debug(u'checking the cache for %r\n%s', signature, cache)
             item = cache.get(signature)
             if item is None:
                 return None  # signal to caller to send req
@@ -481,7 +481,7 @@ class Aggregator(object):
                     return item.response
 
                 if (item.is_flushing):
-                    logger.warn(u'last refresh request did not complete')
+                    _logger.warn(u'last refresh request did not complete')
 
                 item.is_flushing = True
                 item.last_check_time = self._timer()

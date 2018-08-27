@@ -29,7 +29,7 @@ import logging
 
 import strict_rfc3339
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 _EPOCH_START = datetime.datetime(1970, 1, 1)
@@ -57,8 +57,8 @@ def compare(a, b):
     a_is_text = isinstance(a, basestring)
     b_is_text = isinstance(b, basestring)
     if type(a) != type(b) and not (a_is_text and b_is_text):
-        logger.error(u'Cannot compare %s to %s, types differ %s!=%s',
-                     a, b, type(a), type(b))
+        _logger.error(u'Cannot compare %s to %s, types differ %s!=%s',
+                      a, b, type(a), type(b))
         raise ValueError(u'cannot compare inputs of differing types')
 
     if a_is_text:
@@ -96,7 +96,7 @@ def to_rfc3339(timestamp):
     if isinstance(timestamp, datetime.datetime):
         timestamp = timestamp - _EPOCH_START
     if not isinstance(timestamp, datetime.timedelta):
-        logger.error(u'Could not convert %s to a rfc3339 time,', timestamp)
+        _logger.error(u'Could not convert %s to a rfc3339 time,', timestamp)
         raise ValueError(u'Invalid timestamp type')
     return strict_rfc3339.timestamp_to_rfc3339_utcoffset(
         timestamp.total_seconds())

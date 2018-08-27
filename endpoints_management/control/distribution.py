@@ -35,7 +35,7 @@ import math
 
 from . import sc_messages
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 _BAD_NUM_FINITE_BUCKETS = u'number of finite buckets should be > 0'
@@ -141,7 +141,7 @@ def add_sample(a_float, dist):
         _update_general_statistics(a_float, dist)
         _update_explicit_bucket_count(a_float, dist)
     else:
-        logger.error(u'Could not determine bucket option type for %s', dist)
+        _logger.error(u'Could not determine bucket option type for %s', dist)
         raise ValueError(u'Unknown bucket option type')
 
 
@@ -163,14 +163,14 @@ def merge(prior, latest):
 
     """
     if not _buckets_nearly_equal(prior, latest):
-        logger.error(u'Bucket options do not match. From %s To: %s',
-                     prior,
-                     latest)
+        _logger.error(u'Bucket options do not match. From %s To: %s',
+                      prior,
+                      latest)
         raise ValueError(u'Bucket options do not match')
     if len(prior.bucketCounts) != len(latest.bucketCounts):
-        logger.error(u'Bucket count sizes do not match. From %s To: %s',
-                     prior,
-                     latest)
+        _logger.error(u'Bucket count sizes do not match. From %s To: %s',
+                      prior,
+                      latest)
         raise ValueError(u'Bucket count sizes do not match')
     if prior.count <= 0:
         return
@@ -323,8 +323,8 @@ def _update_exponential_bucket_count(a_float, dist):
         index = 1 + int((math.log(a_float / scale) / math.log(factor)))
         index = min(index, num_finite_buckets + 1)
     bucket_counts[index] += 1
-    logger.debug(u'scale:%f, factor:%f, sample:%f, index:%d',
-                 scale, factor, a_float, index)
+    _logger.debug(u'scale:%f, factor:%f, sample:%f, index:%d',
+                  scale, factor, a_float, index)
 
 
 def _update_linear_bucket_count(a_float, dist):
@@ -356,8 +356,8 @@ def _update_linear_bucket_count(a_float, dist):
     else:
         index = 1 + int(((a_float - lower) / width))
     bucket_counts[index] += 1
-    logger.debug(u'upper:%f, lower:%f, width:%f, sample:%f, index:%d',
-                 upper, lower, width, a_float, index)
+    _logger.debug(u'upper:%f, lower:%f, width:%f, sample:%f, index:%d',
+                  upper, lower, width, a_float, index)
 
 
 def _update_explicit_bucket_count(a_float, dist):

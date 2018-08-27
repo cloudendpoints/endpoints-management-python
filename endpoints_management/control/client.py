@@ -54,7 +54,7 @@ from .caches import CheckOptions, QuotaOptions, ReportOptions, to_cache_timer
 from .vendor.py3 import sched
 
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 CONFIG_VAR = u'ENDPOINTS_SERVER_CONFIG_FILE'
@@ -63,11 +63,11 @@ MAX_IDLE_TIME_SECONDS = 120
 
 def _load_from_well_known_env():
     if CONFIG_VAR not in os.environ:
-        logger.info(u'did not load server config; no environ var %s', CONFIG_VAR)
+        _logger.warn(u'did not load server config; no environ var %s', CONFIG_VAR)
         return _load_default()
     json_file = os.environ[CONFIG_VAR]
     if not os.path.exists(json_file):
-        logger.warn(u'did not load service; missing config file %s', json_file)
+        _logger.warn(u'did not load service; missing config file %s', json_file)
         return _load_default()
     try:
         with open(json_file) as f:
@@ -93,9 +93,9 @@ def _load_from_well_known_env():
                     milliseconds=report_json[u'flushIntervalMs']))
             return check_options, quota_options, report_options
     except (KeyError, ValueError):
-        logger.warn(u'did not load service; bad json config file %s',
-                    json_file,
-                    exc_info=True)
+        _logger.warn(u'did not load service; bad json config file %s',
+                     json_file,
+                     exc_info=True)
         return _load_default()
 
 
@@ -133,7 +133,10 @@ _THREAD_CLASS = threading.Thread
 
 def _create_http_transport():
     additional_http_headers = {u"user-agent": USER_AGENT}
-    do_logging = logger.level <= logging.DEBUG
+
+    from endpoints_management import _logger as management_logger
+    do_logging = management_logger.isEnabledFor(logging.DEBUG)
+
     return api_client.ServicecontrolV1(
         additional_http_headers=additional_http_headers,
         log_request=do_logging,
@@ -237,13 +240,13 @@ class Client(object):
             self._stopped = False
             self._running = True
             self._start_idle_timer()
-            logger.info(u'starting thread of type %s to run the scheduler',
-                        _THREAD_CLASS)
+            _logger.debug(u'starting thread of type %s to run the scheduler',
+                          _THREAD_CLASS)
             self._thread = _THREAD_CLASS(target=self._schedule_flushes)
             try:
                 self._thread.start()
             except Exception:  # pylint: disable=broad-except
-                logger.warn(
+                _logger.warn(
                     u'no scheduler thread, scheduler.run() will be invoked by report(...)',
                     exc_info=True)
                 self._thread = None
@@ -258,7 +261,7 @@ class Client(object):
         """
         with self._lock:
             if self._stopped:
-                logger.info(u'%s is already stopped', self)
+                _logger.debug(u'%s is already stopped', self)
                 return
 
             self._flush_all_reports()
@@ -295,8 +298,8 @@ class Client(object):
         self.start()
         res = self._check_aggregator.check(check_req)
         if res:
-            logger.debug(u'using cached check response for %s: %s',
-                         check_request, res)
+            _logger.debug(u'using cached check response for %s: %s',
+                          check_request, res)
             return res
 
         # Application code should not fail because check request's don't
@@ -308,16 +311,16 @@ class Client(object):
             self._check_aggregator.add_response(check_req, resp)
             return resp
         except exceptions.Error:  # only sink apitools errors
-            logger.error(u'direct send of check request failed %s',
-                         check_request, exc_info=True)
+            _logger.error(u'direct send of check request failed %s',
+                          check_request, exc_info=True)
             return None
 
     def allocate_quota(self, allocate_quota_req):
         self.start()
         res = self._quota_aggregator.allocate_quota(allocate_quota_req)
         if res:
-            logger.debug(u'using cached quota response for %s: %s',
-                         allocate_quota_req, res)
+            _logger.debug(u'using cached quota response for %s: %s',
+                          allocate_quota_req, res)
             return res
 
         # no cache, making direct request
@@ -327,8 +330,8 @@ class Client(object):
             self._quota_aggregator.add_response(allocate_quota_req, resp)
             return resp
         except exceptions.Error:  # only sink apitools errors
-            logger.error(u'direct send of quota request failed %s',
-                         allocate_quota_req, exc_info=True)
+            _logger.error(u'direct send of quota request failed %s',
+                          allocate_quota_req, exc_info=True)
             # fail open
             dummy_resp = sc_messages.AllocateQuotaResponse()
             self._quota_aggregator.add_response(allocate_quota_req, dummy_resp)
@@ -348,13 +351,13 @@ class Client(object):
             self._scheduler.run(blocking=False)
 
         if not self._report_aggregator.report(report_req):
-            logger.info(u'need to send a report request directly')
+            _logger.debug(u'need to send a report request directly')
             try:
                 transport = self._create_transport()
                 transport.services.Report(report_req)
             except exceptions.Error:  # only sink apitools errors
-                logger.error(u'direct send for report request failed',
-                             exc_info=True)
+                _logger.error(u'direct send for report request failed',
+                              exc_info=True)
 
     @property
     def _run_scheduler_directly(self):
@@ -362,9 +365,9 @@ class Client(object):
 
     def _initialize_flushing(self):
         with self._lock:
-            logger.info(u'created a scheduler to control flushing')
+            _logger.debug(u'created a scheduler to control flushing')
             self._scheduler = sched.scheduler(self._timer, time.sleep)
-            logger.info(u'scheduling initial check, report, and quota')
+            _logger.debug(u'scheduling initial check, report, and quota')
             self._flush_schedule_check_aggregator()
             self._flush_schedule_report_aggregator()
             self._flush_schedule_quota_aggregator()
@@ -373,7 +376,7 @@ class Client(object):
         # the method expects to be run in the thread created in start()
         self._initialize_flushing()
         self._scheduler.run()  # should block until self._stopped is set
-        logger.info(u'scheduler.run completed, %s will exit', threading.current_thread())
+        _logger.debug(u'scheduler.run completed, %s will exit', threading.current_thread())
 
     def _cleanup_if_stopped(self):
         if not self._stopped:
@@ -386,26 +389,26 @@ class Client(object):
 
     def _flush_schedule_check_aggregator(self):
         if self._cleanup_if_stopped():
-            logger.info(u'did not schedule check flush: client is stopped')
+            _logger.debug(u'did not schedule check flush: client is stopped')
             return
 
         flush_interval = self._check_aggregator.flush_interval
         if not flush_interval or flush_interval.total_seconds() < 0:
-            logger.debug(u'did not schedule check flush: caching is disabled')
+            _logger.debug(u'did not schedule check flush: caching is disabled')
             return
 
         if self._run_scheduler_directly:
-            logger.debug(u'did not schedule check flush: no scheduler thread')
+            _logger.debug(u'did not schedule check flush: no scheduler thread')
             return
 
-        logger.debug(u'flushing the check aggregator')
+        _logger.debug(u'flushing the check aggregator')
         transport = self._create_transport()
         for req in self._check_aggregator.flush():
             try:
                 resp = transport.services.Check(req)
                 self._check_aggregator.add_response(req, resp)
             except Exception:  # pylint: disable=broad-except
-                logger.error(u'failed to flush check_req %s', req, exc_info=True)
+                _logger.error(u'failed to flush check_req %s', req, exc_info=True)
 
         # schedule a repeat of this method
         self._scheduler.enter(
@@ -417,28 +420,28 @@ class Client(object):
 
     def _flush_schedule_quota_aggregator(self):
         if self._cleanup_if_stopped():
-            logger.info(u'did not schedule quota flush: client is stopped')
+            _logger.debug(u'did not schedule quota flush: client is stopped')
             return
 
         flush_interval = self._quota_aggregator.flush_interval
         if not flush_interval or flush_interval.total_seconds() < 0:
-            logger.debug(u'did not schedule quota flush: caching is disabled')
+            _logger.debug(u'did not schedule quota flush: caching is disabled')
             return
 
         if self._run_scheduler_directly:
-            logger.debug(u'did not schedule quota flush: no scheduler thread')
+            _logger.debug(u'did not schedule quota flush: no scheduler thread')
             return
 
-        logger.debug(u'flushing the quota aggregator')
+        _logger.debug(u'flushing the quota aggregator')
         transport = self._create_transport()
         reqs = self._quota_aggregator.flush()
-        logger.debug(u'flushing %d quota from the quota aggregator', len(reqs))
+        _logger.debug(u'flushing %d quota from the quota aggregator', len(reqs))
         for req in reqs:
             try:
                 resp = transport.services.AllocateQuota(req)
                 self._quota_aggregator.add_response(req, resp)
             except Exception:  # pylint: disable=broad-except
-                logger.error(u'failed to flush quota_req %s', req, exc_info=True)
+                _logger.error(u'failed to flush quota_req %s', req, exc_info=True)
 
         # schedule a repeat of this method
         self._scheduler.enter(
@@ -450,28 +453,28 @@ class Client(object):
 
     def _flush_schedule_report_aggregator(self):
         if self._cleanup_if_stopped():
-            logger.info(u'did not schedule report flush: client is stopped')
+            _logger.debug(u'did not schedule report flush: client is stopped')
             return
 
         flush_interval = self._report_aggregator.flush_interval
         if not flush_interval or flush_interval.total_seconds() < 0:
-            logger.debug(u'did not schedule report flush: caching is disabled')
+            _logger.debug(u'did not schedule report flush: caching is disabled')
             return
 
         # flush reports and schedule a repeat of this method
         transport = self._create_transport()
         reqs = self._report_aggregator.flush()
-        logger.debug(u"will flush %d report requests", len(reqs))
+        _logger.debug(u"will flush %d report requests", len(reqs))
         for req in reqs:
             try:
                 transport.services.Report(req)
             except exceptions.Error:  # only sink apitools errors
-                logger.error(u'failed to flush report_req %s', req, exc_info=True)
+                _logger.error(u'failed to flush report_req %s', req, exc_info=True)
 
         if len(reqs) > 0:
             self._start_idle_timer()
         elif self._idle_threshold_reached():
-            logger.info(
+            _logger.debug(
                 u'Shutting down after no reports in the last %d seconds',
                 MAX_IDLE_TIME_SECONDS)
             self.stop()
@@ -485,13 +488,13 @@ class Client(object):
 
     def _flush_all_reports(self):
         all_requests = self._report_aggregator.clear()
-        logger.info(u'flushing all reports (count=%d)', len(all_requests))
+        _logger.debug(u'flushing all reports (count=%d)', len(all_requests))
         transport = self._create_transport()
         for req in all_requests:
             try:
                 transport.services.Report(req)
             except exceptions.Error:  # only sink apitools errors
-                logger.error(u'failed to flush report_req %s', req, exc_info=True)
+                _logger.error(u'failed to flush report_req %s', req, exc_info=True)
 
 
 def use_default_thread():
@@ -507,6 +510,6 @@ def use_gae_thread():
         from google.appengine.api.background_thread import background_thread
         _THREAD_CLASS = background_thread.BackgroundThread
     except ImportError:
-        logger.error(
+        _logger.error(
             u'Could not install appengine background threads!'
             u' Please install the python AppEngine SDK and use this from there')

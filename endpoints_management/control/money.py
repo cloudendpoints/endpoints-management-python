@@ -26,7 +26,7 @@ import sys
 
 from . import sc_messages
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 _INT64_MAX = sys.maxint
 _INT64_MIN = -sys.maxint - 1

@@ -35,7 +35,7 @@ from . import caches, label_descriptor, operation, sc_messages
 from . import metric_descriptor, signing, timestamp
 from .. import USER_AGENT, SERVICE_AGENT
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 NOT_SET = -1
 
@@ -504,12 +504,12 @@ class Aggregator(object):
         if not isinstance(req, sc_messages.ServicecontrolServicesReportRequest):
             raise ValueError(u'Invalid request')
         if req.serviceName != self.service_name:
-            logger.error(u'bad report(): service_name %s does not match ours %s',
-                         req.serviceName, self.service_name)
+            _logger.error(u'bad report(): service_name %s does not match ours %s',
+                          req.serviceName, self.service_name)
             raise ValueError(u'Service name mismatch')
         report_req = req.reportRequest
         if report_req is None:
-            logger.error(u'bad report(): no report_request in %s', req)
+            _logger.error(u'bad report(): no report_request in %s', req)
             raise ValueError(u'Expected report_request not set')
         if _has_high_important_operation(report_req) or self._cache is None:
             return None

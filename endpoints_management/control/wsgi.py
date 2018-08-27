@@ -40,7 +40,7 @@ from ..config.service_config import ServiceConfigException
 from . import check_request, quota_request, report_request, service, sm_messages
 
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 _CONTENT_LENGTH = u'content-length'
@@ -125,7 +125,7 @@ def add_all(application, project_id, control_client,
         if not a_service:
             raise ValueError(u'No service config loaded.')
     except (ServiceConfigException, ValueError):
-        logger.exception(u'Failed to load service config, installing server error handler.')
+        _logger.exception(u'Failed to load service config, installing server error handler.')
         # This will answer all requests with HTTP 503 Service Unavailable
         return HTTPServiceUnavailable()
     authenticator = _create_authenticator(a_service)
@@ -260,8 +260,8 @@ class Middleware(object):
         method_info = environ.get(EnvironmentMiddleware.METHOD_INFO)
         if not method_info:
             # just allow the wrapped application to handle the request
-            logger.debug(u'method_info not present in the wsgi environment'
-                         u', no service control')
+            _logger.debug(u'method_info not present in the wsgi environment'
+                          u', no service control')
             return self._application(environ, start_response)
 
         latency_timer = _LatencyTimer(self._timer)
@@ -277,7 +277,7 @@ class Middleware(object):
             app_info.request_size = int(environ.get(u'CONTENT_LENGTH',
                                                     report_request.NOT_SET))
         except ValueError:
-            logger.warn(u'ignored bad content-length: %s', environ.get(u'CONTENT_LENGTH'))
+            _logger.warn(u'ignored bad content-length: %s', environ.get(u'CONTENT_LENGTH'))
 
         app_info.http_method = http_method
         app_info.url = parsed_uri
@@ -287,11 +287,11 @@ class Middleware(object):
         consumer_project_number = 0
         check_info = self._create_check_info(method_info, parsed_uri, environ)
         if not check_info.api_key and not method_info.allow_unregistered_calls:
-            logger.debug(u"skipping %s, no api key was provided", parsed_uri)
+            _logger.debug(u"skipping %s, no api key was provided", parsed_uri)
             error_msg = self._handle_missing_api_key(app_info, start_response)
         else:
             check_req = check_info.as_check_request()
-            logger.debug(u'checking %s with %s', method_info, check_request)
+            _logger.debug(u'checking %s with %s', method_info, check_request)
             check_resp = self._control_client.check(check_req)
             error_msg = self._handle_check_response(app_info, check_resp, start_response)
             if (check_resp and check_resp.checkInfo and
@@ -301,7 +301,7 @@ class Middleware(object):
             if error_msg is None:
                 quota_info = self._create_quota_info(method_info, parsed_uri, environ)
                 if not quota_info.quota_info:
-                    logger.debug(u'no metric costs for this method')
+                    _logger.debug(u'no metric costs for this method')
                 else:
                     quota_request = quota_info.as_allocate_quota_request()
                     quota_response = self._control_client.allocate_quota(quota_request)
@@ -318,7 +318,7 @@ class Middleware(object):
                                                      latency_timer,
                                                      rules,
                                                      consumer_project_number)
-            logger.debug(u'scheduling report_request %s', report_req)
+            _logger.debug(u'scheduling report_request %s', report_req)
             self._control_client.report(report_req)
             return error_msg
 
@@ -349,7 +349,7 @@ class Middleware(object):
                                                  latency_timer,
                                                  rules,
                                                  consumer_project_number)
-        logger.debug(u'scheduling report_request %s', report_req)
+        _logger.debug(u'scheduling report_request %s', report_req)
         self._control_client.report(report_req)
         return result
 
@@ -441,7 +441,7 @@ class Middleware(object):
             return None  # the check was OK
 
         # there was problem; the request cannot proceed
-        logger.warn(u'Check failed %d, %s', code, detail)
+        _logger.warn(u'Check failed %d, %s', code, detail)
         app_info.response_code = code
         app_info.api_key_valid = api_key_valid
         return self._return_simple_http_response(start_response, code, detail)
@@ -453,14 +453,14 @@ class Middleware(object):
             return None  # the quota was OK
 
         # there was problem; the request cannot proceed
-        logger.warn(u'Quota failed %d, %s', code, detail)
+        _logger.warn(u'Quota failed %d, %s', code, detail)
         app_info.response_code = code
         return self._return_simple_http_response(start_response, code, detail)
 
     def _handle_missing_api_key(self, app_info, start_response):
         code = httplib.UNAUTHORIZED
         detail = self._NO_API_KEY_MSG
-        logger.warn(u'Check not performed %d, %s', code, detail)
+        _logger.warn(u'Check not performed %d, %s', code, detail)
         app_info.response_code = code
         app_info.api_key_valid = False
         return self._return_simple_http_response(start_response, code, detail)
@@ -594,8 +594,8 @@ def _create_authenticator(a_service):
 
     authentication = a_service.authentication
     if not authentication:
-        logger.info(u"authentication is not configured in service, "
-                    u"authentication checks will be disabled")
+        _logger.info(u"authentication is not configured in service, "
+                     u"authentication checks will be disabled")
         return
 
     issuers_to_provider_ids = {}
@@ -646,13 +646,13 @@ class AuthenticationMiddleware(object):
         method_info = environ.get(EnvironmentMiddleware.METHOD_INFO)
         if not method_info or not method_info.auth_info:
             # No authentication configuration for this method
-            logger.debug(u"authentication is not configured")
+            _logger.debug(u"authentication is not configured")
             return self._application(environ, start_response)
 
         auth_token = _extract_auth_token(environ)
         user_info = None
         if not auth_token:
-            logger.debug(u"No auth token is attached to the request")
+            _logger.debug(u"No auth token is attached to the request")
         else:
             try:
                 service_name = environ.get(EnvironmentMiddleware.SERVICE_NAME)
@@ -660,8 +660,8 @@ class AuthenticationMiddleware(object):
                                                              method_info.auth_info,
                                                              service_name)
             except Exception:  # pylint: disable=broad-except
-                logger.debug(u"Cannot decode and verify the auth token. The backend "
-                             u"will not be able to retrieve user info", exc_info=True)
+                _logger.debug(u"Cannot decode and verify the auth token. The backend "
+                              u"will not be able to retrieve user info", exc_info=True)
 
         environ[self.USER_INFO] = user_info
 

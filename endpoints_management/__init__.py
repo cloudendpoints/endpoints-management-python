@@ -14,9 +14,14 @@
 
 from __future__ import absolute_import
 
+import logging
+
 from . import auth, config, control, gen
 
 __version__ = '1.9.1'
+
+_logger = logging.getLogger(__name__)
+_logger.setLevel(logging.INFO)
 
 USER_AGENT = u'ESP'
 SERVICE_AGENT = u'EF_PYTHON/' + __version__
