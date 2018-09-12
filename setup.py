@@ -59,7 +59,7 @@ setup(
     author='Google Inc',
     author_email='googleapis-packages@google.com',
     url='https://github.com/cloudendpoints/endpoints-management-python',
-    packages=find_packages(),
+    packages=find_packages(exclude=['test', 'test.*']),
     namespace_packages=[],
     package_dir={'google-endpoints-api-management': 'endpoints_management'},
     license='Apache License',
