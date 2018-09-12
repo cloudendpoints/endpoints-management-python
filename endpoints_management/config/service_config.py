@@ -86,10 +86,11 @@ def _get_access_token():
 
 
 def _get_http_client():
-    if appengine.is_appengine_sandbox():
+    # don't use the AppEngineManager when sockets access is enabled
+    # see https://urllib3.readthedocs.io/en/latest/reference/urllib3.contrib.html#module-urllib3.contrib.appengine
+    if appengine.is_appengine_sandbox() and 'GAE_USE_SOCKETS_HTTPLIB' not in os.environ:
         return appengine.AppEngineManager()
-    else:
-        return urllib3.PoolManager()
+    return urllib3.PoolManager()
 
 
 def _get_env_var_or_raise(env_variable_name):
