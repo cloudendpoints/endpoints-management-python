@@ -242,7 +242,7 @@ class Client(object):
             self._start_idle_timer()
             _logger.debug(u'starting thread of type %s to run the scheduler',
                           _THREAD_CLASS)
-            self._thread = _THREAD_CLASS(target=self._schedule_flushes)
+            self._thread = create_thread(target=self._schedule_flushes)
             try:
                 self._thread.start()
             except Exception:  # pylint: disable=broad-except
@@ -513,3 +513,8 @@ def use_gae_thread():
         _logger.error(
             u'Could not install appengine background threads!'
             u' Please install the python AppEngine SDK and use this from there')
+
+
+def create_thread(target):
+    """Encapsulate use of _THREAD_CLASS"""
+    return _THREAD_CLASS(target=target)

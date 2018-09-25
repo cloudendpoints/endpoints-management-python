@@ -33,11 +33,13 @@ import uuid
 import urllib2
 import urlparse
 import wsgiref.util
+
+import backoff
 from webob.exc import HTTPServiceUnavailable, status_map as exc_status_map
 
 from ..auth import suppliers, tokens
 from ..config.service_config import ServiceConfigException
-from . import check_request, quota_request, report_request, service, sm_messages
+from . import check_request, client, quota_request, report_request, service, sm_messages
 
 
 _logger = logging.getLogger(__name__)
@@ -120,21 +122,92 @@ def add_all(application, project_id, control_client,
        loader (:class:`endpoints_management.control.service.Loader`): loads the service
           instance that configures this instance's behaviour
     """
-    try:
-        a_service = loader.load()
-        if not a_service:
-            raise ValueError(u'No service config loaded.')
-    except (ServiceConfigException, ValueError):
-        _logger.exception(u'Failed to load service config, installing server error handler.')
+    return ConfigFetchWrapper(application, project_id, control_client, loader)
+
+
+class ConfigFetchWrapper(object):
+    """
+    This class encapsulates the service config loading process. If the initial
+    loading attempt fails, it launches a background thread to retry with
+    exponential backoff. However, if background threads are disabled, it will
+    instead try loading the service config before every request.
+
+    Since it might run in a situation where threading doesn't work, it does not
+    use locks to coordinate access. Instead, the background thread may access
+    only the self.loader and self.service_config variables; specifically,
+    retrieving the former and retrieving and setting the latter. The Python GIL
+    ensures that thread contexts can only switch between individual Python
+    bytecodes.
+    """
+    def __init__(self, application, project_id, control_client,
+                 loader=service.Loaders.FROM_SERVICE_MANAGEMENT,
+                 disable_threading=False):
+        self.service_config = None
+        self.background_thread = None
+        self.threading_failed = disable_threading
         # This will answer all requests with HTTP 503 Service Unavailable
-        return HTTPServiceUnavailable()
-    authenticator = _create_authenticator(a_service)
+        self.wsgi_backend = HTTPServiceUnavailable()
 
-    wrapped_app = Middleware(application, project_id, control_client)
-    if authenticator:
-        wrapped_app = AuthenticationMiddleware(wrapped_app, authenticator)
-    return EnvironmentMiddleware(wrapped_app, a_service)
+        self.application = application
+        self.project_id = project_id
+        self.control_client = control_client
+        self.loader = loader
 
+        self.try_loading()
+        self.wrap_app()
+        if self.service_config is None:
+            self.launch_loading_thread()
+
+    def __call__(self, environ, start_response):
+        if self.threading_failed and self.service_config is None:
+            self.try_loading()
+        if isinstance(self.wsgi_backend, HTTPServiceUnavailable):
+            self.wrap_app()
+        return self.wsgi_backend(environ, start_response)
+
+    def wrap_app(self):
+        if self.service_config is None:
+            return
+        authenticator = _create_authenticator(self.service_config)
+
+        wrapped_app = Middleware(self.application, self.project_id, self.control_client)
+        if authenticator:
+            wrapped_app = AuthenticationMiddleware(wrapped_app, authenticator)
+        self.wsgi_backend = EnvironmentMiddleware(wrapped_app, self.service_config)
+
+    def try_loading(self):
+        try:
+            a_service = self.loader.load()
+            if not a_service:
+                raise ValueError(u'Service config loader returned bad value.')
+        except (ServiceConfigException, ValueError):
+            _logger.exception(u'Failed to load service config.')
+        else:
+            _logger.debug('Loaded service config.')
+            self.service_config = a_service
+
+    def try_loading_in_thread(self):
+        class LoadFailedException(Exception):
+            pass
+
+        @backoff.on_exception(backoff.expo, LoadFailedException)
+        def _load_or_raise():
+            self.try_loading()
+            if self.service_config is None:
+                raise LoadFailedException
+
+        _load_or_raise()
+
+    def launch_loading_thread(self):
+        if self.threading_failed:
+            return
+        self.background_thread = client.create_thread(target=self.try_loading_in_thread)
+        try:
+            self.background_thread.start()
+        except Exception:  # pylint: disable=broad-except
+            _logger.exception(u'Failed to start service config loading background thread.')
+            self.threading_failed = True
+            self.background_thread = None
 
 def _next_operation_uuid():
     return uuid.uuid4().hex
@@ -351,7 +424,7 @@ class Middleware(object):
                                                  consumer_project_number)
         _logger.debug(u'scheduling report_request %s', report_req)
         self._control_client.report(report_req)
-        return result
+        return (result, )
 
     def _create_report_request(self,
                                method_info,

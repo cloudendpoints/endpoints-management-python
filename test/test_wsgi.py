@@ -28,16 +28,17 @@ from endpoints_management.control import (client, report_request, service,
                                           sc_messages, sm_messages, wsgi)
 
 
-def _dummy_start_response(content, dummy_response_headers):
+def _dummy_start_response(status, response_headers, exc_info=None):
     pass
 
 
-_DUMMY_RESPONSE = (b'All must answer "here!"',)
+_DUMMY_RESPONSE = (b'This is the dummy app response.',)
 
 
 class _DummyWsgiApp(object):
-
+    # TODO: replace this with a response object from webob
     def __call__(self, environ, dummy_start_response):
+        dummy_start_response("200 OK", [])
         return _DUMMY_RESPONSE
 
 
@@ -149,16 +150,36 @@ class TestMiddleware(unittest2.TestCase):
         expect(control_client.report.called).to(be_true)
         expect(control_client.allocate_quota.called).to(be_false)
 
-    def test_load_service_failed(self):
-        loader = mock.MagicMock(load=lambda: None)
-        result = wsgi.add_all(_DummyWsgiApp(),
-                              self.PROJECT_ID,
-                              mock.MagicMock(spec=client.Client),
-                              loader=loader)
-        assert isinstance(result, wsgi.HTTPServiceUnavailable)
+    def test_load_service_failed_retrying(self):
+        control_client = mock.MagicMock(spec=client.Client)
+
+        given = {
+            u'wsgi.url_scheme': u'http',
+            u'PATH_INFO': u'/any',
+            u'REMOTE_ADDR': u'192.168.0.3',
+            u'HTTP_HOST': u'localhost',
+            u'HTTP_REFERER': u'example.myreferer.com',
+            u'REQUEST_METHOD': u'GET'}
+        dummy_response = sc_messages.CheckResponse(
+            operationId=u'fake_operation_id')
+        control_client.check.return_value = dummy_response
+
+        loader = mock.MagicMock()
+        # fail to load twice, then load
+        loader.load.side_effect = [None, None, service.Loaders.SIMPLE.load()]
+        # will consume first value
+        result = wsgi.ConfigFetchWrapper(
+            _DummyWsgiApp(), self.PROJECT_ID, control_client,
+            loader=loader, disable_threading=True)
+
         test_app = webtest.TestApp(result)
+        # will retry, consuming second value
         resp = test_app.get('/any', expect_errors=True)
         assert resp.status_code == 503
+        # will retry, consuming third value
+        resp = test_app.get('/any')
+        assert resp.status_code == 200
+
 
 
 _SYSTEM_PARAMETER_CONFIG_TEST = b"""

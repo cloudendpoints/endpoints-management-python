@@ -30,6 +30,7 @@ with open('endpoints_management/__init__.py', 'r') as f:
         raise RuntimeError("No version number found!")
 
 install_requires = [
+    'backoff>=1.6.0',
     'cachetools>=1.0.0,<2',
     "dogpile.cache>=0.6.1,<0.7",
     'enum34>=1.1.6,<2',
