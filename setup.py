@@ -31,7 +31,7 @@ with open('endpoints_management/__init__.py', 'r') as f:
 
 install_requires = [
     'backoff>=1.6.0',
-    'cachetools>=1.0.0,<2',
+    'cachetools>=1.0.0,<3',
     "dogpile.cache>=0.6.1,<0.7",
     'enum34>=1.1.6,<2',
     'google-apitools>=0.5.21,<0.6',
